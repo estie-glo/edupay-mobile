@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { router } from 'expo-router';
 import { deleteItem, getItem, setItem } from './storage';
 
 // Contrat confirmé par l'équipe backend (API REST v1, Laravel + Sanctum) le 30/08/2026.
@@ -19,6 +20,22 @@ api.interceptors.request.use(async (config) => {
   if (token) config.headers.Authorization = `Bearer ${token}`;
   return config;
 });
+
+// Redirige vers l'écran hors-ligne uniquement quand la requête n'a reçu
+// aucune réponse (pas de réseau) — pas pour les erreurs 4xx/5xx classiques,
+// qui ont leur propre gestion dans chaque écran.
+let redirectionHorsLigneEnCours = false;
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (!error.response && !redirectionHorsLigneEnCours) {
+      redirectionHorsLigneEnCours = true;
+      router.push('/screens/commun/OfflineScreen');
+      setTimeout(() => { redirectionHorsLigneEnCours = false; }, 3000);
+    }
+    return Promise.reject(error);
+  }
+);
 
 // ── AUTH ──────────────────────────────────────────────────────
 export const register = async (data: {

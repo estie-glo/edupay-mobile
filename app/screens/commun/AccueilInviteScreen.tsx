@@ -17,27 +17,9 @@ import {
   Wallet,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-
-type Etablissement = {
-  nom: string;
-  ville: string;
-  type: string;
-};
+import { ETABLISSEMENTS } from '../../../data/etablissements';
 
 const COULEURS_AVATAR = ['#0B2545', '#0D9E75', '#1a472a', '#E8A020'];
-
-// Pas de route /etablissements/search dans l'API annoncée par le backend : on
-// reprend la liste réellement affichée sur edupay.mekontso.gsi2026.com (capture
-// du 30/08/2026) plutôt que de laisser la section vide.
-const ECOLES: Etablissement[] = [
-  { nom: 'Collège la dignite', ville: 'Yaoundé', type: 'Maternelle' },
-  { nom: 'Collège Sainte-Marie', ville: 'Yaoundé', type: 'Collège' },
-  { nom: 'Lycée Bilingue de Melen', ville: 'Yaoundé', type: 'Lycée général' },
-  { nom: "Lycée d'éligibilité essono", ville: 'Yaoundé', type: 'Lycée général' },
-  { nom: "lycee d'estelle", ville: 'yaounde', type: 'Maternelle' },
-  { nom: 'lycee de KL', ville: 'yaounde', type: 'Lycée technique' },
-  { nom: 'SAR/SM batcham', ville: 'Batcham ville', type: 'Lycée technique' },
-];
 
 // Texte exact du site en ligne (capture edupay.mekontso.gsi2026.com du 30/08/2026)
 const FONCTIONNALITES = [
@@ -104,8 +86,8 @@ export default function AccueilInviteScreen() {
 
   const ecoles = useMemo(() => {
     const q = recherche.trim().toLowerCase();
-    if (!q) return ECOLES;
-    return ECOLES.filter((e) => e.nom.toLowerCase().includes(q) || e.ville.toLowerCase().includes(q));
+    if (!q) return ETABLISSEMENTS;
+    return ETABLISSEMENTS.filter((e) => e.nom.toLowerCase().includes(q) || e.ville.toLowerCase().includes(q));
   }, [recherche]);
 
   return (
@@ -168,6 +150,9 @@ export default function AccueilInviteScreen() {
                 <Text style={styles.heroBtnSecondaryTxt}>Inscrire mon établissement</Text>
               </TouchableOpacity>
             </View>
+            <TouchableOpacity style={styles.commentLien} onPress={() => router.push('/screens/commun/CommentScreen')}>
+              <Text style={styles.commentLienTxt}>Comment ça marche ?</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Stats — la landing réelle (main) anime ces valeurs depuis des compteurs live
@@ -251,6 +236,10 @@ export default function AccueilInviteScreen() {
               ))}
             </View>
           )}
+
+          <TouchableOpacity style={styles.voirToutBtn} onPress={() => router.push('/screens/commun/EcolesScreen')}>
+            <Text style={styles.voirToutTxt}>Voir tout l'annuaire des établissements →</Text>
+          </TouchableOpacity>
         </View>
 
         {/* POURQUOI CHOISIR EDUPAY */}
@@ -361,6 +350,8 @@ const styles = StyleSheet.create({
   heroAccent: { color: '#0D9E75' },
   heroDesc: { fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 18, marginBottom: 24 },
   heroBtns: { gap: 10 },
+  commentLien: { marginTop: 14, alignItems: 'center' },
+  commentLienTxt: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600', textDecorationLine: 'underline' },
   heroBtnPrimary: { backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
   heroBtnPrimaryTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   heroBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 14, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
@@ -389,6 +380,8 @@ const styles = StyleSheet.create({
   vide: { fontSize: 12, color: '#888888', textAlign: 'center', marginTop: 12 },
 
   ecolesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  voirToutBtn: { marginTop: 14, alignItems: 'center' },
+  voirToutTxt: { fontSize: 12, fontWeight: '700', color: '#0D9E75' },
   ecoleCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
   ecoleAvatar: { width: 48, height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   ecoleAvatarTxt: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
