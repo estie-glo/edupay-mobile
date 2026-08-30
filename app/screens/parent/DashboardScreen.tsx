@@ -65,44 +65,51 @@ export default function DashboardScreen() {
   }, [token, authLoading]);
 
   // Pas d'endpoint /dashboard consolidé côté API : on compose à partir de
-  // GET /apprenants (avec leurs frais) et GET /paiements (page 1).
+  // GET /apprenants et GET /paiements. GET /paiements renvoie parfois une
+  // 500 côté serveur (bug confirmé, remonté à l'équipe backend) — on ne
+  // laisse pas ça bloquer l'affichage des apprenants, qui eux fonctionnent.
   const chargerDashboard = async () => {
     setLoading(true);
-    try {
-      const [apprenantsRes, paiementsRes] = await Promise.all([getApprenants(), getHistorique(1)]);
-      const apprenantsData = apprenantsRes.data ?? apprenantsRes;
-      const apprenants: Apprenant[] = Array.isArray(apprenantsData) ? apprenantsData : apprenantsData.apprenants ?? [];
+    const [apprenantsResult, paiementsResult] = await Promise.allSettled([getApprenants(), getHistorique(1)]);
 
-      const paiementsPagination = paiementsRes.data ?? paiementsRes;
-      const paiements: Paiement[] = Array.isArray(paiementsPagination) ? paiementsPagination : paiementsPagination.data ?? [];
-
-      let totalDu = 0;
-      let totalPaye = 0;
-      apprenants.forEach((a) => {
-        if (a.frais) {
-          a.frais.forEach((f) => {
-            totalDu += Math.max(0, f.montant_total - f.montant_paye);
-            totalPaye += f.montant_paye;
-          });
-        } else {
-          totalDu += a.solde_du ?? 0;
-          totalPaye += (a.montant_total ?? 0) - (a.solde_du ?? 0);
-        }
-      });
-      const nbRecus = paiements.filter((p) => (p.statut || '').toLowerCase() === 'valide').length;
-
-      setDashboard({
-        apprenants,
-        total_du: totalDu,
-        total_paye: totalPaye,
-        nb_recus: nbRecus,
-        derniers_paiements: paiements.slice(0, 5),
-      });
-    } catch (error: any) {
-      Alert.alert('Erreur', error.response?.data?.message || 'Impossible de charger le tableau de bord');
-    } finally {
+    if (apprenantsResult.status === 'rejected') {
+      Alert.alert('Erreur', apprenantsResult.reason?.response?.data?.message || 'Impossible de charger vos enfants');
       setLoading(false);
+      return;
     }
+
+    const apprenantsData = apprenantsResult.value.data ?? apprenantsResult.value;
+    const apprenants: Apprenant[] = Array.isArray(apprenantsData) ? apprenantsData : apprenantsData.apprenants ?? [];
+
+    let paiements: Paiement[] = [];
+    if (paiementsResult.status === 'fulfilled') {
+      const paiementsPagination = paiementsResult.value.data ?? paiementsResult.value;
+      paiements = Array.isArray(paiementsPagination) ? paiementsPagination : paiementsPagination.data ?? [];
+    }
+
+    let totalDu = 0;
+    let totalPaye = 0;
+    apprenants.forEach((a) => {
+      if (a.frais) {
+        a.frais.forEach((f) => {
+          totalDu += Math.max(0, f.montant_total - f.montant_paye);
+          totalPaye += f.montant_paye;
+        });
+      } else {
+        totalDu += a.solde_du ?? 0;
+        totalPaye += (a.montant_total ?? 0) - (a.solde_du ?? 0);
+      }
+    });
+    const nbRecus = paiements.filter((p) => (p.statut || '').toLowerCase() === 'valide').length;
+
+    setDashboard({
+      apprenants,
+      total_du: totalDu,
+      total_paye: totalPaye,
+      nb_recus: nbRecus,
+      derniers_paiements: paiements.slice(0, 5),
+    });
+    setLoading(false);
   };
 
   if (loading || !dashboard) {
