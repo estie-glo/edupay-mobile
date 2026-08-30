@@ -38,13 +38,13 @@ const ECOLES: Etablissement[] = [
   { nom: 'SAR/SM batcham', ville: 'Batcham ville', type: 'Lycée technique' },
 ];
 
-// Textes alignés sur la maquette officielle (maquettes/01_accueil_landing.png du dépôt backend)
+// Texte exact du site en ligne (capture edupay.mekontso.gsi2026.com du 30/08/2026)
 const FONCTIONNALITES = [
-  { titre: 'Mobile Money natif', desc: 'Intégration directe MTN Mobile Money & Orange Money Cameroun. Confirmation USSD instantanée.', Icone: Wallet },
+  { titre: 'Mobile Money natif', desc: 'Intégration directe MTN Mobile Money & Orange Money Cameroun.', Icone: Wallet },
   { titre: 'Reçu PDF automatique', desc: 'Chaque paiement validé génère un reçu signé électroniquement, envoyé par email et SMS.', Icone: FileCheck },
   { titre: 'Dashboard temps réel', desc: 'Directeurs et comptables suivent encaissements, impayés et relances depuis un seul écran.', Icone: BarChart3 },
   { titre: 'Sécurité PCI-DSS', desc: 'Chiffrement TLS 1.3, authentification 2FA, conformité COBAC/BEAC et protection anti-fraude.', Icone: ShieldCheck },
-  { titre: 'Paiement fractionné', desc: "Payez en 2 ou 3 tranches selon l'échéancier de l'établissement. Rappels SMS automatiques.", Icone: Layers },
+  { titre: 'Paiement fractionné', desc: "Payez en 2 ou 3 tranches selon l'échéancier de l'établissement.", Icone: Layers },
   { titre: 'Multi-établissements', desc: 'Un parent peut gérer plusieurs enfants dans plusieurs écoles depuis un seul compte EduPay.', Icone: Building2 },
 ];
 
@@ -222,14 +222,30 @@ export default function AccueilInviteScreen() {
         {/* CTA ÉTABLISSEMENT */}
         <View style={styles.ctaBox}>
           <GraduationCap size={28} color="#FFFFFF" />
-          <Text style={styles.ctaTitre}>Votre établissement n'est pas encore sur EduPay ?</Text>
-          <Text style={styles.ctaDesc}>Digitalisez la collecte de vos frais scolaires dès aujourd'hui.</Text>
+          <Text style={styles.ctaTitre}>Votre établissement n'est pas encore partenaire ?</Text>
+          <Text style={styles.ctaDesc}>Inscription gratuite · Onboarding en 24h · Support dédié · Aucun engagement</Text>
           <TouchableOpacity
             style={styles.ctaBtn}
             onPress={() => router.push('/screens/ecole/RegisterEcoleScreen')}
           >
-            <Text style={styles.ctaBtnTxt}>Inscrire mon établissement</Text>
+            <Text style={styles.ctaBtnTxt}>Inscrire mon établissement →</Text>
           </TouchableOpacity>
+        </View>
+
+        {/* FOOTER */}
+        <View style={styles.footer}>
+          <Text style={styles.footerLogo}>Edu<Text style={{ color: '#5DCAA5' }}>Pay</Text> Cameroun</Text>
+          <Text style={styles.footerDesc}>
+            La première plateforme de paiement électronique des frais de scolarité pensée pour les réalités camerounaises.
+          </Text>
+          <View style={styles.footerBadges}>
+            {['TLS 1.3', 'PCI-DSS', 'COBAC'].map((badge) => (
+              <View key={badge} style={styles.footerBadge}>
+                <Text style={styles.footerBadgeTxt}>{badge}</Text>
+              </View>
+            ))}
+          </View>
+          <Text style={styles.footerCopyright}>© 2026 EduPay Cameroun — Tous droits réservés</Text>
         </View>
 
       </ScrollView>
@@ -309,4 +325,13 @@ const styles = StyleSheet.create({
   ctaDesc: { fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginBottom: 16 },
   ctaBtn: { backgroundColor: '#0D9E75', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
   ctaBtnTxt: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
+
+  // FOOTER
+  footer: { backgroundColor: '#0B2545', padding: 24, alignItems: 'center' },
+  footerLogo: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', marginBottom: 10 },
+  footerDesc: { fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 16, marginBottom: 16 },
+  footerBadges: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  footerBadge: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
+  footerBadgeTxt: { fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
+  footerCopyright: { fontSize: 9, color: 'rgba(255,255,255,0.35)', textAlign: 'center' },
 });
