@@ -16,7 +16,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react-native';
-import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
+import { LinearGradient } from 'expo-linear-gradient';
 
 type Etablissement = {
   nom: string;
@@ -65,12 +65,14 @@ const FOOTER_COLONNES = [
   { titre: 'INFORMATIONS', liens: ['À propos', 'Contact', 'Politique de confidentialité', "Conditions d'utilisation"] },
 ];
 
-const FOOTER_RESEAUX: { nom: string; icone: string }[] = [
-  { nom: 'LinkedIn', icone: 'linkedin' },
-  { nom: 'X', icone: 'twitter' },
-  { nom: 'WhatsApp', icone: 'whatsapp' },
-  { nom: 'Facebook', icone: 'facebook-f' },
-  { nom: 'Instagram', icone: 'instagram' },
+// Monogrammes texte plutôt qu'une police d'icônes (FontAwesome) : évite tout
+// risque de chargement de police manquant/raté sur web comme sur mobile.
+const FOOTER_RESEAUX = [
+  { nom: 'LinkedIn', sigle: 'in' },
+  { nom: 'X', sigle: 'X' },
+  { nom: 'WhatsApp', sigle: 'wa' },
+  { nom: 'Facebook', sigle: 'f' },
+  { nom: 'Instagram', sigle: 'ig' },
 ];
 
 export default function AccueilInviteScreen() {
@@ -87,8 +89,15 @@ export default function AccueilInviteScreen() {
     <View style={styles.container}>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
-        {/* HERO SECTION */}
-        <View style={styles.hero}>
+        {/* HERO SECTION — dégradé exact du site (video-bg.css, variante ≤480px : la
+            vidéo de fond y est volontairement désactivée pour la data/perf mobile) */}
+        <LinearGradient
+          colors={['#0B2545', 'rgba(11,37,69,0.95)', 'rgba(13,158,117,0.3)']}
+          locations={[0, 0.6, 1]}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+          style={styles.hero}
+        >
           {/* Navbar */}
           <View style={styles.navbar}>
             <View style={styles.logoBox}>
@@ -160,7 +169,7 @@ export default function AccueilInviteScreen() {
               <Text style={styles.statLbl}>Uptime garanti</Text>
             </View>
           </View>
-        </View>
+        </LinearGradient>
 
         {/* CONÇU POUR TOUT LE SYSTÈME ÉDUCATIF */}
         <View style={styles.section}>
@@ -292,9 +301,9 @@ export default function AccueilInviteScreen() {
           </View>
 
           <View style={styles.footerReseaux}>
-            {FOOTER_RESEAUX.map(({ nom, icone }) => (
+            {FOOTER_RESEAUX.map(({ nom, sigle }) => (
               <TouchableOpacity key={nom} style={styles.footerReseauBtn} onPress={() => Alert.alert(nom, 'Bientôt disponible.')}>
-                <FontAwesome5 name={icone} size={14} color="#FFFFFF" />
+                <Text style={styles.footerReseauTxt}>{sigle}</Text>
               </TouchableOpacity>
             ))}
           </View>
@@ -398,5 +407,6 @@ const styles = StyleSheet.create({
   footerBadge2Txt: { fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
   footerReseaux: { flexDirection: 'row', gap: 10, marginBottom: 16 },
   footerReseauBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
+  footerReseauTxt: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
   footerCopyright: { fontSize: 9, color: 'rgba(255,255,255,0.35)', textAlign: 'center' },
 });
