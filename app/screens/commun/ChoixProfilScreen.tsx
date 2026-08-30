@@ -6,6 +6,7 @@ import {
   TouchableOpacity,
   View
 } from 'react-native';
+import { ArrowLeft, ArrowRight, Compass, School, Users } from 'lucide-react-native';
 
 export default function ChoixProfilScreen() {
   const router = useRouter();
@@ -19,9 +20,9 @@ export default function ChoixProfilScreen() {
           style={styles.backBtn}
           onPress={() => router.back()}
         >
-          <Text style={styles.backTxt}>←</Text>
+          <ArrowLeft size={16} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.titre}>Bienvenue 👋</Text>
+        <Text style={styles.titre}>Bienvenue</Text>
         <Text style={styles.sousTitre}>
           Comment souhaitez-vous continuer sur EduPay ?
         </Text>
@@ -39,7 +40,7 @@ export default function ChoixProfilScreen() {
           onPress={() => router.push('/screens/parent/LoginParentScreen')}
         >
           <View style={[styles.ico, { backgroundColor: '#E0F5EE' }]}>
-            <Text style={styles.icoTxt}>👨‍👩‍👧</Text>
+            <Users size={22} color="#0D9E75" />
           </View>
           <View style={styles.texts}>
             <Text style={styles.cardTitre}>Parent / Élève</Text>
@@ -47,7 +48,7 @@ export default function ChoixProfilScreen() {
               Payez les frais scolaires, suivez vos paiements et vos enfants.
             </Text>
           </View>
-          <Text style={styles.arrow}>→</Text>
+          <ArrowRight size={18} color="#AAAAAA" />
         </TouchableOpacity>
 
         {/* Établissement */}
@@ -56,7 +57,7 @@ export default function ChoixProfilScreen() {
           onPress={() => router.push('/screens/ecole/LoginEcoleScreen')}
         >
           <View style={[styles.ico, { backgroundColor: '#FEF3DC' }]}>
-            <Text style={styles.icoTxt}>🏫</Text>
+            <School size={22} color="#E8A020" />
           </View>
           <View style={styles.texts}>
             <Text style={styles.cardTitre}>Établissement</Text>
@@ -64,7 +65,7 @@ export default function ChoixProfilScreen() {
               Gérez les encaissements, apprenants et réclamations de votre école.
             </Text>
           </View>
-          <Text style={styles.arrow}>→</Text>
+          <ArrowRight size={18} color="#AAAAAA" />
         </TouchableOpacity>
 
         {/* Invité */}
@@ -73,7 +74,7 @@ export default function ChoixProfilScreen() {
           onPress={() => router.back()}
         >
           <View style={[styles.ico, { backgroundColor: '#E6F0FB' }]}>
-            <Text style={styles.icoTxt}>🧭</Text>
+            <Compass size={22} color="#1A4E8A" />
           </View>
           <View style={styles.texts}>
             <Text style={styles.cardTitre}>Continuer en invité</Text>
@@ -81,7 +82,7 @@ export default function ChoixProfilScreen() {
               Découvrez l'app, les écoles partenaires et simulez vos frais.
             </Text>
           </View>
-          <Text style={styles.arrow}>→</Text>
+          <ArrowRight size={18} color="#AAAAAA" />
         </TouchableOpacity>
 
         <Text style={styles.note}>
@@ -112,11 +113,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginBottom: 14,
-  },
-  backTxt: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
   },
   titre: {
     fontSize: 22,
@@ -157,9 +153,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     flexShrink: 0,
   },
-  icoTxt: {
-    fontSize: 24,
-  },
   texts: {
     flex: 1,
   },
@@ -173,11 +166,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: '#888888',
     lineHeight: 15,
-  },
-  arrow: {
-    fontSize: 18,
-    color: '#AAAAAA',
-    flexShrink: 0,
   },
   note: {
     textAlign: 'center',

@@ -13,6 +13,15 @@ export default function RootLayout() {
       <Stack.Screen name="screens/commun/EcolesScreen" />
       <Stack.Screen name="screens/commun/SimulateurScreen" />
       <Stack.Screen name="screens/commun/CommentScreen" />
+      <Stack.Screen name="screens/commun/FonctionnalitesScreen" />
+      <Stack.Screen name="screens/commun/AProposScreen" />
+      <Stack.Screen name="screens/commun/TemoignagesScreen" />
+      <Stack.Screen name="screens/commun/TarifsScreen" />
+      <Stack.Screen name="screens/commun/GuideScreen" />
+      <Stack.Screen name="screens/commun/ContactScreen" />
+      <Stack.Screen name="screens/commun/PolitiqueConfidentialiteScreen" />
+      <Stack.Screen name="screens/commun/ConditionsUtilisationScreen" />
+      <Stack.Screen name="screens/commun/MentionsLegalesScreen" />
       <Stack.Screen name="screens/parent/LoginParentScreen" />
       <Stack.Screen name="screens/parent/RegisterParentScreen" />
       <Stack.Screen name="screens/parent/DashboardScreen" />

@@ -60,9 +60,32 @@ const FOOTER_BADGES_1 = ['TLS 1.3', 'PCI-DSS', 'COBAC'];
 const FOOTER_BADGES_2 = ['MTN Mobile Money Partner', 'Orange Money Intégré', 'CinetPay Certifié', 'COBAC Conforme'];
 
 const FOOTER_COLONNES = [
-  { titre: 'PRODUIT', liens: ['Fonctionnalités', 'Témoignages', 'Tarifs'] },
-  { titre: 'ÉTABLISSEMENTS', liens: ['Inscrire mon école', 'Back-office', "Guide d'utilisation", 'Support dédié'] },
-  { titre: 'INFORMATIONS', liens: ['À propos', 'Contact', 'Politique de confidentialité', "Conditions d'utilisation"] },
+  {
+    titre: 'PRODUIT',
+    liens: [
+      { label: 'Fonctionnalités', route: '/screens/commun/FonctionnalitesScreen' },
+      { label: 'Témoignages', route: '/screens/commun/TemoignagesScreen' },
+      { label: 'Tarifs', route: '/screens/commun/TarifsScreen' },
+    ],
+  },
+  {
+    titre: 'ÉTABLISSEMENTS',
+    liens: [
+      { label: 'Inscrire mon école', route: '/screens/ecole/RegisterEcoleScreen' },
+      { label: 'Back-office', route: '/screens/ecole/LoginEcoleScreen' },
+      { label: "Guide d'utilisation", route: '/screens/commun/GuideScreen' },
+      { label: 'Support dédié', route: '/screens/commun/AideScreen' },
+    ],
+  },
+  {
+    titre: 'INFORMATIONS',
+    liens: [
+      { label: 'À propos', route: '/screens/commun/AProposScreen' },
+      { label: 'Contact', route: '/screens/commun/ContactScreen' },
+      { label: 'Politique de confidentialité', route: '/screens/commun/PolitiqueConfidentialiteScreen' },
+      { label: "Conditions d'utilisation", route: '/screens/commun/ConditionsUtilisationScreen' },
+    ],
+  },
 ];
 
 // Monogrammes texte plutôt qu'une police d'icônes (FontAwesome) : évite tout
@@ -277,9 +300,9 @@ export default function AccueilInviteScreen() {
             {FOOTER_COLONNES.map(({ titre, liens }) => (
               <View key={titre} style={styles.footerColonne}>
                 <Text style={styles.footerColonneTitre}>{titre}</Text>
-                {liens.map((lien) => (
-                  <TouchableOpacity key={lien} onPress={() => Alert.alert(lien, 'Bientôt disponible.')}>
-                    <Text style={styles.footerLien}>{lien}</Text>
+                {liens.map(({ label, route }) => (
+                  <TouchableOpacity key={label} onPress={() => router.push(route as any)}>
+                    <Text style={styles.footerLien}>{label}</Text>
                   </TouchableOpacity>
                 ))}
               </View>
@@ -288,7 +311,7 @@ export default function AccueilInviteScreen() {
 
           <View style={styles.footerDivider} />
 
-          <TouchableOpacity onPress={() => Alert.alert('Mentions légales', 'Bientôt disponible.')}>
+          <TouchableOpacity onPress={() => router.push('/screens/commun/MentionsLegalesScreen')}>
             <Text style={styles.footerMentions}>Mentions légales</Text>
           </TouchableOpacity>
 
