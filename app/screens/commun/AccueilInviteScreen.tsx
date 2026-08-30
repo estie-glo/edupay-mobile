@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useMemo, useState } from 'react';
-import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import {
   BarChart3,
   Building2,
@@ -16,6 +16,7 @@ import {
   Users,
   Wallet,
 } from 'lucide-react-native';
+import FontAwesome5 from '@expo/vector-icons/FontAwesome5';
 
 type Etablissement = {
   nom: string;
@@ -53,6 +54,23 @@ const NIVEAUX = [
   { titre: 'Collèges & Lycées', desc: 'Scolarité, examens, internat', Icone: FileText, couleur: '#E8A020' },
   { titre: 'Universités & Instituts', desc: "Frais d'inscription, frais de scolarité", Icone: Monitor, couleur: '#0B2545' },
   { titre: 'Payeurs : Parents, Élèves & Étudiants', desc: 'Paiement 24h/24 depuis partout', Icone: Users, couleur: '#7C3AED' },
+];
+
+const FOOTER_BADGES_1 = ['TLS 1.3', 'PCI-DSS', 'COBAC'];
+const FOOTER_BADGES_2 = ['MTN Mobile Money Partner', 'Orange Money Intégré', 'CinetPay Certifié', 'COBAC Conforme'];
+
+const FOOTER_COLONNES = [
+  { titre: 'PRODUIT', liens: ['Fonctionnalités', 'Témoignages', 'Tarifs'] },
+  { titre: 'ÉTABLISSEMENTS', liens: ['Inscrire mon école', 'Back-office', "Guide d'utilisation", 'Support dédié'] },
+  { titre: 'INFORMATIONS', liens: ['À propos', 'Contact', 'Politique de confidentialité', "Conditions d'utilisation"] },
+];
+
+const FOOTER_RESEAUX: { nom: string; icone: string }[] = [
+  { nom: 'LinkedIn', icone: 'linkedin' },
+  { nom: 'X', icone: 'twitter' },
+  { nom: 'WhatsApp', icone: 'whatsapp' },
+  { nom: 'Facebook', icone: 'facebook-f' },
+  { nom: 'Instagram', icone: 'instagram' },
 ];
 
 export default function AccueilInviteScreen() {
@@ -239,12 +257,48 @@ export default function AccueilInviteScreen() {
             La première plateforme de paiement électronique des frais de scolarité pensée pour les réalités camerounaises.
           </Text>
           <View style={styles.footerBadges}>
-            {['TLS 1.3', 'PCI-DSS', 'COBAC'].map((badge) => (
+            {FOOTER_BADGES_1.map((badge) => (
               <View key={badge} style={styles.footerBadge}>
                 <Text style={styles.footerBadgeTxt}>{badge}</Text>
               </View>
             ))}
           </View>
+
+          <View style={styles.footerColonnes}>
+            {FOOTER_COLONNES.map(({ titre, liens }) => (
+              <View key={titre} style={styles.footerColonne}>
+                <Text style={styles.footerColonneTitre}>{titre}</Text>
+                {liens.map((lien) => (
+                  <TouchableOpacity key={lien} onPress={() => Alert.alert(lien, 'Bientôt disponible.')}>
+                    <Text style={styles.footerLien}>{lien}</Text>
+                  </TouchableOpacity>
+                ))}
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.footerDivider} />
+
+          <TouchableOpacity onPress={() => Alert.alert('Mentions légales', 'Bientôt disponible.')}>
+            <Text style={styles.footerMentions}>Mentions légales</Text>
+          </TouchableOpacity>
+
+          <View style={styles.footerBadges2}>
+            {FOOTER_BADGES_2.map((badge) => (
+              <View key={badge} style={styles.footerBadge2}>
+                <Text style={styles.footerBadge2Txt}>{badge}</Text>
+              </View>
+            ))}
+          </View>
+
+          <View style={styles.footerReseaux}>
+            {FOOTER_RESEAUX.map(({ nom, icone }) => (
+              <TouchableOpacity key={nom} style={styles.footerReseauBtn} onPress={() => Alert.alert(nom, 'Bientôt disponible.')}>
+                <FontAwesome5 name={icone} size={14} color="#FFFFFF" />
+              </TouchableOpacity>
+            ))}
+          </View>
+
           <Text style={styles.footerCopyright}>© 2026 EduPay Cameroun — Tous droits réservés</Text>
         </View>
 
@@ -330,8 +384,19 @@ const styles = StyleSheet.create({
   footer: { backgroundColor: '#0B2545', padding: 24, alignItems: 'center' },
   footerLogo: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', marginBottom: 10 },
   footerDesc: { fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 16, marginBottom: 16 },
-  footerBadges: { flexDirection: 'row', gap: 8, marginBottom: 16 },
+  footerBadges: { flexDirection: 'row', gap: 8, marginBottom: 24 },
   footerBadge: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
   footerBadgeTxt: { fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
+  footerColonnes: { width: '100%', gap: 16, marginBottom: 8 },
+  footerColonne: { alignItems: 'center' },
+  footerColonneTitre: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.9)', letterSpacing: 0.8, marginBottom: 10 },
+  footerLien: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10, textAlign: 'center' },
+  footerDivider: { width: '100%', height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 16 },
+  footerMentions: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 16 },
+  footerBadges2: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 16 },
+  footerBadge2: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
+  footerBadge2Txt: { fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
+  footerReseaux: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  footerReseauBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
   footerCopyright: { fontSize: 9, color: 'rgba(255,255,255,0.35)', textAlign: 'center' },
 });
