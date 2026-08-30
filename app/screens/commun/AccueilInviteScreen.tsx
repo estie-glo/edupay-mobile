@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useMemo, useState } from 'react';
+import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import {
   BarChart3,
   Building2,
@@ -16,16 +16,27 @@ import {
   Users,
   Wallet,
 } from 'lucide-react-native';
-import { searchEtablissements } from '../../../services/api';
 
 type Etablissement = {
-  id?: number;
   nom: string;
   ville: string;
   type: string;
 };
 
 const COULEURS_AVATAR = ['#0B2545', '#0D9E75', '#1a472a', '#E8A020'];
+
+// Pas de route /etablissements/search dans l'API annoncée par le backend : on
+// reprend la liste réellement affichée sur edupay.mekontso.gsi2026.com (capture
+// du 30/08/2026) plutôt que de laisser la section vide.
+const ECOLES: Etablissement[] = [
+  { nom: 'Collège la dignite', ville: 'Yaoundé', type: 'Maternelle' },
+  { nom: 'Collège Sainte-Marie', ville: 'Yaoundé', type: 'Collège' },
+  { nom: 'Lycée Bilingue de Melen', ville: 'Yaoundé', type: 'Lycée général' },
+  { nom: "Lycée d'éligibilité essono", ville: 'Yaoundé', type: 'Lycée général' },
+  { nom: "lycee d'estelle", ville: 'yaounde', type: 'Maternelle' },
+  { nom: 'lycee de KL', ville: 'yaounde', type: 'Lycée technique' },
+  { nom: 'SAR/SM batcham', ville: 'Batcham ville', type: 'Lycée technique' },
+];
 
 // Textes alignés sur la maquette officielle (maquettes/01_accueil_landing.png du dépôt backend)
 const FONCTIONNALITES = [
@@ -47,25 +58,12 @@ const NIVEAUX = [
 export default function AccueilInviteScreen() {
   const router = useRouter();
   const [recherche, setRecherche] = useState('');
-  const [ecoles, setEcoles] = useState<Etablissement[]>([]);
-  const [loadingEcoles, setLoadingEcoles] = useState(true);
 
-  useEffect(() => {
-    const timeout = setTimeout(() => chargerEcoles(recherche), 300);
-    return () => clearTimeout(timeout);
+  const ecoles = useMemo(() => {
+    const q = recherche.trim().toLowerCase();
+    if (!q) return ECOLES;
+    return ECOLES.filter((e) => e.nom.toLowerCase().includes(q) || e.ville.toLowerCase().includes(q));
   }, [recherche]);
-
-  const chargerEcoles = async (q: string) => {
-    setLoadingEcoles(true);
-    try {
-      const response = await searchEtablissements(q);
-      setEcoles(response.data || response || []);
-    } catch {
-      setEcoles([]);
-    } finally {
-      setLoadingEcoles(false);
-    }
-  };
 
   return (
     <View style={styles.container}>
@@ -128,7 +126,7 @@ export default function AccueilInviteScreen() {
               buguées du backend ("30 000+" etc. sont des noms de clé, pas du contenu réel). */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>6</Text>
+              <Text style={styles.statVal}>7</Text>
               <Text style={styles.statLbl}>Établissements partenaires</Text>
             </View>
             <View style={styles.statItem}>
@@ -182,14 +180,12 @@ export default function AccueilInviteScreen() {
           </View>
 
           {/* Écoles */}
-          {loadingEcoles ? (
-            <ActivityIndicator size="small" color="#0D9E75" style={{ marginTop: 12 }} />
-          ) : ecoles.length === 0 ? (
+          {ecoles.length === 0 ? (
             <Text style={styles.vide}>Aucun établissement trouvé.</Text>
           ) : (
             <View style={styles.ecolesGrid}>
               {ecoles.map((ecole, i) => (
-                <TouchableOpacity key={ecole.id ?? i} style={styles.ecoleCard}>
+                <TouchableOpacity key={ecole.nom} style={styles.ecoleCard}>
                   <View style={[styles.ecoleAvatar, { backgroundColor: COULEURS_AVATAR[i % COULEURS_AVATAR.length] }]}>
                     <Text style={styles.ecoleAvatarTxt}>{ecole.nom.charAt(0)}</Text>
                   </View>
