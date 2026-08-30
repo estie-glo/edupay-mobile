@@ -122,19 +122,22 @@ export default function AccueilInviteScreen() {
             </View>
           </View>
 
-          {/* Stats */}
+          {/* Stats — la landing réelle (main) anime ces valeurs depuis des compteurs live
+              (nb_etablissements/nb_apprenants/nb_paiements) ; en l'absence d'API pour les
+              récupérer, on garde des libellés descriptifs plutôt que les clés de traduction
+              buguées du backend ("30 000+" etc. sont des noms de clé, pas du contenu réel). */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>30 000+</Text>
-              <Text style={styles.statLbl}>Établissements ciblés</Text>
+              <Text style={styles.statVal}>6</Text>
+              <Text style={styles.statLbl}>Établissements partenaires</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>6 000 000</Text>
-              <Text style={styles.statLbl}>Apprenants au Cameroun</Text>
+              <Text style={styles.statVal}>15</Text>
+              <Text style={styles.statLbl}>Apprenants inscrits</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>12M</Text>
-              <Text style={styles.statLbl}>Abonnés Mobile Money</Text>
+              <Text style={styles.statVal}>5</Text>
+              <Text style={styles.statLbl}>Paiements validés</Text>
             </View>
             <View style={styles.statItem}>
               <Text style={[styles.statVal, { color: '#5DCAA5' }]}>99,5%</Text>

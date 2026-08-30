@@ -120,15 +120,15 @@ export default function DashboardScreen() {
           </View>
           <View style={styles.kpiCard}>
             <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{dashboard.total_paye.toLocaleString('fr-FR')}</Text>
-            <Text style={styles.kpiLbl}>Payés</Text>
+            <Text style={styles.kpiLbl}>FCFA payés</Text>
           </View>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{dashboard.apprenants.length}</Text>
-            <Text style={styles.kpiLbl}>Enfants</Text>
+            <Text style={styles.kpiLbl}>Enfants suivis</Text>
           </View>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{dashboard.nb_recus}</Text>
-            <Text style={styles.kpiLbl}>Reçus</Text>
+            <Text style={styles.kpiLbl}>Reçus PDF</Text>
           </View>
         </View>
 
@@ -142,7 +142,7 @@ export default function DashboardScreen() {
         <Text style={styles.sec}>Mes enfants</Text>
         {dashboard.apprenants.length === 0 ? (
           <TouchableOpacity style={styles.videCard} onPress={() => router.push('/screens/parent/EnfantsScreen')}>
-            <Text style={styles.videTxt}>Aucun enfant rattaché. Ajoutez-en un →</Text>
+            <Text style={styles.videTxt}>Rattacher un enfant →</Text>
           </TouchableOpacity>
         ) : (
           dashboard.apprenants.map((a) => {
@@ -192,7 +192,12 @@ export default function DashboardScreen() {
         )}
 
         {/* Derniers paiements */}
-        <Text style={styles.sec}>Derniers paiements</Text>
+        <View style={styles.secHeaderRow}>
+          <Text style={styles.sec}>Derniers paiements</Text>
+          <TouchableOpacity onPress={() => router.push('/screens/parent/HistoriqueScreen')}>
+            <Text style={styles.voirTout}>Voir l'historique →</Text>
+          </TouchableOpacity>
+        </View>
         {dashboard.derniers_paiements.length === 0 ? (
           <Text style={styles.videTxt}>Aucun paiement récent.</Text>
         ) : (
@@ -242,6 +247,8 @@ const styles = StyleSheet.create({
   payBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#0D9E75', borderRadius: 12, padding: 14, marginBottom: 20 },
   payBtnTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   sec: { fontSize: 10, fontWeight: '700', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+  secHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  voirTout: { fontSize: 11, fontWeight: '700', color: '#0D9E75', marginBottom: 10 },
   videCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, alignItems: 'center' },
   videTxt: { fontSize: 12, color: '#0D9E75', fontWeight: '600' },
   enfantCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 3 },

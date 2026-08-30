@@ -9,27 +9,28 @@ type ModePaiement = 'mtn_momo' | 'orange_money' | 'carte';
 export default function PaiementScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{
-    apprenantId?: string;
-    categorieFraisId?: string;
-    echeancierId?: string;
+    fraisApprenantId?: string;
     montant?: string;
-    typePaiement?: string;
+    montantTranche?: string;
     libelle?: string;
     apprenantNom?: string;
   }>();
 
   const [modePaiement, setModePaiement] = useState<ModePaiement>('mtn_momo');
+  const [typePaiement, setTypePaiement] = useState<'integral' | 'tranche'>('integral');
   const [telephone, setTelephone] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const montant = Number(params.montant || 0);
-  const donneesIncompletes = !params.apprenantId || !params.categorieFraisId || !params.echeancierId || !montant;
+  const montantIntegral = Number(params.montant || 0);
+  const montantTranche = params.montantTranche ? Number(params.montantTranche) : null;
+  const montant = typePaiement === 'tranche' && montantTranche ? montantTranche : montantIntegral;
+  const donneesIncompletes = !params.fraisApprenantId || !montantIntegral;
 
   if (donneesIncompletes) {
     return (
       <View style={styles.videContainer}>
         <Text style={styles.videTitre}>Choisissez d'abord une échéance</Text>
-        <Text style={styles.videDesc}>Sélectionnez un enfant puis la tranche à payer depuis son échéancier.</Text>
+        <Text style={styles.videDesc}>Sélectionnez un enfant puis le frais à payer depuis son échéancier.</Text>
         <TouchableOpacity style={styles.btnPayer} onPress={() => router.push('/screens/parent/EnfantsScreen')}>
           <Text style={styles.btnPayerTxt}>Voir mes enfants →</Text>
         </TouchableOpacity>
@@ -45,13 +46,11 @@ export default function PaiementScreen() {
     setLoading(true);
     try {
       const response = await initierPaiement({
-        apprenant_id: Number(params.apprenantId),
-        categorie_frais_id: Number(params.categorieFraisId),
-        echeancier_id: Number(params.echeancierId),
+        frais_apprenant_id: Number(params.fraisApprenantId),
         mode_paiement: modePaiement,
-        type_paiement: params.typePaiement || 'tranche',
+        type_paiement: typePaiement,
         montant,
-        telephone_momo: modePaiement === 'carte' ? undefined : telephone,
+        telephone_paiement: modePaiement === 'carte' ? undefined : telephone,
       });
       router.push({
         pathname: '/screens/parent/PaiementSuccessScreen',
@@ -70,7 +69,7 @@ export default function PaiementScreen() {
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
           <ArrowLeft size={18} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.titre}>Paiement sécurisé</Text>
+        <Text style={styles.titre}>Effectuer un paiement</Text>
         <View style={styles.tlsRow}>
           <ShieldCheck size={13} color="rgba(255,255,255,0.6)" />
           <Text style={styles.tls}>TLS 1.3</Text>
@@ -89,6 +88,26 @@ export default function PaiementScreen() {
           </View>
         </View>
 
+        <Text style={styles.sec}>Option de paiement</Text>
+        <View style={styles.optionRow}>
+          <TouchableOpacity
+            style={[styles.optionCard, typePaiement === 'integral' && styles.optionCardActive]}
+            onPress={() => setTypePaiement('integral')}
+          >
+            <Text style={styles.optionLabel}>Paiement intégral</Text>
+            <Text style={styles.optionMontant}>{montantIntegral.toLocaleString('fr-FR')}</Text>
+          </TouchableOpacity>
+          {!!montantTranche && (
+            <TouchableOpacity
+              style={[styles.optionCard, typePaiement === 'tranche' && styles.optionCardActive]}
+              onPress={() => setTypePaiement('tranche')}
+            >
+              <Text style={styles.optionLabel}>Tranche suivante</Text>
+              <Text style={styles.optionMontant}>{montantTranche.toLocaleString('fr-FR')}</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
         <Text style={styles.sec}>Moyen de paiement</Text>
         <View style={styles.paiementRow}>
           <TouchableOpacity
@@ -97,7 +116,7 @@ export default function PaiementScreen() {
           >
             <Smartphone size={20} color="#996600" />
             <Text style={[styles.paiementNom, { color: '#996600' }]}>MTN</Text>
-            <Text style={styles.paiementSub}>MoMo</Text>
+            <Text style={styles.paiementSub}>Mobile Money</Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.paiementCard, modePaiement === 'orange_money' && styles.paiementCardActive]}
@@ -119,35 +138,28 @@ export default function PaiementScreen() {
 
         {modePaiement !== 'carte' && (
           <>
-            <Text style={styles.sec}>Numéro de téléphone</Text>
+            <Text style={styles.sec}>Numéro {modePaiement === 'mtn_momo' ? 'MTN MoMo' : 'Orange Money'}</Text>
             <TextInput
               style={styles.input}
-              placeholder="6XX XXX XXX"
+              placeholder={modePaiement === 'mtn_momo' ? '6XX XXX XXX (MTN)' : '6XX XXX XXX (Orange)'}
               placeholderTextColor="#AAAAAA"
               value={telephone}
-              onChangeText={setTelephone}
+              onChangeText={(t) => setTelephone(t.replace(/\D/g, '').slice(0, 9))}
               keyboardType="number-pad"
+              maxLength={9}
             />
           </>
         )}
 
         <View style={styles.warnBox}>
           <Text style={styles.warnTxt}>
-            Vous recevrez une notification sur votre téléphone pour confirmer.
+            Vous recevrez une notification USSD sur votre téléphone pour confirmer.
           </Text>
         </View>
 
         <View style={styles.totalBox}>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLbl}>Montant</Text>
-            <Text style={styles.totalVal}>{montant.toLocaleString('fr-FR')} FCFA</Text>
-          </View>
-          <View style={styles.totalRow}>
-            <Text style={styles.totalLbl}>Frais</Text>
-            <Text style={[styles.totalVal, { color: '#0D9E75' }]}>Offerts</Text>
-          </View>
-          <View style={[styles.totalRow, { borderTopWidth: 1, borderTopColor: '#EEEEEE', paddingTop: 10, marginTop: 4 }]}>
-            <Text style={[styles.totalLbl, { fontWeight: '700', fontSize: 15 }]}>Total</Text>
+          <View style={[styles.totalRow, { borderTopWidth: 0, paddingTop: 0 }]}>
+            <Text style={[styles.totalLbl, { fontWeight: '700', fontSize: 15 }]}>Total à payer</Text>
             <Text style={[styles.totalVal, { color: '#0D9E75', fontSize: 20, fontWeight: '800' }]}>{montant.toLocaleString('fr-FR')} FCFA</Text>
           </View>
         </View>
@@ -178,6 +190,11 @@ const styles = StyleSheet.create({
   resumeMontant: { fontSize: 28, fontWeight: '800', color: '#085041' },
   resumeDevise: { fontSize: 11, color: '#0F6E56', textAlign: 'right' },
   sec: { fontSize: 10, fontWeight: '700', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+  optionRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
+  optionCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
+  optionCardActive: { borderColor: '#0D9E75', backgroundColor: '#E0F5EE' },
+  optionLabel: { fontSize: 11, fontWeight: '700', color: '#888888', marginBottom: 4 },
+  optionMontant: { fontSize: 16, fontWeight: '800', color: '#1A1A2E' },
   paiementRow: { flexDirection: 'row', gap: 8, marginBottom: 20 },
   paiementCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 10, padding: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0', gap: 4 },
   paiementCardActive: { borderWidth: 2, borderColor: '#0D9E75' },

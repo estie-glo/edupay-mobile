@@ -17,7 +17,7 @@ type DashboardEcole = {
   total_encaisse?: number;
   total_impaye?: number;
   nb_apprenants?: number;
-  nb_paiements_mois?: number;
+  nb_dossiers_impayes?: number;
 };
 
 export default function BackOfficeScreen() {
@@ -109,8 +109,8 @@ export default function BackOfficeScreen() {
             <Text style={styles.kpiLbl}>Apprenants</Text>
           </View>
           <View style={styles.kpiCard}>
-            <Text style={styles.kpiVal}>{dashboard.nb_paiements_mois ?? 0}</Text>
-            <Text style={styles.kpiLbl}>Paiements/mois</Text>
+            <Text style={styles.kpiVal}>{dashboard.nb_dossiers_impayes ?? 0}</Text>
+            <Text style={styles.kpiLbl}>Dossiers impayés</Text>
           </View>
         </View>
 

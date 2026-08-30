@@ -38,18 +38,19 @@ export const register = async (data: {
   return response.data;
 };
 
-export const login = async (identifiant: string, password: string) => {
-  const response = await api.post('/auth/login', { identifiant, password });
+// `login` : téléphone ou email, champ unique — cf. auth/login.blade.php (name="login") sur main
+export const login = async (login: string, password: string) => {
+  const response = await api.post('/auth/login', { login, password });
   return response.data;
 };
 
-export const verifyOtp = async (telephone: string, code: string) => {
-  const response = await api.post('/auth/verify-otp', { telephone, code });
+export const verifyOtp = async (login: string, otp_code: string) => {
+  const response = await api.post('/auth/verify-otp', { login, otp_code });
   return response.data;
 };
 
-export const resendOtp = async (telephone: string) => {
-  const response = await api.post('/auth/resend-otp', { telephone });
+export const resendOtp = async (login: string) => {
+  const response = await api.post('/auth/resend-otp', { login });
   return response.data;
 };
 
@@ -100,14 +101,15 @@ export const removeApprenant = async (id: number) => {
 };
 
 // ── PAIEMENTS ─────────────────────────────────────────────────
+// payeur/paiement.blade.php sur main : un seul dossier de frais par (apprenant,
+// catégorie) — pas de tranche/échéancier séparés, `type_paiement` détermine le
+// montant calculé côté serveur (intégral vs tranche suivante).
 export const initierPaiement = async (data: {
-  apprenant_id: number;
-  categorie_frais_id: number;
-  echeancier_id: number;
+  frais_apprenant_id: number;
   mode_paiement: string;
   type_paiement: string;
   montant: number;
-  telephone_momo?: string;
+  telephone_paiement?: string;
 }) => {
   const response = await api.post('/payeur/paiement/initier', data);
   return response.data;
@@ -136,10 +138,12 @@ export const getReclamations = async () => {
   return response.data;
 };
 
+// payeur/reclamations.blade.php sur main : sujet libre, paiement lié optionnel
+// (pas de champ "type" à choix fixe)
 export const creerReclamation = async (data: {
-  paiement_id: number;
-  type: string;
+  sujet: string;
   description: string;
+  paiement_id?: number;
 }) => {
   const response = await api.post('/payeur/reclamations', data);
   return response.data;

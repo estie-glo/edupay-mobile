@@ -6,31 +6,31 @@ import { useAuth } from '../../../context/AuthContext';
 import { creerReclamation, getHistorique, getReclamations } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
 
+// payeur/reclamations.blade.php sur main : sujet libre + paiement lié optionnel
+// (pas de champ "type" à choix fixe), 4 statuts : ouvert/en_cours/resolu/rejetee.
 type Reclamation = {
   id: number;
-  titre?: string;
-  type?: string;
+  sujet?: string;
   description: string;
   statut?: string;
   reponse?: string;
   motif_rejet?: string;
   created_at?: string;
-  reference?: string;
+  numero_ticket?: string;
 };
 
 type Paiement = { id: number; libelle?: string; description?: string; montant: number };
 
 const STATUT_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
+  ouvert: { bg: '#E6F0FB', fg: '#1A4E8A', label: 'Ouvert' },
   en_cours: { bg: '#FEF3DC', fg: '#8B5E10', label: 'En cours' },
   resolu: { bg: '#E0F5EE', fg: '#085041', label: 'Résolu' },
-  rejete: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Rejeté' },
+  rejetee: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Rejetée' },
 };
 
 function styleStatut(statut?: string) {
-  return STATUT_STYLE[(statut || 'en_cours').toLowerCase()] || { bg: '#F0F2F5', fg: '#666666', label: statut || '—' };
+  return STATUT_STYLE[(statut || 'ouvert').toLowerCase()] || { bg: '#F0F2F5', fg: '#666666', label: statut || '—' };
 }
-
-const TYPES = ['Erreur sur montant', 'Paiement non comptabilisé', 'Reçu PDF non reçu', 'Autre'];
 
 export default function ReclamationsScreen() {
   const router = useRouter();
@@ -40,7 +40,7 @@ export default function ReclamationsScreen() {
   const [formOuvert, setFormOuvert] = useState(false);
   const [paiements, setPaiements] = useState<Paiement[]>([]);
   const [paiementId, setPaiementId] = useState<number | null>(null);
-  const [type, setType] = useState(TYPES[0]);
+  const [sujet, setSujet] = useState('');
   const [description, setDescription] = useState('');
   const [envoi, setEnvoi] = useState(false);
 
@@ -76,14 +76,15 @@ export default function ReclamationsScreen() {
   };
 
   const soumettre = async () => {
-    if (!paiementId || !description) {
-      Alert.alert('Erreur', 'Veuillez sélectionner un paiement et décrire le problème');
+    if (!sujet || !description) {
+      Alert.alert('Erreur', 'Veuillez indiquer un sujet et décrire le problème');
       return;
     }
     setEnvoi(true);
     try {
-      await creerReclamation({ paiement_id: paiementId, type, description });
+      await creerReclamation({ sujet, description, paiement_id: paiementId ?? undefined });
       setFormOuvert(false);
+      setSujet('');
       setDescription('');
       setPaiementId(null);
       chargerReclamations();
@@ -117,7 +118,16 @@ export default function ReclamationsScreen() {
           <View style={styles.formCard}>
             <Text style={styles.formTitre}>Nouvelle réclamation</Text>
 
-            <Text style={styles.lbl}>Paiement concerné *</Text>
+            <Text style={styles.lbl}>Sujet *</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex : Paiement en double du 15 mars"
+              placeholderTextColor="#AAAAAA"
+              value={sujet}
+              onChangeText={setSujet}
+            />
+
+            <Text style={styles.lbl}>Transaction concernée (optionnel)</Text>
             {paiements.length === 0 ? (
               <Text style={styles.vide}>Aucun paiement disponible.</Text>
             ) : (
@@ -126,7 +136,7 @@ export default function ReclamationsScreen() {
                   <TouchableOpacity
                     key={p.id}
                     style={[styles.chip, paiementId === p.id && styles.chipActive]}
-                    onPress={() => setPaiementId(p.id)}
+                    onPress={() => setPaiementId(paiementId === p.id ? null : p.id)}
                   >
                     <Text style={[styles.chipTxt, paiementId === p.id && styles.chipTxtActive]}>
                       {(p.libelle || p.description || `Paiement #${p.id}`)} · {p.montant.toLocaleString('fr-FR')} F
@@ -135,15 +145,6 @@ export default function ReclamationsScreen() {
                 ))}
               </View>
             )}
-
-            <Text style={styles.lbl}>Type de problème *</Text>
-            <View style={styles.chipsRow}>
-              {TYPES.map((t) => (
-                <TouchableOpacity key={t} style={[styles.chip, type === t && styles.chipActive]} onPress={() => setType(t)}>
-                  <Text style={[styles.chipTxt, type === t && styles.chipTxtActive]}>{t}</Text>
-                </TouchableOpacity>
-              ))}
-            </View>
 
             <Text style={styles.lbl}>Description *</Text>
             <TextInput
@@ -175,14 +176,14 @@ export default function ReclamationsScreen() {
             return (
               <View key={r.id} style={styles.card}>
                 <View style={styles.cardTop}>
-                  <Text style={styles.cardTitre}>{r.titre || r.type || 'Réclamation'}</Text>
+                  <Text style={styles.cardTitre}>{r.sujet || 'Réclamation'}</Text>
                   <View style={[styles.pill, { backgroundColor: s.bg }]}>
                     <Text style={[styles.pillTxt, { color: s.fg }]}>{s.label}</Text>
                   </View>
                 </View>
                 <Text style={styles.cardDesc}>{r.description}</Text>
                 <Text style={styles.cardDate}>
-                  Soumis le {(r.created_at || '').slice(0, 10)}{r.reference ? ` · Réf. #${r.reference}` : ''}
+                  Soumis le {(r.created_at || '').slice(0, 10)}{r.numero_ticket ? ` · Ticket #${r.numero_ticket}` : ''}
                 </Text>
                 {r.reponse && (
                   <View style={styles.reponseBox}>
@@ -229,6 +230,7 @@ const styles = StyleSheet.create({
   formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 12 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
+  input: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
   chip: { backgroundColor: '#F5F6F7', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 6 },
   chipActive: { backgroundColor: '#0D9E75', borderColor: '#0D9E75' },
