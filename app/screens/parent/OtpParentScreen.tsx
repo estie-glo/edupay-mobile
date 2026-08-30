@@ -1,23 +1,65 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useState } from 'react';
-import { StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ArrowLeft, MessageSquareText, ShieldAlert } from 'lucide-react-native';
+import { useAuth } from '../../../context/AuthContext';
+import { resendOtp, verifyOtp } from '../../../services/api';
 
 export default function OtpParentScreen() {
   const router = useRouter();
+  const { telephone: telephoneParam } = useLocalSearchParams<{ telephone?: string }>();
+  const { user, signIn } = useAuth();
+  const telephone = telephoneParam || user?.telephone || '';
   const [otp, setOtp] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleVerify = async () => {
+    if (otp.length !== 6) {
+      Alert.alert('Erreur', 'Le code OTP doit contenir 6 chiffres');
+      return;
+    }
+    setLoading(true);
+    try {
+      const response = await verifyOtp(telephone, otp);
+      if (response.token) {
+        await signIn(response.token, response.user);
+      }
+      router.replace('/screens/parent/DashboardScreen');
+    } catch (error: any) {
+      Alert.alert(
+        'Code invalide',
+        error.response?.data?.message || 'Code OTP incorrect ou expiré'
+      );
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleResend = async () => {
+    try {
+      await resendOtp(telephone);
+      Alert.alert('Code envoyé', 'Un nouveau code OTP vous a été envoyé par SMS');
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || 'Impossible de renvoyer le code');
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <Text style={styles.backTxt}>←</Text>
+          <ArrowLeft size={18} color="#FFFFFF" />
         </TouchableOpacity>
-        <Text style={styles.titre}>Verification SMS</Text>
-        <Text style={styles.sousTitre}>Code envoye au +237 6XX XXX XXX</Text>
+        <Text style={styles.titre}>Vérification SMS</Text>
+        <Text style={styles.sousTitre}>
+          Code envoyé au {telephone || '+237 6XX XXX XXX'}
+        </Text>
       </View>
       <View style={styles.content}>
-        <Text style={styles.icone}>📱</Text>
-        <Text style={styles.desc}>Entrez le code OTP a 6 chiffres</Text>
+        <View style={styles.iconeBox}>
+          <MessageSquareText size={40} color="#0D9E75" />
+        </View>
+        <Text style={styles.desc}>Entrez le code OTP à 6 chiffres</Text>
         <Text style={styles.subdesc}>Valide pendant 10 minutes</Text>
         <TextInput
           style={styles.otpInput}
@@ -30,17 +72,23 @@ export default function OtpParentScreen() {
           textAlign="center"
         />
         <TouchableOpacity
-          style={styles.btnVerifier}
-          onPress={() => router.push('/screens/parent/DashboardScreen')}
+          style={[styles.btnVerifier, loading && { opacity: 0.7 }]}
+          onPress={handleVerify}
+          disabled={loading}
         >
-          <Text style={styles.btnTxt}>Verifier le code</Text>
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.btnTxt}>Vérifier le code</Text>
+          )}
         </TouchableOpacity>
-        <TouchableOpacity style={styles.renvoyer}>
+        <TouchableOpacity style={styles.renvoyer} onPress={handleResend}>
           <Text style={styles.renvoyerTxt}>
-            Pas recu le code ? <Text style={styles.renvoyerLnk}>Renvoyer</Text>
+            Pas reçu le code ? <Text style={styles.renvoyerLnk}>Renvoyer</Text>
           </Text>
         </TouchableOpacity>
         <View style={styles.warnBox}>
+          <ShieldAlert size={14} color="#8B5E10" />
           <Text style={styles.warnTxt}>Ne partagez jamais ce code avec quelqu'un d'autre.</Text>
         </View>
       </View>
@@ -56,7 +104,7 @@ const styles = StyleSheet.create({
   titre: { fontSize: 22, fontWeight: '800', color: '#FFFFFF', marginBottom: 4 },
   sousTitre: { fontSize: 13, color: 'rgba(255,255,255,0.6)' },
   content: { flex: 1, padding: 24, alignItems: 'center' },
-  icone: { fontSize: 56, marginTop: 24, marginBottom: 16 },
+  iconeBox: { width: 76, height: 76, borderRadius: 38, backgroundColor: '#E0F5EE', alignItems: 'center', justifyContent: 'center', marginTop: 24, marginBottom: 16 },
   desc: { fontSize: 16, fontWeight: '700', color: '#1A1A2E', marginBottom: 6 },
   subdesc: { fontSize: 12, color: '#888888', marginBottom: 24 },
   otpInput: { width: '100%', backgroundColor: '#FFFFFF', borderWidth: 2, borderColor: '#0D9E75', borderRadius: 12, paddingVertical: 16, fontSize: 28, fontWeight: '700', color: '#1A1A2E', letterSpacing: 12, marginBottom: 24 },
@@ -65,6 +113,6 @@ const styles = StyleSheet.create({
   renvoyer: { marginBottom: 24 },
   renvoyerTxt: { fontSize: 13, color: '#888888', textAlign: 'center' },
   renvoyerLnk: { color: '#0D9E75', fontWeight: '700' },
-  warnBox: { backgroundColor: '#FEF3DC', borderRadius: 10, padding: 12, width: '100%' },
-  warnTxt: { fontSize: 11, color: '#8B5E10', textAlign: 'center' },
+  warnBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF3DC', borderRadius: 10, padding: 12, width: '100%' },
+  warnTxt: { flex: 1, fontSize: 11, color: '#8B5E10', textAlign: 'left' },
 });

@@ -1,7 +1,9 @@
 import { Stack } from 'expo-router';
+import { AuthProvider } from '../context/AuthContext';
 
 export default function RootLayout() {
   return (
+    <AuthProvider>
     <Stack screenOptions={{ headerShown: false }}>
       <Stack.Screen name="index" />
       <Stack.Screen name="screens/commun/AccueilInviteScreen" />
@@ -26,6 +28,8 @@ export default function RootLayout() {
       <Stack.Screen name="screens/ecole/EcoleKycScreen" />
       <Stack.Screen name="screens/ecole/BackOfficeScreen" />
       <Stack.Screen name="screens/admin/SuperAdminScreen" />
+      <Stack.Screen name="screens/parent/PaiementSuccessScreen" />
     </Stack>
+    </AuthProvider>
   );
 }

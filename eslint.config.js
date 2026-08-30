@@ -7,4 +7,11 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*'],
   },
+  {
+    // Interface entièrement en français : les apostrophes dans le texte JSX
+    // (l'établissement, aujourd'hui...) sont normales et ne doivent pas être échappées.
+    rules: {
+      'react/no-unescaped-entities': 'off',
+    },
+  },
 ]);

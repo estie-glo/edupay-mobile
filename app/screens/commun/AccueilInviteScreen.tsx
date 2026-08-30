@@ -1,154 +1,237 @@
 import { useRouter } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import {
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View
-} from 'react-native';
+  BarChart3,
+  Building2,
+  FileCheck,
+  FileText,
+  GraduationCap,
+  Home,
+  Layers,
+  MapPin,
+  Monitor,
+  Search,
+  ShieldCheck,
+  Users,
+  Wallet,
+} from 'lucide-react-native';
+import { searchEtablissements } from '../../../services/api';
+
+type Etablissement = {
+  id?: number;
+  nom: string;
+  ville: string;
+  type: string;
+};
+
+const COULEURS_AVATAR = ['#0B2545', '#0D9E75', '#1a472a', '#E8A020'];
+
+// Textes alignés sur la maquette officielle (maquettes/01_accueil_landing.png du dépôt backend)
+const FONCTIONNALITES = [
+  { titre: 'Mobile Money natif', desc: 'Intégration directe MTN Mobile Money & Orange Money Cameroun. Confirmation USSD instantanée.', Icone: Wallet },
+  { titre: 'Reçu PDF automatique', desc: 'Chaque paiement validé génère un reçu signé électroniquement, envoyé par email et SMS.', Icone: FileCheck },
+  { titre: 'Dashboard temps réel', desc: 'Directeurs et comptables suivent encaissements, impayés et relances depuis un seul écran.', Icone: BarChart3 },
+  { titre: 'Sécurité PCI-DSS', desc: 'Chiffrement TLS 1.3, authentification 2FA, conformité COBAC/BEAC et protection anti-fraude.', Icone: ShieldCheck },
+  { titre: 'Paiement fractionné', desc: "Payez en 2 ou 3 tranches selon l'échéancier de l'établissement. Rappels SMS automatiques.", Icone: Layers },
+  { titre: 'Multi-établissements', desc: 'Un parent peut gérer plusieurs enfants dans plusieurs écoles depuis un seul compte EduPay.', Icone: Building2 },
+];
+
+const NIVEAUX = [
+  { titre: 'Maternelle & Primaire', desc: 'Inscription, frais scolaires, cantine', Icone: Home, couleur: '#0D9E75' },
+  { titre: 'Collèges & Lycées', desc: 'Scolarité, examens, internat', Icone: FileText, couleur: '#E8A020' },
+  { titre: 'Universités & Instituts', desc: "Frais d'inscription, frais de scolarité", Icone: Monitor, couleur: '#0B2545' },
+  { titre: 'Payeurs : Parents, Élèves & Étudiants', desc: 'Paiement 24h/24 depuis partout', Icone: Users, couleur: '#7C3AED' },
+];
 
 export default function AccueilInviteScreen() {
   const router = useRouter();
+  const [recherche, setRecherche] = useState('');
+  const [ecoles, setEcoles] = useState<Etablissement[]>([]);
+  const [loadingEcoles, setLoadingEcoles] = useState(true);
+
+  useEffect(() => {
+    const timeout = setTimeout(() => chargerEcoles(recherche), 300);
+    return () => clearTimeout(timeout);
+  }, [recherche]);
+
+  const chargerEcoles = async (q: string) => {
+    setLoadingEcoles(true);
+    try {
+      const response = await searchEtablissements(q);
+      setEcoles(response.data || response || []);
+    } catch {
+      setEcoles([]);
+    } finally {
+      setLoadingEcoles(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
+      <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
-    {/* Bandeau invité */}
-<View style={styles.guestBanner}>
-  <View style={styles.guestLeft}>
-    <Text style={styles.guestDot}>🧭</Text>
-    <Text style={styles.guestTxt}>Mode invité — accès limité</Text>
-  </View>
-  <TouchableOpacity
-    style={styles.guestBtn}
-    onPress={() => router.push('/screens/parent/LoginParentScreen')}
-  >
-    <Text style={styles.guestBtnTxt}>Se connecter →</Text>
-  </TouchableOpacity>
-</View>
-
-      {/* Header navy */}
-      <View style={styles.header}>
-        <Text style={styles.logo}>
-          Edu<Text style={styles.logoAccent}>Pay</Text>
-        </Text>
-        <Text style={styles.sousTitre}>
-          La plateforme de paiement scolaire au Cameroun
-        </Text>
-        <View style={styles.btnRow}>
-          <TouchableOpacity
-            style={styles.btnConnexion}
-            onPress={() => router.push('/screens/parent/LoginParentScreen')}
-          >
-            <Text style={styles.btnConnexionTxt}>Se connecter</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.btnInscription}
-            onPress={() => router.push('/screens/commun/ChoixProfilScreen')}
-          >
-            <Text style={styles.btnInscriptionTxt}>S'inscrire</Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      <ScrollView
-        style={styles.content}
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 32 }}
-      >
-
-        {/* Section À découvrir */}
-        <Text style={styles.sec}>À découvrir sans compte</Text>
-
-        {/* Carte Écoles partenaires */}
-        <TouchableOpacity
-          style={styles.choixCard}
-          onPress={() => router.push('/screens/commun/EcolesScreen')}
-        >
-          <View style={[styles.choixIco, { backgroundColor: '#FEF3DC' }]}>
-            <Text style={styles.choixIcoTxt}>🏫</Text>
+        {/* HERO SECTION */}
+        <View style={styles.hero}>
+          {/* Navbar */}
+          <View style={styles.navbar}>
+            <View style={styles.logoBox}>
+              <Text style={styles.logoTxt}>EP</Text>
+            </View>
+            <View style={styles.navBtns}>
+              <TouchableOpacity
+                style={styles.btnConnexion}
+                onPress={() => router.push('/screens/parent/LoginParentScreen')}
+              >
+                <Text style={styles.btnConnexionTxt}>Connexion</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.btnInscrire}
+                onPress={() => router.push('/screens/commun/ChoixProfilScreen')}
+              >
+                <Text style={styles.btnInscrireTxt}>S'inscrire →</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.choixTexts}>
-            <Text style={styles.choixTitre}>Écoles partenaires</Text>
-            <Text style={styles.choixSub}>127 établissements affiliés</Text>
-          </View>
-          <Text style={styles.arrow}>→</Text>
-        </TouchableOpacity>
 
-        {/* Carte Simulateur */}
-        <TouchableOpacity
-          style={styles.choixCard}
-          onPress={() => router.push('/screens/commun/SimulateurScreen')}
-        >
-          <View style={[styles.choixIco, { backgroundColor: '#E0F5EE' }]}>
-            <Text style={styles.choixIcoTxt}>🧮</Text>
+          {/* Hero content */}
+          <View style={styles.heroContent}>
+            <View style={styles.heroBadge}>
+              <View style={styles.heroBadgeDot} />
+              <Text style={styles.heroBadgeTxt}>Plateforme 100% camerounaise · EdTech × FinTech</Text>
+            </View>
+            <Text style={styles.heroTitre}>
+              Payez les frais scolaires{'\n'}en <Text style={styles.heroAccent}>2 minutes</Text>,{'\n'}depuis votre téléphone.
+            </Text>
+            <Text style={styles.heroDesc}>
+              EduPay Cameroun connecte les établissements scolaires aux familles via MTN MoMo, Orange Money et carte bancaire. Zéro file d'attente. Reçu PDF immédiat.
+            </Text>
+            <View style={styles.heroBtns}>
+              <TouchableOpacity
+                style={styles.heroBtnPrimary}
+                onPress={() => router.push('/screens/parent/RegisterParentScreen')}
+              >
+                <Text style={styles.heroBtnPrimaryTxt}>Créer mon compte payeur</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.heroBtnSecondary}
+                onPress={() => router.push('/screens/ecole/RegisterEcoleScreen')}
+              >
+                <Text style={styles.heroBtnSecondaryTxt}>Inscrire mon établissement</Text>
+              </TouchableOpacity>
+            </View>
           </View>
-          <View style={styles.choixTexts}>
-            <Text style={styles.choixTitre}>Simuler mes frais</Text>
-            <Text style={styles.choixSub}>Estimez le montant à payer</Text>
-          </View>
-          <Text style={styles.arrow}>→</Text>
-        </TouchableOpacity>
 
-        {/* Carte Comment ça marche */}
-        <TouchableOpacity
-          style={styles.choixCard}
-          onPress={() => router.push('/screens/commun/CommentScreen')}
-        >
-          <View style={[styles.choixIco, { backgroundColor: '#E6F0FB' }]}>
-            <Text style={styles.choixIcoTxt}>❓</Text>
-          </View>
-          <View style={styles.choixTexts}>
-            <Text style={styles.choixTitre}>Comment ça marche</Text>
-            <Text style={styles.choixSub}>Le parcours en 4 étapes</Text>
-          </View>
-          <Text style={styles.arrow}>→</Text>
-        </TouchableOpacity>
-
-        {/* Carte Dashboard — bloquée */}
-        <TouchableOpacity
-          style={[styles.choixCard, { opacity: 0.7 }]}
-          onPress={() => router.push('/screens/parent/LoginParentScreen')}
-        >
-          <View style={[styles.choixIco, { backgroundColor: '#EDE9FE' }]}>
-            <Text style={styles.choixIcoTxt}>📊</Text>
-          </View>
-          <View style={styles.choixTexts}>
-            <Text style={styles.choixTitre}>Mon tableau de bord</Text>
-            <Text style={styles.choixSub}>Nécessite un compte parent</Text>
-          </View>
-          <Text style={styles.arrow}>🔒</Text>
-        </TouchableOpacity>
-
-        {/* Stats box */}
-        <View style={styles.statsBox}>
-          <Text style={styles.statsSub}>Déjà sur EduPay</Text>
+          {/* Stats */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>127</Text>
-              <Text style={styles.statLbl}>Écoles</Text>
+              <Text style={styles.statVal}>30 000+</Text>
+              <Text style={styles.statLbl}>Établissements ciblés</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>3 847</Text>
-              <Text style={styles.statLbl}>Transactions</Text>
+              <Text style={styles.statVal}>6 000 000</Text>
+              <Text style={styles.statLbl}>Apprenants au Cameroun</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>99,5%</Text>
-              <Text style={styles.statLbl}>Uptime</Text>
+              <Text style={styles.statVal}>12M</Text>
+              <Text style={styles.statLbl}>Abonnés Mobile Money</Text>
+            </View>
+            <View style={styles.statItem}>
+              <Text style={[styles.statVal, { color: '#5DCAA5' }]}>99,5%</Text>
+              <Text style={styles.statLbl}>Uptime garanti</Text>
             </View>
           </View>
         </View>
 
-        {/* FAQ link */}
-        <Text style={styles.faqTxt}>
-          Besoin d'aide ?{' '}
-          <Text
-            style={styles.faqLnk}
-            onPress={() => router.push('/screens/commun/AideScreen')}
+        {/* CONÇU POUR TOUT LE SYSTÈME ÉDUCATIF */}
+        <View style={styles.section}>
+          <Text style={styles.secLabel}>CONÇU POUR TOUT LE SYSTÈME ÉDUCATIF</Text>
+          <View style={styles.niveauxGrid}>
+            {NIVEAUX.map(({ titre, desc, Icone, couleur }) => (
+              <View key={titre} style={[styles.niveauCard, { borderTopColor: couleur }]}>
+                <View style={[styles.niveauIco, { backgroundColor: `${couleur}1A` }]}>
+                  <Icone size={18} color={couleur} />
+                </View>
+                <Text style={styles.niveauTitre}>{titre}</Text>
+                <Text style={styles.niveauDesc}>{desc}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* ÉCOLES PARTENAIRES */}
+        <View style={styles.section}>
+          <Text style={styles.secLabel}>NOS ÉTABLISSEMENTS PARTENAIRES</Text>
+          <Text style={styles.secDesc}>Des établissements nous font confiance pour la collecte de leurs frais scolaires.</Text>
+
+          {/* Barre de recherche */}
+          <View style={styles.searchRow}>
+            <View style={styles.searchBox}>
+              <Search size={16} color="#888888" />
+              <TextInput
+                style={styles.searchInput}
+                placeholder="Rechercher un établissement, une ville..."
+                placeholderTextColor="#AAAAAA"
+                value={recherche}
+                onChangeText={setRecherche}
+              />
+            </View>
+          </View>
+
+          {/* Écoles */}
+          {loadingEcoles ? (
+            <ActivityIndicator size="small" color="#0D9E75" style={{ marginTop: 12 }} />
+          ) : ecoles.length === 0 ? (
+            <Text style={styles.vide}>Aucun établissement trouvé.</Text>
+          ) : (
+            <View style={styles.ecolesGrid}>
+              {ecoles.map((ecole, i) => (
+                <TouchableOpacity key={ecole.id ?? i} style={styles.ecoleCard}>
+                  <View style={[styles.ecoleAvatar, { backgroundColor: COULEURS_AVATAR[i % COULEURS_AVATAR.length] }]}>
+                    <Text style={styles.ecoleAvatarTxt}>{ecole.nom.charAt(0)}</Text>
+                  </View>
+                  <Text style={styles.ecoleNom}>{ecole.nom}</Text>
+                  <View style={styles.ecoleVilleRow}>
+                    <MapPin size={10} color="#888888" />
+                    <Text style={styles.ecoleVille}>{ecole.ville}</Text>
+                  </View>
+                  <View style={styles.ecolePill}>
+                    <Text style={styles.ecolePillTxt}>{ecole.type}</Text>
+                  </View>
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
+        </View>
+
+        {/* POURQUOI CHOISIR EDUPAY */}
+        <View style={styles.section}>
+          <Text style={styles.secLabel}>POURQUOI CHOISIR EDUPAY ?</Text>
+          <View style={styles.featuresGrid}>
+            {FONCTIONNALITES.map(({ titre, desc, Icone }) => (
+              <View key={titre} style={styles.featureCard}>
+                <View style={styles.featureIco}>
+                  <Icone size={18} color="#0D9E75" />
+                </View>
+                <Text style={styles.featureTitre}>{titre}</Text>
+                <Text style={styles.featureDesc}>{desc}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* CTA ÉTABLISSEMENT */}
+        <View style={styles.ctaBox}>
+          <GraduationCap size={28} color="#FFFFFF" />
+          <Text style={styles.ctaTitre}>Votre établissement n'est pas encore sur EduPay ?</Text>
+          <Text style={styles.ctaDesc}>Digitalisez la collecte de vos frais scolaires dès aujourd'hui.</Text>
+          <TouchableOpacity
+            style={styles.ctaBtn}
+            onPress={() => router.push('/screens/ecole/RegisterEcoleScreen')}
           >
-            Consulter la FAQ
-          </Text>
-        </Text>
+            <Text style={styles.ctaBtnTxt}>Inscrire mon établissement</Text>
+          </TouchableOpacity>
+        </View>
 
       </ScrollView>
     </View>
@@ -156,203 +239,75 @@ export default function AccueilInviteScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FAFC',
-  },
+  container: { flex: 1, backgroundColor: '#F8FAFC' },
 
-  // Bandeau invité
-  guestBanner: {
-  backgroundColor: '#0B2545',
-  paddingHorizontal: 16,
-  paddingVertical: 10,
-   paddingTop: 44, 
-  flexDirection: 'row',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  borderBottomWidth: 1,
-  borderBottomColor: 'rgba(255,255,255,0.1)',
-},
-guestLeft: {
-  flexDirection: 'row',
-  alignItems: 'center',
-  gap: 6,
-},
-guestDot: {
-  fontSize: 12,
-},
-guestTxt: {
-  fontSize: 11,
-  fontWeight: '600',
-  color: 'rgba(255,255,255,0.7)',
-},
-guestBtn: {
-  backgroundColor: '#0D9E75',
-  paddingHorizontal: 12,
-  paddingVertical: 6,
-  borderRadius: 20,
-},
-guestBtnTxt: {
-  fontSize: 11,
-  fontWeight: '700',
-  color: '#FFFFFF',
-},
-  // Header
-  header: {
-    backgroundColor: '#0B2545',
-    paddingHorizontal: 20,
-    paddingTop: 20,
-    paddingBottom: 40,
-  },
-  logo: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#FFFFFF',
-    marginBottom: 6,
-  },
-  logoAccent: {
-    color: '#5DCAA5',
-  },
-  sousTitre: {
-    fontSize: 13,
-    color: 'rgba(255,255,255,0.6)',
-    marginBottom: 20,
-    lineHeight: 18,
-  },
-  btnRow: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  btnConnexion: {
-    flex: 1,
-    backgroundColor: '#0D9E75',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-  },
-  btnConnexionTxt: {
-    color: '#FFFFFF',
-    fontWeight: '700',
-    fontSize: 13,
-  },
-  btnInscription: {
-    flex: 1,
-    backgroundColor: 'rgba(255,255,255,0.12)',
-    paddingVertical: 12,
-    borderRadius: 10,
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.25)',
-  },
-  btnInscriptionTxt: {
-    color: '#FFFFFF',
-    fontWeight: '600',
-    fontSize: 13,
-  },
+  // HERO
+  hero: { backgroundColor: '#0B2545', paddingBottom: 0 },
+  navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16 },
+  logoBox: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#0D9E75', alignItems: 'center', justifyContent: 'center' },
+  logoTxt: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
+  navBtns: { flexDirection: 'row', gap: 8, alignItems: 'center' },
+  btnConnexion: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  btnConnexionTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  btnInscrire: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, backgroundColor: '#0D9E75' },
+  btnInscrireTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 
-  // Contenu scrollable
-  content: {
-    flex: 1,
-    paddingHorizontal: 16,
-    marginTop: -20,
-  },
-  sec: {
-    fontSize: 10,
-    fontWeight: '700',
-    color: '#AAAAAA',
-    textTransform: 'uppercase',
-    letterSpacing: 0.8,
-    marginTop: 24,
-    marginBottom: 10,
-  },
+  heroContent: { paddingHorizontal: 20, paddingTop: 16, paddingBottom: 24 },
+  heroBadge: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.1)', borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 5, alignSelf: 'flex-start', marginBottom: 16 },
+  heroBadgeDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: '#0D9E75' },
+  heroBadgeTxt: { fontSize: 10, color: 'rgba(255,255,255,0.8)', fontWeight: '600' },
+  heroTitre: { fontSize: 26, fontWeight: '800', color: '#FFFFFF', lineHeight: 34, marginBottom: 12 },
+  heroAccent: { color: '#0D9E75' },
+  heroDesc: { fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 18, marginBottom: 24 },
+  heroBtns: { gap: 10 },
+  heroBtnPrimary: { backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
+  heroBtnPrimaryTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  heroBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 14, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  heroBtnSecondaryTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
 
-  // Cartes de choix
-  choixCard: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 8,
-    gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
-  },
-  choixIco: {
-    width: 38,
-    height: 38,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  choixIcoTxt: {
-    fontSize: 18,
-  },
-  choixTexts: {
-    flex: 1,
-  },
-  choixTitre: {
-    fontSize: 13,
-    fontWeight: '700',
-    color: '#1A1A2E',
-    marginBottom: 2,
-  },
-  choixSub: {
-    fontSize: 11,
-    color: '#888888',
-  },
-  arrow: {
-    fontSize: 16,
-    color: '#AAAAAA',
-    flexShrink: 0,
-  },
+  statsRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingVertical: 16, paddingHorizontal: 20 },
+  statItem: { flex: 1, alignItems: 'center' },
+  statVal: { fontSize: 20, fontWeight: '800', color: '#FFFFFF', marginBottom: 2 },
+  statLbl: { fontSize: 9, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 12 },
 
-  // Stats
-  statsBox: {
-    backgroundColor: '#0B2545',
-    borderRadius: 12,
-    padding: 16,
-    marginTop: 8,
-    marginBottom: 14,
-  },
-  statsSub: {
-    fontSize: 11,
-    color: 'rgba(255,255,255,0.5)',
-    textAlign: 'center',
-    marginBottom: 12,
-  },
-  statsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
-  },
-  statItem: {
-    alignItems: 'center',
-  },
-  statVal: {
-    fontSize: 20,
-    fontWeight: '700',
-    color: '#5DCAA5',
-  },
-  statLbl: {
-    fontSize: 10,
-    color: 'rgba(255,255,255,0.5)',
-    marginTop: 2,
-  },
+  // NIVEAUX
+  niveauxGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  niveauCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', borderTopWidth: 3 },
+  niveauIco: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  niveauTitre: { fontSize: 12, fontWeight: '700', color: '#1A1A2E', marginBottom: 4 },
+  niveauDesc: { fontSize: 10, color: '#888888', lineHeight: 14 },
 
-  // FAQ
-  faqTxt: {
-    textAlign: 'center',
-    fontSize: 12,
-    color: '#888888',
-  },
-  faqLnk: {
-    color: '#0D9E75',
-    fontWeight: '700',
-  },
+  // SECTION ÉCOLES
+  section: { padding: 20 },
+  secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
+  secDesc: { fontSize: 13, color: '#555555', marginBottom: 16, lineHeight: 18 },
+
+  searchRow: { marginBottom: 16 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
+  searchInput: { flex: 1, fontSize: 13, color: '#1A1A2E' },
+  vide: { fontSize: 12, color: '#888888', textAlign: 'center', marginTop: 12 },
+
+  ecolesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  ecoleCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  ecoleAvatar: { width: 48, height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
+  ecoleAvatarTxt: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
+  ecoleNom: { fontSize: 11, fontWeight: '700', color: '#1A1A2E', textAlign: 'center', marginBottom: 4 },
+  ecoleVilleRow: { flexDirection: 'row', alignItems: 'center', gap: 3, marginBottom: 6 },
+  ecoleVille: { fontSize: 10, color: '#888888' },
+  ecolePill: { backgroundColor: '#E0F5EE', borderRadius: 10, paddingHorizontal: 8, paddingVertical: 3 },
+  ecolePillTxt: { fontSize: 9, fontWeight: '700', color: '#085041' },
+
+  // FONCTIONNALITÉS
+  featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  featureCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' },
+  featureIco: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#E0F5EE', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
+  featureTitre: { fontSize: 12, fontWeight: '700', color: '#1A1A2E', marginBottom: 4 },
+  featureDesc: { fontSize: 10, color: '#888888', lineHeight: 14 },
+
+  // CTA ÉTABLISSEMENT
+  ctaBox: { margin: 20, backgroundColor: '#0B2545', borderRadius: 16, padding: 24, alignItems: 'center' },
+  ctaTitre: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', marginTop: 10, marginBottom: 4 },
+  ctaDesc: { fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginBottom: 16 },
+  ctaBtn: { backgroundColor: '#0D9E75', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
+  ctaBtnTxt: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 });
