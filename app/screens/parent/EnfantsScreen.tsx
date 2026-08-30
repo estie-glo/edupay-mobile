@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ArrowLeft, ChevronRight, Trash2, UserPlus } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { addApprenant, getDashboard, removeApprenant, searchEtablissements } from '../../../services/api';
+import { getApprenants, rattacherApprenant, removeApprenant } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
 
 type Apprenant = {
@@ -34,14 +34,8 @@ export default function EnfantsScreen() {
   const [formOuvert, setFormOuvert] = useState(false);
   const [envoi, setEnvoi] = useState(false);
 
-  const [prenom, setPrenom] = useState('');
-  const [nom, setNom] = useState('');
-  const [matricule, setMatricule] = useState('');
-  const [classe, setClasse] = useState('');
   const [codeEtablissement, setCodeEtablissement] = useState('');
-  const [rechercheEcole, setRechercheEcole] = useState('');
-  const [suggestions, setSuggestions] = useState<{ id: number; nom: string }[]>([]);
-  const [etablissementChoisi, setEtablissementChoisi] = useState<{ id: number; nom: string } | null>(null);
+  const [matricule, setMatricule] = useState('');
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -54,9 +48,9 @@ export default function EnfantsScreen() {
   const chargerApprenants = async () => {
     setLoading(true);
     try {
-      const response = await getDashboard();
+      const response = await getApprenants();
       const data = response.data ?? response;
-      setApprenants(data.apprenants ?? data.enfants ?? []);
+      setApprenants(Array.isArray(data) ? data : data.apprenants ?? []);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Impossible de charger vos enfants');
     } finally {
@@ -64,47 +58,20 @@ export default function EnfantsScreen() {
     }
   };
 
-  const handleRechercheEcole = async (q: string) => {
-    setRechercheEcole(q);
-    setEtablissementChoisi(null);
-    if (q.length < 2) {
-      setSuggestions([]);
-      return;
-    }
-    try {
-      const response = await searchEtablissements(q);
-      setSuggestions(response.data || response || []);
-    } catch {
-      setSuggestions([]);
-    }
-  };
-
   const resetFormulaire = () => {
     setFormOuvert(false);
-    setPrenom('');
-    setNom('');
-    setMatricule('');
-    setClasse('');
     setCodeEtablissement('');
-    setRechercheEcole('');
-    setEtablissementChoisi(null);
+    setMatricule('');
   };
 
   const handleAjouter = async () => {
-    if (!prenom || !nom || !etablissementChoisi || !matricule || !classe || !codeEtablissement) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs et sélectionner un établissement');
+    if (!codeEtablissement || !matricule) {
+      Alert.alert('Erreur', "Veuillez renseigner le code établissement et le matricule");
       return;
     }
     setEnvoi(true);
     try {
-      await addApprenant({
-        etablissement_id: etablissementChoisi.id,
-        prenom,
-        nom,
-        matricule,
-        classe,
-        code_etablissement: codeEtablissement,
-      });
+      await rattacherApprenant({ code_etablissement: codeEtablissement, matricule });
       resetFormulaire();
       chargerApprenants();
     } catch (error: any) {
@@ -157,33 +124,11 @@ export default function EnfantsScreen() {
         {formOuvert && (
           <View style={styles.formCard}>
             <Text style={styles.formTitre}>Rattacher un enfant</Text>
-            <Text style={styles.lbl}>Prénom *</Text>
-            <TextInput style={styles.input} placeholder="ex : Brice" placeholderTextColor="#AAAAAA" value={prenom} onChangeText={setPrenom} />
-            <Text style={styles.lbl}>Nom *</Text>
-            <TextInput style={styles.input} placeholder="ex : FONO" placeholderTextColor="#AAAAAA" value={nom} onChangeText={setNom} />
-            <Text style={styles.lbl}>École *</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Rechercher une école..."
-              placeholderTextColor="#AAAAAA"
-              value={etablissementChoisi ? etablissementChoisi.nom : rechercheEcole}
-              onChangeText={handleRechercheEcole}
-            />
-            {suggestions.length > 0 && !etablissementChoisi && (
-              <View style={styles.suggestions}>
-                {suggestions.map((e) => (
-                  <TouchableOpacity key={e.id} style={styles.suggestionItem} onPress={() => { setEtablissementChoisi(e); setSuggestions([]); }}>
-                    <Text style={styles.suggestionTxt}>{e.nom}</Text>
-                  </TouchableOpacity>
-                ))}
-              </View>
-            )}
+            <Text style={styles.formSousTitre}>Ces informations vous sont fournies par l'établissement de l'enfant.</Text>
             <Text style={styles.lbl}>Code établissement *</Text>
             <TextInput style={styles.input} placeholder="Fourni par l'école" placeholderTextColor="#AAAAAA" value={codeEtablissement} onChangeText={setCodeEtablissement} autoCapitalize="characters" />
-            <Text style={styles.lbl}>Matricule *</Text>
+            <Text style={styles.lbl}>Matricule de l'enfant *</Text>
             <TextInput style={styles.input} placeholder="ex : 2026-0451" placeholderTextColor="#AAAAAA" value={matricule} onChangeText={setMatricule} />
-            <Text style={styles.lbl}>Classe *</Text>
-            <TextInput style={styles.input} placeholder="ex : 3eme A" placeholderTextColor="#AAAAAA" value={classe} onChangeText={setClasse} />
 
             <View style={styles.formBtns}>
               <TouchableOpacity style={styles.btnAnnuler} onPress={resetFormulaire}>
@@ -256,11 +201,9 @@ const styles = StyleSheet.create({
   trashBtn: { padding: 4 },
   formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 4 },
+  formSousTitre: { fontSize: 11, color: '#888888', marginBottom: 4, lineHeight: 15 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
   input: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
-  suggestions: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, marginTop: 6, overflow: 'hidden' },
-  suggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F2F5' },
-  suggestionTxt: { fontSize: 13, color: '#1A1A2E' },
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },

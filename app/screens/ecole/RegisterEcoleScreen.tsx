@@ -58,7 +58,7 @@ export default function RegisterEcoleScreen() {
       });
       if (response.token) {
         await signIn(response.token, response.user);
-        router.push('/screens/ecole/OtpEcoleScreen');
+        router.replace('/screens/ecole/EcoleKycScreen');
       }
     } catch (error: any) {
       Alert.alert('Erreur inscription', error.response?.data?.message || 'Une erreur est survenue');

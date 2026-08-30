@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { deleteItem, getItem, setItem } from './storage';
 
+// Contrat confirmé par l'équipe backend (API REST v1, Laravel + Sanctum) le 30/08/2026.
 const API_URL = 'https://edupay.mekontso.gsi2026.com/api/v1';
 
 const api = axios.create({
@@ -38,19 +39,10 @@ export const register = async (data: {
   return response.data;
 };
 
-// `login` : téléphone ou email, champ unique — cf. auth/login.blade.php (name="login") sur main
+// `login` : email OU téléphone, champ unique. Pas d'étape OTP après inscription
+// ou connexion côté API — /auth/register et /auth/login renvoient { token, user }.
 export const login = async (login: string, password: string) => {
   const response = await api.post('/auth/login', { login, password });
-  return response.data;
-};
-
-export const verifyOtp = async (login: string, otp_code: string) => {
-  const response = await api.post('/auth/verify-otp', { login, otp_code });
-  return response.data;
-};
-
-export const resendOtp = async (login: string) => {
-  const response = await api.post('/auth/resend-otp', { login });
   return response.data;
 };
 
@@ -66,113 +58,118 @@ export const forgotPassword = async (email: string) => {
   return response.data;
 };
 
-// ── DASHBOARD PAYEUR ──────────────────────────────────────────
-export const getDashboard = async () => {
-  const response = await api.get('/payeur/dashboard');
+export const resetPassword = async (data: {
+  email: string;
+  code: string;
+  password: string;
+  password_confirmation: string;
+}) => {
+  const response = await api.post('/auth/reset-password', data);
   return response.data;
 };
 
-export const getFraisApprenant = async (apprenant_id: number) => {
-  const response = await api.get(`/payeur/frais/${apprenant_id}`);
+// ── PROFIL ────────────────────────────────────────────────────
+export const getMe = async () => {
+  const response = await api.get('/me');
+  return response.data;
+};
+
+export const getProfil = async () => {
+  const response = await api.get('/profil');
+  return response.data;
+};
+
+export const updateProfil = async (data: any) => {
+  const response = await api.put('/profil', data);
   return response.data;
 };
 
 // ── APPRENANTS ────────────────────────────────────────────────
 export const getApprenants = async () => {
-  const response = await api.get('/payeur/dashboard');
+  const response = await api.get('/apprenants');
   return response.data;
 };
 
-export const addApprenant = async (data: {
-  etablissement_id: number;
-  prenom: string;
-  nom: string;
-  matricule: string;
-  classe: string;
+// Rattachement par code établissement + matricule (fournis par l'école au parent)
+export const rattacherApprenant = async (data: {
   code_etablissement: string;
+  matricule: string;
 }) => {
-  const response = await api.post('/payeur/apprenants', data);
+  const response = await api.post('/apprenants/rattacher', data);
   return response.data;
 };
 
 export const removeApprenant = async (id: number) => {
-  const response = await api.delete(`/payeur/apprenants/${id}`);
+  const response = await api.delete(`/apprenants/${id}`);
   return response.data;
 };
 
-// ── PAIEMENTS ─────────────────────────────────────────────────
-// payeur/paiement.blade.php sur main : un seul dossier de frais par (apprenant,
-// catégorie) — pas de tranche/échéancier séparés, `type_paiement` détermine le
-// montant calculé côté serveur (intégral vs tranche suivante).
-export const initierPaiement = async (data: {
-  frais_apprenant_id: number;
-  mode_paiement: string;
-  type_paiement: string;
-  montant: number;
-  telephone_paiement?: string;
-}) => {
-  const response = await api.post('/payeur/paiement/initier', data);
-  return response.data;
-};
-
-export const getStatutPaiement = async (paiement_id: number) => {
-  const response = await api.get(`/payeur/paiement/${paiement_id}/statut`);
+// ── FRAIS & PAIEMENTS ─────────────────────────────────────────
+export const getFraisApprenant = async (apprenant_id: number) => {
+  const response = await api.get(`/frais/${apprenant_id}`);
   return response.data;
 };
 
 export const getHistorique = async (page: number = 1) => {
-  const response = await api.get(`/payeur/historique?page=${page}`);
+  const response = await api.get(`/paiements?page=${page}`);
   return response.data;
 };
 
-export const getRecu = async (paiement_id: number) => {
-  const response = await api.get(`/payeur/recu/${paiement_id}`, {
-    responseType: 'blob'
-  });
+export const initierPaiement = async (data: {
+  frais_apprenant_id: number;
+  montant: number;
+  mode: 'mtn_momo' | 'orange_money' | 'carte';
+  telephone?: string;
+}) => {
+  const response = await api.post('/paiements/initier', data);
+  return response.data;
+};
+
+// Polling statut : en_attente → valide / echoue
+export const verifierPaiement = async (paiement_id: number) => {
+  const response = await api.post(`/paiements/${paiement_id}/verifier`);
   return response.data;
 };
 
 // ── RECLAMATIONS ──────────────────────────────────────────────
 export const getReclamations = async () => {
-  const response = await api.get('/payeur/reclamations');
+  const response = await api.get('/reclamations');
   return response.data;
 };
 
-// payeur/reclamations.blade.php sur main : sujet libre, paiement lié optionnel
-// (pas de champ "type" à choix fixe)
 export const creerReclamation = async (data: {
   sujet: string;
   description: string;
   paiement_id?: number;
 }) => {
-  const response = await api.post('/payeur/reclamations', data);
+  const response = await api.post('/reclamations', data);
   return response.data;
 };
 
 export const getDetailReclamation = async (id: number) => {
-  const response = await api.get(`/payeur/reclamations/${id}`);
+  const response = await api.get(`/reclamations/${id}`);
   return response.data;
 };
 
-// ── PROFIL ────────────────────────────────────────────────────
-export const getProfil = async () => {
-  const response = await api.get('/payeur/profil');
+// ── NOTIFICATIONS ─────────────────────────────────────────────
+export const getNotifications = async () => {
+  const response = await api.get('/notifications');
   return response.data;
 };
 
-export const updateProfil = async (data: any) => {
-  const response = await api.put('/payeur/profil', data);
+export const marquerNotificationsLues = async () => {
+  const response = await api.post('/notifications/lire');
   return response.data;
 };
 
-// ── ETABLISSEMENTS (recherche publique) ───────────────────────
+// ── ETABLISSEMENTS (recherche publique — endpoint non confirmé par le backend) ─
 export const searchEtablissements = async (q: string, type?: string) => {
   const params = type ? `?q=${q}&type=${type}` : `?q=${q}`;
   const response = await api.get(`/etablissements/search${params}`);
   return response.data;
 };
 
-// ── BACK-OFFICE ECOLE ─────────────────────────────────────────
+// ── BACK-OFFICE ECOLE (pas encore annoncé par le backend — routes provisoires) ─
 export const getDashboardEcole = async () => {
   const response = await api.get('/etablissement/dashboard');
   return response.data;

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ArrowLeft, BookOpen, CheckCircle2, CheckSquare, GraduationCap, Square, User } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { addApprenant, register, searchEtablissements } from '../../../services/api';
+import { rattacherApprenant, register } from '../../../services/api';
 
 type Profil = 'parent' | 'eleve' | 'etudiant';
 
@@ -39,14 +39,8 @@ export default function RegisterParentScreen() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [cguAccepted, setCguAccepted] = useState(false);
 
-  const [apprenantPrenom, setApprenantPrenom] = useState('');
-  const [apprenantNom, setApprenantNom] = useState('');
   const [matricule, setMatricule] = useState('');
-  const [classe, setClasse] = useState('');
   const [codeEtablissement, setCodeEtablissement] = useState('');
-  const [rechercheEcole, setRechercheEcole] = useState('');
-  const [etablissementsTrouves, setEtablissementsTrouves] = useState<{ id: number; nom: string }[]>([]);
-  const [etablissementChoisi, setEtablissementChoisi] = useState<{ id: number; nom: string } | null>(null);
 
   const handleRegister = async () => {
     if (!prenom || !nom || !telephone || !ville) {
@@ -96,36 +90,14 @@ export default function RegisterParentScreen() {
     }
   };
 
-  const handleRechercheEcole = async (q: string) => {
-    setRechercheEcole(q);
-    setEtablissementChoisi(null);
-    if (q.length < 2) {
-      setEtablissementsTrouves([]);
-      return;
-    }
-    try {
-      const response = await searchEtablissements(q);
-      setEtablissementsTrouves(response.data || response || []);
-    } catch {
-      setEtablissementsTrouves([]);
-    }
-  };
-
   const handleAjouterApprenant = async () => {
-    if (!apprenantPrenom || !apprenantNom || !etablissementChoisi || !matricule || !classe || !codeEtablissement) {
-      Alert.alert('Erreur', 'Veuillez remplir tous les champs et sélectionner un établissement');
+    if (!codeEtablissement || !matricule) {
+      Alert.alert('Erreur', "Veuillez renseigner le code établissement et le matricule");
       return;
     }
     setLoading(true);
     try {
-      await addApprenant({
-        etablissement_id: etablissementChoisi.id,
-        prenom: apprenantPrenom,
-        nom: apprenantNom,
-        matricule,
-        classe,
-        code_etablissement: codeEtablissement,
-      });
+      await rattacherApprenant({ code_etablissement: codeEtablissement, matricule });
       setEtapeIndex(2);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Impossible de rattacher cet apprenant');
@@ -190,42 +162,12 @@ export default function RegisterParentScreen() {
   const renderApprenant = () => (
     <View>
       <View style={styles.infoBox}>
-        <Text style={styles.infoTxt}>Ajoutez votre premier enfant.</Text>
+        <Text style={styles.infoTxt}>Rattachez votre premier enfant à l'aide des informations fournies par son établissement.</Text>
       </View>
-      <Text style={styles.lbl}>Prénom de l'enfant *</Text>
-      <TextInput style={styles.input} placeholder="ex : Brice" placeholderTextColor="#AAAAAA" value={apprenantPrenom} onChangeText={setApprenantPrenom} />
-      <Text style={styles.lbl}>Nom de l'enfant *</Text>
-      <TextInput style={styles.input} placeholder="ex : FONO" placeholderTextColor="#AAAAAA" value={apprenantNom} onChangeText={setApprenantNom} />
-      <Text style={styles.lbl}>École *</Text>
-      <TextInput
-        style={styles.input}
-        placeholder="Rechercher une école..."
-        placeholderTextColor="#AAAAAA"
-        value={etablissementChoisi ? etablissementChoisi.nom : rechercheEcole}
-        onChangeText={handleRechercheEcole}
-      />
-      {etablissementsTrouves.length > 0 && !etablissementChoisi && (
-        <View style={styles.suggestions}>
-          {etablissementsTrouves.map((e) => (
-            <TouchableOpacity
-              key={e.id}
-              style={styles.suggestionItem}
-              onPress={() => {
-                setEtablissementChoisi(e);
-                setEtablissementsTrouves([]);
-              }}
-            >
-              <Text style={styles.suggestionTxt}>{e.nom}</Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
       <Text style={styles.lbl}>Code établissement *</Text>
       <TextInput style={styles.input} placeholder="Fourni par l'école" placeholderTextColor="#AAAAAA" value={codeEtablissement} onChangeText={setCodeEtablissement} autoCapitalize="characters" />
-      <Text style={styles.lbl}>Matricule *</Text>
+      <Text style={styles.lbl}>Matricule de l'enfant *</Text>
       <TextInput style={styles.input} placeholder="ex : 2026-0451" placeholderTextColor="#AAAAAA" value={matricule} onChangeText={setMatricule} />
-      <Text style={styles.lbl}>Classe *</Text>
-      <TextInput style={styles.input} placeholder="ex : 3eme A" placeholderTextColor="#AAAAAA" value={classe} onChangeText={setClasse} />
       <TouchableOpacity
         style={[styles.btnSuivant, loading && { opacity: 0.7 }]}
         onPress={handleAjouterApprenant}
@@ -243,13 +185,13 @@ export default function RegisterParentScreen() {
       </View>
       <Text style={styles.confirmTitre}>Compte créé !</Text>
       <Text style={styles.confirmDesc}>
-        Un code OTP a été envoyé au {telephone} pour vérifier votre téléphone.
+        Bienvenue sur EduPay, {prenom}.
       </Text>
       <TouchableOpacity
         style={styles.btnSuivant}
-        onPress={() => router.push('/screens/parent/OtpParentScreen')}
+        onPress={() => router.replace('/screens/parent/DashboardScreen')}
       >
-        <Text style={styles.btnSuivantTxt}>Vérifier mon numéro →</Text>
+        <Text style={styles.btnSuivantTxt}>Aller à mon tableau de bord →</Text>
       </TouchableOpacity>
     </View>
   );
@@ -307,9 +249,6 @@ const styles = StyleSheet.create({
   profilChipActive: { backgroundColor: '#0D9E75', borderColor: '#0D9E75' },
   profilChipTxt: { fontSize: 11, fontWeight: '700', color: '#1A1A2E' },
   profilChipTxtActive: { color: '#FFFFFF' },
-  suggestions: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 10, marginTop: 6, overflow: 'hidden' },
-  suggestionItem: { paddingHorizontal: 14, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F2F5' },
-  suggestionTxt: { fontSize: 13, color: '#1A1A2E' },
   cguRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 18 },
   cguTxt: { flex: 1, fontSize: 12, color: '#555555', lineHeight: 16 },
 });

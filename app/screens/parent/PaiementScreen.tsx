@@ -47,14 +47,13 @@ export default function PaiementScreen() {
     try {
       const response = await initierPaiement({
         frais_apprenant_id: Number(params.fraisApprenantId),
-        mode_paiement: modePaiement,
-        type_paiement: typePaiement,
+        mode: modePaiement,
         montant,
-        telephone_paiement: modePaiement === 'carte' ? undefined : telephone,
+        telephone: modePaiement === 'carte' ? undefined : telephone,
       });
       router.push({
         pathname: '/screens/parent/PaiementSuccessScreen',
-        params: { paiementId: String(response.data?.id ?? response.id ?? '') },
+        params: { paiementId: String(response.paiement_id ?? response.data?.paiement_id ?? '') },
       });
     } catch (error: any) {
       Alert.alert('Erreur de paiement', error.response?.data?.message || "Le paiement n'a pas pu être initié");

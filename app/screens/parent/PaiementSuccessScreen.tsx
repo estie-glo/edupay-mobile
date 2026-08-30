@@ -1,58 +1,89 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { CircleCheck, Clock } from 'lucide-react-native';
-import { getStatutPaiement } from '../../../services/api';
+import { CircleCheck, Clock, XCircle } from 'lucide-react-native';
+import { verifierPaiement } from '../../../services/api';
 
 type Statut = {
   reference?: string;
   apprenant?: { prenom?: string; nom?: string };
   montant?: number;
-  mode_paiement?: string;
+  mode?: string;
   date?: string;
   created_at?: string;
   statut?: string;
 };
+
+// AangaraaPay confirme le paiement de façon asynchrone (prompt USSD sur le
+// téléphone du payeur) : on interroge /paiements/{id}/verifier toutes les 5s,
+// jusqu'à 24 fois (2 minutes), comme le fait la page web d'attente.
+const INTERVALLE_MS = 5000;
+const MAX_TENTATIVES = 24;
 
 export default function PaiementSuccessScreen() {
   const router = useRouter();
   const { paiementId } = useLocalSearchParams<{ paiementId?: string }>();
   const [statut, setStatut] = useState<Statut | null>(null);
   const [loading, setLoading] = useState(true);
+  const [timeout_, setTimeoutAtteint] = useState(false);
+  const tentatives = useRef(0);
 
   useEffect(() => {
     if (!paiementId) {
       setLoading(false);
       return;
     }
-    (async () => {
+    let annule = false;
+
+    const verifier = async () => {
       try {
-        const response = await getStatutPaiement(Number(paiementId));
-        setStatut(response.data ?? response);
-      } catch {
-        setStatut(null);
-      } finally {
+        const response = await verifierPaiement(Number(paiementId));
+        const data = response.data ?? response;
+        if (annule) return;
+        setStatut(data);
         setLoading(false);
+
+        const s = (data.statut || '').toLowerCase();
+        if (s === 'en_attente' && tentatives.current < MAX_TENTATIVES) {
+          tentatives.current += 1;
+          setTimeout(verifier, INTERVALLE_MS);
+        } else if (s === 'en_attente') {
+          setTimeoutAtteint(true);
+        }
+      } catch {
+        if (!annule) setLoading(false);
       }
-    })();
+    };
+
+    verifier();
+    return () => { annule = true; };
   }, [paiementId]);
 
   if (loading) {
     return <ActivityIndicator size="large" color="#0D9E75" style={{ flex: 1 }} />;
   }
 
-  const enCours = statut?.statut && !['valide', 'reussi'].includes(statut.statut.toLowerCase());
+  const s = (statut?.statut || '').toLowerCase();
+  const echoue = s === 'echoue' || timeout_;
+  const enAttente = s === 'en_attente' && !timeout_;
+  const valide = s === 'valide';
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
-        <View style={[styles.checkCircle, enCours && { backgroundColor: '#E8A020' }]}>
-          {enCours ? <Clock size={40} color="#FFFFFF" /> : <CircleCheck size={40} color="#FFFFFF" />}
+        <View style={[styles.checkCircle, enAttente && { backgroundColor: '#E8A020' }, echoue && { backgroundColor: '#D94040' }]}>
+          {echoue ? <XCircle size={40} color="#FFFFFF" /> : enAttente ? <Clock size={40} color="#FFFFFF" /> : <CircleCheck size={40} color="#FFFFFF" />}
         </View>
-        <Text style={styles.titre}>{enCours ? 'Paiement en cours de confirmation' : 'Paiement validé !'}</Text>
+        <Text style={styles.titre}>
+          {echoue ? 'Paiement échoué' : enAttente ? 'En attente de confirmation' : 'Paiement validé !'}
+        </Text>
         {!!statut?.reference && <Text style={styles.ref}>Réf. {statut.reference}</Text>}
         <Text style={styles.desc}>
-          {enCours ? 'Confirmez sur votre téléphone pour finaliser le paiement.' : 'Reçu PDF envoyé par SMS et email'}
+          {echoue
+            ? "Le paiement n'a pas abouti. Vous pouvez réessayer depuis l'échéancier."
+            : enAttente
+              ? 'Confirmez le paiement avec votre code PIN Mobile Money sur votre téléphone.'
+              : 'Reçu PDF envoyé par SMS et email'}
         </Text>
         <View style={styles.detailBox}>
           <View style={styles.detailRow}>
@@ -69,18 +100,20 @@ export default function PaiementSuccessScreen() {
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLbl}>Mode</Text>
-            <Text style={styles.detailVal}>{statut?.mode_paiement || '—'}</Text>
+            <Text style={styles.detailVal}>{statut?.mode || '—'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLbl}>Date</Text>
             <Text style={styles.detailVal}>{(statut?.date || statut?.created_at || '').slice(0, 10) || '—'}</Text>
           </View>
         </View>
+        {valide && (
+          <TouchableOpacity style={styles.btnRecu} onPress={() => router.push('/screens/parent/HistoriqueScreen')}>
+            <Text style={styles.btnRecuTxt}>Voir le reçu PDF</Text>
+          </TouchableOpacity>
+        )}
         <TouchableOpacity style={styles.btnDashboard} onPress={() => router.push('/screens/parent/DashboardScreen')}>
           <Text style={styles.btnDashboardTxt}>Retour au tableau de bord</Text>
-        </TouchableOpacity>
-        <TouchableOpacity style={styles.btnRecu} onPress={() => router.push('/screens/parent/HistoriqueScreen')}>
-          <Text style={styles.btnRecuTxt}>Voir le reçu PDF</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -100,6 +133,6 @@ const styles = StyleSheet.create({
   detailVal: { fontSize: 12, fontWeight: '700', color: '#1A1A2E' },
   btnDashboard: { backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 12, alignItems: 'center', width: '100%', marginBottom: 10 },
   btnDashboardTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  btnRecu: { backgroundColor: '#FFFFFF', paddingVertical: 14, borderRadius: 12, alignItems: 'center', width: '100%', borderWidth: 2, borderColor: '#0D9E75' },
+  btnRecu: { backgroundColor: '#FFFFFF', paddingVertical: 14, borderRadius: 12, alignItems: 'center', width: '100%', borderWidth: 2, borderColor: '#0D9E75', marginBottom: 10 },
   btnRecuTxt: { color: '#0D9E75', fontSize: 14, fontWeight: '700' },
 });

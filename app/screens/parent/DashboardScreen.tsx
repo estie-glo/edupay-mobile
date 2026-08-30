@@ -3,8 +3,10 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Bell, CreditCard, TriangleAlert } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { getDashboard } from '../../../services/api';
+import { getApprenants, getHistorique } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
+
+type Frais = { montant_total: number; montant_paye: number };
 
 type Apprenant = {
   id: number;
@@ -12,6 +14,7 @@ type Apprenant = {
   nom: string;
   etablissement?: { nom?: string };
   classe?: string;
+  frais?: Frais[];
   solde_du?: number;
   montant_total?: number;
   statut?: string;
@@ -61,17 +64,39 @@ export default function DashboardScreen() {
     if (token) chargerDashboard();
   }, [token, authLoading]);
 
+  // Pas d'endpoint /dashboard consolidé côté API : on compose à partir de
+  // GET /apprenants (avec leurs frais) et GET /paiements (page 1).
   const chargerDashboard = async () => {
     setLoading(true);
     try {
-      const response = await getDashboard();
-      const data = response.data ?? response;
+      const [apprenantsRes, paiementsRes] = await Promise.all([getApprenants(), getHistorique(1)]);
+      const apprenantsData = apprenantsRes.data ?? apprenantsRes;
+      const apprenants: Apprenant[] = Array.isArray(apprenantsData) ? apprenantsData : apprenantsData.apprenants ?? [];
+
+      const paiementsPagination = paiementsRes.data ?? paiementsRes;
+      const paiements: Paiement[] = Array.isArray(paiementsPagination) ? paiementsPagination : paiementsPagination.data ?? [];
+
+      let totalDu = 0;
+      let totalPaye = 0;
+      apprenants.forEach((a) => {
+        if (a.frais) {
+          a.frais.forEach((f) => {
+            totalDu += Math.max(0, f.montant_total - f.montant_paye);
+            totalPaye += f.montant_paye;
+          });
+        } else {
+          totalDu += a.solde_du ?? 0;
+          totalPaye += (a.montant_total ?? 0) - (a.solde_du ?? 0);
+        }
+      });
+      const nbRecus = paiements.filter((p) => (p.statut || '').toLowerCase() === 'valide').length;
+
       setDashboard({
-        apprenants: data.apprenants ?? data.enfants ?? [],
-        total_du: data.total_du ?? data.kpis?.total_du ?? 0,
-        total_paye: data.total_paye ?? data.kpis?.total_paye ?? 0,
-        nb_recus: data.nb_recus ?? data.kpis?.nb_recus ?? 0,
-        derniers_paiements: data.derniers_paiements ?? data.paiements ?? [],
+        apprenants,
+        total_du: totalDu,
+        total_paye: totalPaye,
+        nb_recus: nbRecus,
+        derniers_paiements: paiements.slice(0, 5),
       });
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Impossible de charger le tableau de bord');

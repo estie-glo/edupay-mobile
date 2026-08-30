@@ -14,7 +14,6 @@ export default function RootLayout() {
       <Stack.Screen name="screens/commun/SimulateurScreen" />
       <Stack.Screen name="screens/commun/CommentScreen" />
       <Stack.Screen name="screens/parent/LoginParentScreen" />
-      <Stack.Screen name="screens/parent/OtpParentScreen" />
       <Stack.Screen name="screens/parent/RegisterParentScreen" />
       <Stack.Screen name="screens/parent/DashboardScreen" />
       <Stack.Screen name="screens/parent/PaiementScreen" />
@@ -23,7 +22,6 @@ export default function RootLayout() {
       <Stack.Screen name="screens/parent/EnfantsScreen" />
       <Stack.Screen name="screens/parent/ReclamationsScreen" />
       <Stack.Screen name="screens/ecole/LoginEcoleScreen" />
-      <Stack.Screen name="screens/ecole/OtpEcoleScreen" />
       <Stack.Screen name="screens/ecole/RegisterEcoleScreen" />
       <Stack.Screen name="screens/ecole/EcoleKycScreen" />
       <Stack.Screen name="screens/ecole/BackOfficeScreen" />
