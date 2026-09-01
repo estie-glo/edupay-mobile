@@ -1,9 +1,11 @@
+import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, Plus, Trash2, UserCheck, UserX } from 'lucide-react-native';
+import { ArrowLeft, FileSpreadsheet, Plus, Trash2, UserCheck, UserX } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { creerApprenantEcole, getApprenantsEcole, rejeterApprenant, removeApprenantEcole, validerApprenant } from '../../../services/api';
+import { creerApprenantEcole, getApprenantsEcole, importerApprenantsCsv, rejeterApprenant, removeApprenantEcole, validerApprenant } from '../../../services/api';
+import { telechargerEtPartager } from '../../../services/fichiers';
 
 type Apprenant = {
   id: number;
@@ -33,6 +35,8 @@ export default function EcoleApprenantsScreen() {
   const [formOuvert, setFormOuvert] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [enTraitement, setEnTraitement] = useState<number | null>(null);
+  const [importEnCours, setImportEnCours] = useState(false);
+  const [modeleEnCours, setModeleEnCours] = useState(false);
 
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
@@ -66,6 +70,34 @@ export default function EcoleApprenantsScreen() {
     setNom('');
     setMatricule('');
     setClasse('');
+  };
+
+  const handleTelechargerModele = async () => {
+    setModeleEnCours(true);
+    try {
+      await telechargerEtPartager('/etablissement/apprenants/import/modele', 'modele-import-apprenants.csv');
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || 'Téléchargement du modèle impossible');
+    } finally {
+      setModeleEnCours(false);
+    }
+  };
+
+  const handleImporterCsv = async () => {
+    const resultat = await DocumentPicker.getDocumentAsync({ type: ['text/csv', 'text/comma-separated-values'], copyToCacheDirectory: true });
+    if (resultat.canceled || !resultat.assets?.[0]) return;
+    const fichier = resultat.assets[0];
+    setImportEnCours(true);
+    try {
+      const reponse = await importerApprenantsCsv({ uri: fichier.uri, name: fichier.name, mimeType: fichier.mimeType });
+      const nbImportes = reponse.data?.nb_importes ?? reponse.nb_importes;
+      Alert.alert('Import terminé', nbImportes != null ? `${nbImportes} apprenant(s) importé(s).` : 'Fichier importé avec succès.');
+      charger();
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || "Échec de l'import du fichier");
+    } finally {
+      setImportEnCours(false);
+    }
   };
 
   const handleAjouter = async () => {
@@ -165,6 +197,15 @@ export default function EcoleApprenantsScreen() {
           value={recherche}
           onChangeText={setRecherche}
         />
+        <View style={styles.importRow}>
+          <TouchableOpacity style={styles.importBtn} onPress={handleImporterCsv} disabled={importEnCours}>
+            {importEnCours ? <ActivityIndicator size="small" color="#FFFFFF" /> : <FileSpreadsheet size={13} color="#FFFFFF" />}
+            <Text style={styles.importBtnTxt}>Importer un CSV</Text>
+          </TouchableOpacity>
+          <TouchableOpacity onPress={handleTelechargerModele} disabled={modeleEnCours}>
+            <Text style={styles.modeleLien}>{modeleEnCours ? '...' : 'Modèle CSV'}</Text>
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -241,7 +282,11 @@ const styles = StyleSheet.create({
   titre: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   addBtn: { backgroundColor: '#E8A020', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   searchZone: { backgroundColor: '#0B2545', paddingHorizontal: 16, paddingBottom: 16 },
-  searchInput: { backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 13, color: '#1A1A2E' },
+  searchInput: { backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 13, color: '#1A1A2E', marginBottom: 10 },
+  importRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  importBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
+  importBtnTxt: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
+  modeleLien: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.7)', textDecorationLine: 'underline' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },

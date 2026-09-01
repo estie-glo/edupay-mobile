@@ -279,6 +279,20 @@ export const rejeterApprenant = async (id: number) => {
   return response.data;
 };
 
+// Import en masse via un fichier CSV (uri local choisi par expo-document-picker)
+export const importerApprenantsCsv = async (fichier: { uri: string; name: string; mimeType?: string }) => {
+  const formData = new FormData();
+  formData.append('fichier', {
+    uri: fichier.uri,
+    name: fichier.name,
+    type: fichier.mimeType || 'text/csv',
+  } as any);
+  const response = await api.post('/etablissement/apprenants/import', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
 // ── ECOLE : FRAIS & ECHEANCIERS ──────────────────────────────────
 export const getFraisEcole = async () => {
   const response = await api.get('/etablissement/frais');
