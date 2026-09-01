@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, ChevronRight, Trash2, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, Award, ChevronRight, Trash2, UserPlus } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getApprenants, rattacherApprenant, removeApprenant } from '../../../services/api';
+import { telechargerEtPartager } from '../../../services/fichiers';
 import BottomNavParent from '../../../components/BottomNavParent';
 
 type Apprenant = {
@@ -36,6 +37,7 @@ export default function EnfantsScreen() {
 
   const [codeEtablissement, setCodeEtablissement] = useState('');
   const [matricule, setMatricule] = useState('');
+  const [certificatEnCoursId, setCertificatEnCoursId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -103,6 +105,17 @@ export default function EnfantsScreen() {
     );
   };
 
+  const handleTelechargerCertificat = async (apprenant: Apprenant) => {
+    setCertificatEnCoursId(apprenant.id);
+    try {
+      await telechargerEtPartager(`/apprenants/${apprenant.id}/certificat`, `certificat-${apprenant.prenom}-${apprenant.nom}.pdf`);
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || 'Téléchargement du certificat impossible');
+    } finally {
+      setCertificatEnCoursId(null);
+    }
+  };
+
   if (loading) {
     return <ActivityIndicator size="large" color="#0D9E75" style={{ flex: 1 }} />;
   }
@@ -164,6 +177,9 @@ export default function EnfantsScreen() {
                 <View style={styles.cardBottom}>
                   <Text style={styles.solde}>Reste dû : <Text style={{ fontWeight: '700' }}>{(a.solde_du ?? 0).toLocaleString('fr-FR')} FCFA</Text></Text>
                   <View style={styles.cardActions}>
+                    <TouchableOpacity onPress={() => handleTelechargerCertificat(a)} style={styles.trashBtn} disabled={certificatEnCoursId === a.id}>
+                      {certificatEnCoursId === a.id ? <ActivityIndicator size="small" color="#0D9E75" /> : <Award size={16} color="#0D9E75" />}
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleSupprimer(a)} style={styles.trashBtn}>
                       <Trash2 size={16} color="#D94040" />
                     </TouchableOpacity>

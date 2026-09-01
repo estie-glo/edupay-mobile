@@ -1,7 +1,8 @@
 import { useState } from 'react';
-import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Mail, MapPin, Phone, Send } from 'lucide-react-native';
 import PageHeader from '../../../components/PageHeader';
+import { envoyerContact } from '../../../services/api';
 
 const SUJETS = ['Problème de paiement', 'Intégration technique', 'Partenariat', 'Autre demande'];
 
@@ -11,14 +12,28 @@ export default function ContactScreen() {
   const [telephone, setTelephone] = useState('');
   const [sujet, setSujet] = useState(SUJETS[0]);
   const [message, setMessage] = useState('');
+  const [envoi, setEnvoi] = useState(false);
 
-  const handleEnvoyer = () => {
+  const handleEnvoyer = async () => {
     if (!nom || !email || !telephone || !message) {
       Alert.alert('Erreur', 'Veuillez remplir tous les champs obligatoires');
       return;
     }
-    const corps = `Nom : ${nom}\nEmail : ${email}\nTéléphone : ${telephone}\nSujet : ${sujet}\n\n${message}`;
-    Linking.openURL(`mailto:contact@edupay.cm?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`);
+    setEnvoi(true);
+    try {
+      await envoyerContact({ name: nom, email, phone: telephone, subject: sujet, message });
+      Alert.alert('Message envoyé', 'Notre équipe vous répondra dans les 24h ouvrables.');
+      setNom('');
+      setEmail('');
+      setTelephone('');
+      setMessage('');
+    } catch {
+      // Repli si l'API est indisponible : ouvre le client mail avec le message pré-rempli.
+      const corps = `Nom : ${nom}\nEmail : ${email}\nTéléphone : ${telephone}\nSujet : ${sujet}\n\n${message}`;
+      Linking.openURL(`mailto:contact@edupay.cm?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`);
+    } finally {
+      setEnvoi(false);
+    }
   };
 
   return (
@@ -74,9 +89,8 @@ export default function ContactScreen() {
           numberOfLines={5}
         />
 
-        <TouchableOpacity style={styles.btnEnvoyer} onPress={handleEnvoyer}>
-          <Send size={16} color="#FFFFFF" />
-          <Text style={styles.btnEnvoyerTxt}>Envoyer le message</Text>
+        <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleEnvoyer} disabled={envoi}>
+          {envoi ? <ActivityIndicator color="#FFFFFF" /> : <><Send size={16} color="#FFFFFF" /><Text style={styles.btnEnvoyerTxt}>Envoyer le message</Text></>}
         </TouchableOpacity>
         <Text style={styles.note}>Nous répondons dans les 24h ouvrables.</Text>
       </ScrollView>

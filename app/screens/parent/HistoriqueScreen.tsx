@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, ArrowLeftRight, CreditCard, SlidersHorizontal, XCircle } from 'lucide-react-native';
+import { ArrowLeft, ArrowLeftRight, CreditCard, Download, SlidersHorizontal, XCircle } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { getHistorique } from '../../../services/api';
+import { annulerPaiement, getHistorique } from '../../../services/api';
+import { telechargerEtPartager } from '../../../services/fichiers';
 import BottomNavParent from '../../../components/BottomNavParent';
 
 type Paiement = {
@@ -38,6 +39,7 @@ export default function HistoriqueScreen() {
   const [dernierePage, setDernierePage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [loadingPlus, setLoadingPlus] = useState(false);
+  const [actionEnCoursId, setActionEnCoursId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -65,6 +67,38 @@ export default function HistoriqueScreen() {
     }
   };
 
+  const handleTelechargerRecu = async (p: Paiement) => {
+    setActionEnCoursId(p.id);
+    try {
+      await telechargerEtPartager(`/paiements/${p.id}/recu`, `recu-edupay-${p.id}.pdf`);
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || 'Téléchargement du reçu impossible');
+    } finally {
+      setActionEnCoursId(null);
+    }
+  };
+
+  const handleAnnuler = (p: Paiement) => {
+    Alert.alert('Annuler ce paiement ?', 'Vous pourrez relancer un nouvel essai de paiement ensuite.', [
+      { text: 'Non', style: 'cancel' },
+      {
+        text: 'Annuler le paiement',
+        style: 'destructive',
+        onPress: async () => {
+          setActionEnCoursId(p.id);
+          try {
+            await annulerPaiement(p.id);
+            chargerHistorique(1);
+          } catch (error: any) {
+            Alert.alert('Erreur', error.response?.data?.message || 'Annulation impossible');
+          } finally {
+            setActionEnCoursId(null);
+          }
+        },
+      },
+    ]);
+  };
+
   if (loading) {
     return <ActivityIndicator size="large" color="#0D9E75" style={{ flex: 1 }} />;
   }
@@ -89,8 +123,12 @@ export default function HistoriqueScreen() {
             {paiements.map((p) => {
               const s = styleStatut(p.statut);
               const negatif = (p.montant ?? 0) < 0;
+              const statutLower = (p.statut || '').toLowerCase();
+              const estValide = statutLower === 'valide' || statutLower === 'reussi';
+              const estEnAttente = statutLower === 'en_attente';
+              const enCours = actionEnCoursId === p.id;
               return (
-                <TouchableOpacity key={p.id} style={styles.row}>
+                <View key={p.id} style={styles.row}>
                   <View style={[styles.ico, { backgroundColor: s.bg }]}>
                     {negatif ? <ArrowLeftRight size={18} color={s.fg} /> : p.statut === 'echoue' ? <XCircle size={18} color={s.fg} /> : <CreditCard size={18} color={s.fg} />}
                   </View>
@@ -102,14 +140,26 @@ export default function HistoriqueScreen() {
                     <Text style={styles.rowSub}>
                       {(p.date || p.created_at || '').slice(0, 10)}{p.mode_paiement ? ` · ${p.mode_paiement}` : ''}
                     </Text>
+                    {estEnAttente && (
+                      <TouchableOpacity onPress={() => handleAnnuler(p)} disabled={enCours}>
+                        <Text style={styles.annulerLien}>{enCours ? 'Annulation...' : 'Annuler ce paiement'}</Text>
+                      </TouchableOpacity>
+                    )}
                   </View>
                   <View style={{ alignItems: 'flex-end' }}>
                     <Text style={[styles.rowMontant, { color: s.fg }]}>{Math.abs(p.montant ?? 0).toLocaleString('fr-FR')} F</Text>
-                    <View style={[styles.pill, { backgroundColor: s.bg }]}>
-                      <Text style={[styles.pillTxt, { color: s.fg }]}>{s.label}</Text>
-                    </View>
+                    {estValide ? (
+                      <TouchableOpacity style={[styles.pill, { backgroundColor: s.bg, flexDirection: 'row', alignItems: 'center', gap: 4 }]} onPress={() => handleTelechargerRecu(p)} disabled={enCours}>
+                        {enCours ? <ActivityIndicator size="small" color={s.fg} /> : <Download size={10} color={s.fg} />}
+                        <Text style={[styles.pillTxt, { color: s.fg }]}>{s.label}</Text>
+                      </TouchableOpacity>
+                    ) : (
+                      <View style={[styles.pill, { backgroundColor: s.bg }]}>
+                        <Text style={[styles.pillTxt, { color: s.fg }]}>{s.label}</Text>
+                      </View>
+                    )}
                   </View>
-                </TouchableOpacity>
+                </View>
               );
             })}
           </View>
@@ -140,6 +190,7 @@ const styles = StyleSheet.create({
   rowTexts: { flex: 1 },
   rowTitre: { fontSize: 12, fontWeight: '600', color: '#1A1A2E' },
   rowSub: { fontSize: 10, color: '#888888', marginTop: 2 },
+  annulerLien: { fontSize: 10, color: '#D94040', fontWeight: '700', marginTop: 4 },
   rowMontant: { fontSize: 13, fontWeight: '700', marginBottom: 4 },
   pill: { borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },
   pillTxt: { fontSize: 9, fontWeight: '700' },

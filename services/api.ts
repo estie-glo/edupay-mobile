@@ -148,6 +148,13 @@ export const verifierPaiement = async (paiement_id: number) => {
   return response.data;
 };
 
+// Annule un paiement en attente pour permettre un nouvel essai — ne touche pas
+// au statut réel si l'opérateur confirme finalement en retard (annule_manuellement).
+export const annulerPaiement = async (paiement_id: number) => {
+  const response = await api.post(`/paiements/${paiement_id}/annuler`);
+  return response.data;
+};
+
 // ── RECLAMATIONS ──────────────────────────────────────────────
 export const getReclamations = async () => {
   const response = await api.get('/reclamations');
@@ -179,7 +186,29 @@ export const marquerNotificationsLues = async () => {
   return response.data;
 };
 
-// ── ETABLISSEMENTS (recherche publique — endpoint non confirmé par le backend) ─
+// ── PUBLIC (sans token) ───────────────────────────────────────
+export const getStatsPubliques = async () => {
+  const response = await api.get('/stats');
+  return response.data;
+};
+
+export const getEtablissementPublic = async (code: string) => {
+  const response = await api.get(`/etablissements/${code}`);
+  return response.data;
+};
+
+export const envoyerContact = async (data: {
+  name: string;
+  email: string;
+  phone: string;
+  subject: string;
+  message: string;
+}) => {
+  const response = await api.post('/contact', data);
+  return response.data;
+};
+
+// Recherche publique — endpoint non confirmé par le backend, gardé en fallback.
 export const searchEtablissements = async (q: string, type?: string) => {
   const params = type ? `?q=${q}&type=${type}` : `?q=${q}`;
   const response = await api.get(`/etablissements/search${params}`);

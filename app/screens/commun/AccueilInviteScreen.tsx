@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import {
   BarChart3,
@@ -18,6 +18,7 @@ import {
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { ETABLISSEMENTS } from '../../../data/etablissements';
+import { getStatsPubliques } from '../../../services/api';
 
 const COULEURS_AVATAR = ['#0B2545', '#0D9E75', '#1a472a', '#E8A020'];
 
@@ -80,15 +81,24 @@ const FOOTER_RESEAUX = [
   { nom: 'Instagram', sigle: 'ig' },
 ];
 
+type Stats = { nb_etablissements?: number; nb_apprenants?: number; nb_paiements?: number };
+
 export default function AccueilInviteScreen() {
   const router = useRouter();
   const [recherche, setRecherche] = useState('');
+  const [stats, setStats] = useState<Stats | null>(null);
 
   const ecoles = useMemo(() => {
     const q = recherche.trim().toLowerCase();
     if (!q) return ETABLISSEMENTS;
     return ETABLISSEMENTS.filter((e) => e.nom.toLowerCase().includes(q) || e.ville.toLowerCase().includes(q));
   }, [recherche]);
+
+  useEffect(() => {
+    getStatsPubliques()
+      .then((response) => setStats(response.data ?? response))
+      .catch(() => setStats(null));
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -155,21 +165,19 @@ export default function AccueilInviteScreen() {
             </TouchableOpacity>
           </View>
 
-          {/* Stats — la landing réelle (main) anime ces valeurs depuis des compteurs live
-              (nb_etablissements/nb_apprenants/nb_paiements) ; en l'absence d'API pour les
-              récupérer, on garde des libellés descriptifs plutôt que les clés de traduction
-              buguées du backend ("30 000+" etc. sont des noms de clé, pas du contenu réel). */}
+          {/* Stats live via GET /stats (route publique confirmée) — repli sur des
+              valeurs plausibles si l'appel échoue, plutôt que d'afficher 0. */}
           <View style={styles.statsRow}>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>7</Text>
+              <Text style={styles.statVal}>{stats?.nb_etablissements ?? 7}</Text>
               <Text style={styles.statLbl}>Établissements partenaires</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>15</Text>
+              <Text style={styles.statVal}>{stats?.nb_apprenants ?? 15}</Text>
               <Text style={styles.statLbl}>Apprenants inscrits</Text>
             </View>
             <View style={styles.statItem}>
-              <Text style={styles.statVal}>5</Text>
+              <Text style={styles.statVal}>{stats?.nb_paiements ?? 5}</Text>
               <Text style={styles.statLbl}>Paiements validés</Text>
             </View>
             <View style={styles.statItem}>
