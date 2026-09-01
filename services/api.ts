@@ -219,6 +219,78 @@ export const getRapports = async (params?: string) => {
   return response.data;
 };
 
+// ── ECOLE : APPRENANTS ──────────────────────────────────────────
+export const creerApprenantEcole = async (data: {
+  prenom: string;
+  nom: string;
+  matricule: string;
+  classe: string;
+}) => {
+  const response = await api.post('/etablissement/apprenants', data);
+  return response.data;
+};
+
+export const updateApprenantEcole = async (id: number, data: { prenom?: string; nom?: string; matricule?: string; classe?: string }) => {
+  const response = await api.put(`/etablissement/apprenants/${id}`, data);
+  return response.data;
+};
+
+export const removeApprenantEcole = async (id: number) => {
+  const response = await api.delete(`/etablissement/apprenants/${id}`);
+  return response.data;
+};
+
+export const validerApprenant = async (id: number) => {
+  const response = await api.post(`/etablissement/apprenants/${id}/valider`);
+  return response.data;
+};
+
+export const rejeterApprenant = async (id: number) => {
+  const response = await api.post(`/etablissement/apprenants/${id}/rejeter`);
+  return response.data;
+};
+
+// ── ECOLE : FRAIS & ECHEANCIERS ──────────────────────────────────
+export const getFraisEcole = async () => {
+  const response = await api.get('/etablissement/frais');
+  return response.data;
+};
+
+export const creerFraisEcole = async (data: {
+  nom: string;
+  montant_total: number;
+  fractionnable?: boolean;
+  nb_tranches_max?: number;
+}) => {
+  const response = await api.post('/etablissement/frais', data);
+  return response.data;
+};
+
+export const updateFraisEcole = async (id: number, data: { nom?: string; montant_total?: number; fractionnable?: boolean; nb_tranches_max?: number }) => {
+  const response = await api.put(`/etablissement/frais/${id}`, data);
+  return response.data;
+};
+
+export const removeFraisEcole = async (id: number) => {
+  const response = await api.delete(`/etablissement/frais/${id}`);
+  return response.data;
+};
+
+export const affecterFraisClasse = async (id: number, classe: string) => {
+  const response = await api.post(`/etablissement/frais/${id}/affecter`, { classe });
+  return response.data;
+};
+
+export const ajouterEcheancier = async (fraisId: number, data: { libelle: string; montant: number; date_echeance?: string }) => {
+  const response = await api.post(`/etablissement/frais/${fraisId}/echeanciers`, data);
+  return response.data;
+};
+
+export const supprimerEcheancier = async (fraisId: number, echeancierId: number) => {
+  const response = await api.delete(`/etablissement/frais/${fraisId}/echeanciers/${echeancierId}`);
+  return response.data;
+};
+
 // ── TOKEN ─────────────────────────────────────────────────────
 export const saveToken = async (token: string) => {
   await setItem('token', token);
