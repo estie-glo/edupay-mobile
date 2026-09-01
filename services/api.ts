@@ -186,7 +186,9 @@ export const searchEtablissements = async (q: string, type?: string) => {
   return response.data;
 };
 
-// ── BACK-OFFICE ECOLE (pas encore annoncé par le backend — routes provisoires) ─
+// ── BACK-OFFICE ECOLE ─────────────────────────────────────────
+// Annoncé par le backend le 01/09/2026 : socle complet sous /etablissement,
+// même token Bearer que le payeur (rôle directeur|comptable|caissier).
 export const getDashboardEcole = async () => {
   const response = await api.get('/etablissement/dashboard');
   return response.data;
@@ -202,16 +204,18 @@ export const getImpayes = async () => {
   return response.data;
 };
 
-export const envoyerRelanceGroupee = async (data: {
-  filtre: any;
-  message: string;
-}) => {
-  const response = await api.post('/etablissement/impayes/relance-groupee', data);
+export const relancerImpayesGroupe = async (data: { filtre?: any; message?: string }) => {
+  const response = await api.post('/etablissement/impayes/relancer', data);
   return response.data;
 };
 
-export const getRapports = async (params: string) => {
-  const response = await api.get(`/etablissement/rapports?${params}`);
+export const relancerImpayeApprenant = async (apprenantId: number) => {
+  const response = await api.post(`/etablissement/impayes/apprenants/${apprenantId}/relancer`);
+  return response.data;
+};
+
+export const getRapports = async (params?: string) => {
+  const response = await api.get(`/etablissement/rapports${params ? `?${params}` : ''}`);
   return response.data;
 };
 

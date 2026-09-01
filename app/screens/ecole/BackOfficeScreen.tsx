@@ -1,15 +1,31 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AlertCircle, Building2, LogOut, Megaphone } from 'lucide-react-native';
+import { AlertCircle, Building2, Calendar, LogOut, Megaphone } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { envoyerRelanceGroupee, getDashboardEcole, getImpayes } from '../../../services/api';
+import { getDashboardEcole, getImpayes, relancerImpayeApprenant, relancerImpayesGroupe } from '../../../services/api';
 
 type Impaye = {
   id: number;
-  apprenant?: { prenom?: string; nom?: string };
+  apprenant?: { id?: number; prenom?: string; nom?: string };
   montant: number;
   classe?: string;
+};
+
+type Abonnement = {
+  plan?: string;
+  statut?: string;
+  date_fin?: string;
+  jours_restants?: number;
+};
+
+type Paiement = {
+  id: number;
+  apprenant?: { prenom?: string; nom?: string };
+  montant: number;
+  mode?: string;
+  date?: string;
+  created_at?: string;
 };
 
 type DashboardEcole = {
@@ -18,6 +34,14 @@ type DashboardEcole = {
   total_impaye?: number;
   nb_apprenants?: number;
   nb_dossiers_impayes?: number;
+  abonnement?: Abonnement;
+  derniers_paiements?: Paiement[];
+};
+
+const STATUT_ABONNEMENT: Record<string, { bg: string; fg: string; label: string }> = {
+  actif: { bg: '#E0F5EE', fg: '#085041', label: 'Actif' },
+  attente: { bg: '#FEF3DC', fg: '#8B5E10', label: 'En attente' },
+  suspendu: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Suspendu' },
 };
 
 export default function BackOfficeScreen() {
@@ -27,6 +51,7 @@ export default function BackOfficeScreen() {
   const [impayes, setImpayes] = useState<Impaye[]>([]);
   const [loading, setLoading] = useState(true);
   const [envoiRelance, setEnvoiRelance] = useState(false);
+  const [relanceApprenantId, setRelanceApprenantId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -54,7 +79,7 @@ export default function BackOfficeScreen() {
     if (impayes.length === 0) return;
     Alert.alert(
       'Envoyer une relance groupée ?',
-      `Un SMS sera envoyé aux familles des ${impayes.length} apprenants en impayé affichés.`,
+      `Un SMS sera envoyé aux familles des apprenants en impayé.`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -62,7 +87,7 @@ export default function BackOfficeScreen() {
           onPress: async () => {
             setEnvoiRelance(true);
             try {
-              await envoyerRelanceGroupee({ filtre: {}, message: 'Rappel : des frais scolaires restent impayés. Merci de régulariser votre situation sur EduPay.' });
+              await relancerImpayesGroupe({});
               Alert.alert('Envoyé', 'La relance groupée a été envoyée.');
             } catch (error: any) {
               Alert.alert('Erreur', error.response?.data?.message || "Échec de l'envoi de la relance");
@@ -75,9 +100,25 @@ export default function BackOfficeScreen() {
     );
   };
 
+  const handleRelanceApprenant = async (apprenantId?: number) => {
+    if (!apprenantId) return;
+    setRelanceApprenantId(apprenantId);
+    try {
+      await relancerImpayeApprenant(apprenantId);
+      Alert.alert('Envoyé', 'Relance SMS envoyée à la famille.');
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || "Échec de l'envoi de la relance");
+    } finally {
+      setRelanceApprenantId(null);
+    }
+  };
+
   if (loading || !dashboard) {
     return <ActivityIndicator size="large" color="#E8A020" style={{ flex: 1 }} />;
   }
+
+  const abo = dashboard.abonnement;
+  const aboStyle = STATUT_ABONNEMENT[(abo?.statut || 'actif').toLowerCase()] || STATUT_ABONNEMENT.actif;
 
   return (
     <View style={styles.container}>
@@ -95,6 +136,25 @@ export default function BackOfficeScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+        {!!abo && (
+          <View style={[styles.aboCard, { borderColor: aboStyle.fg + '33' }]}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.aboPlan}>Abonnement {abo.plan || ''}</Text>
+              {!!abo.date_fin && (
+                <View style={styles.aboDateRow}>
+                  <Calendar size={11} color="#888888" />
+                  <Text style={styles.aboDate}>
+                    Jusqu'au {abo.date_fin.slice(0, 10)}{abo.jours_restants != null ? ` (${abo.jours_restants} j. restants)` : ''}
+                  </Text>
+                </View>
+              )}
+            </View>
+            <View style={[styles.pill, { backgroundColor: aboStyle.bg }]}>
+              <Text style={[styles.pillTxt, { color: aboStyle.fg }]}>{aboStyle.label}</Text>
+            </View>
+          </View>
+        )}
+
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
             <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{(dashboard.total_encaisse ?? 0).toLocaleString('fr-FR')}</Text>
@@ -137,10 +197,39 @@ export default function BackOfficeScreen() {
                   <Text style={styles.rowTitre}>{imp.apprenant ? `${imp.apprenant.prenom} ${imp.apprenant.nom}` : 'Apprenant'}</Text>
                   {!!imp.classe && <Text style={styles.rowSub}>{imp.classe}</Text>}
                 </View>
-                <Text style={styles.rowMontant}>{imp.montant.toLocaleString('fr-FR')} F</Text>
+                <View style={{ alignItems: 'flex-end', gap: 4 }}>
+                  <Text style={styles.rowMontant}>{imp.montant.toLocaleString('fr-FR')} F</Text>
+                  <TouchableOpacity
+                    onPress={() => handleRelanceApprenant(imp.apprenant?.id)}
+                    disabled={relanceApprenantId === imp.apprenant?.id}
+                  >
+                    {relanceApprenantId === imp.apprenant?.id ? (
+                      <ActivityIndicator size="small" color="#D94040" />
+                    ) : (
+                      <Text style={styles.relancerLien}>Relancer</Text>
+                    )}
+                  </TouchableOpacity>
+                </View>
               </View>
             ))}
           </View>
+        )}
+
+        {!!dashboard.derniers_paiements?.length && (
+          <>
+            <Text style={[styles.sec, { marginTop: 20 }]}>Derniers paiements</Text>
+            <View style={styles.card}>
+              {dashboard.derniers_paiements.map((p) => (
+                <View key={p.id} style={styles.row}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.rowTitre}>{p.apprenant ? `${p.apprenant.prenom} ${p.apprenant.nom}` : 'Paiement'}</Text>
+                    <Text style={styles.rowSub}>{(p.date || p.created_at || '').slice(0, 10)}{p.mode ? ` · ${p.mode}` : ''}</Text>
+                  </View>
+                  <Text style={[styles.rowMontant, { color: '#0D9E75' }]}>{p.montant.toLocaleString('fr-FR')} F</Text>
+                </View>
+              ))}
+            </View>
+          </>
         )}
       </ScrollView>
     </View>
@@ -155,7 +244,13 @@ const styles = StyleSheet.create({
   titre: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', flexShrink: 1 },
   sousTitre: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
   content: { flex: 1, padding: 16 },
-  kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20, marginTop: 4 },
+  aboCard: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 16, borderWidth: 1 },
+  aboPlan: { fontSize: 13, fontWeight: '700', color: '#1A1A2E', marginBottom: 4 },
+  aboDateRow: { flexDirection: 'row', alignItems: 'center', gap: 5 },
+  aboDate: { fontSize: 11, color: '#888888' },
+  pill: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, flexShrink: 0 },
+  pillTxt: { fontSize: 10, fontWeight: '700' },
+  kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   kpiCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, alignItems: 'center' },
   kpiVal: { fontSize: 15, fontWeight: '800', color: '#1A1A2E' },
   kpiLbl: { fontSize: 9, color: '#888888', marginTop: 2, textAlign: 'center' },
@@ -170,4 +265,5 @@ const styles = StyleSheet.create({
   rowTitre: { fontSize: 12, fontWeight: '600', color: '#1A1A2E' },
   rowSub: { fontSize: 10, color: '#888888', marginTop: 2 },
   rowMontant: { fontSize: 13, fontWeight: '700', color: '#D94040' },
+  relancerLien: { fontSize: 10, fontWeight: '700', color: '#0D9E75' },
 });
