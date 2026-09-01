@@ -338,6 +338,27 @@ export const refuserRemboursement = async (id: number, motif?: string) => {
   return response.data;
 };
 
+// ── ECOLE : MULTI-SITES (plans Standard/Premium) ─────────────────
+export const getSites = async () => {
+  const response = await api.get('/etablissement/sites');
+  return response.data;
+};
+
+export const creerSite = async (data: { nom: string; ville: string; adresse?: string; telephone?: string }) => {
+  const response = await api.post('/etablissement/sites', data);
+  return response.data;
+};
+
+export const updateSite = async (id: number, data: { nom?: string; ville?: string; adresse?: string; telephone?: string }) => {
+  const response = await api.put(`/etablissement/sites/${id}`, data);
+  return response.data;
+};
+
+export const supprimerSite = async (id: number) => {
+  const response = await api.delete(`/etablissement/sites/${id}`);
+  return response.data;
+};
+
 // ── TOKEN ─────────────────────────────────────────────────────
 export const saveToken = async (token: string) => {
   await setItem('token', token);
