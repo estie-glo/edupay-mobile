@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AlertCircle, Building2, Calendar, Layers3, LogOut, Megaphone, RotateCcw, UserCog, Users } from 'lucide-react-native';
+import { AlertCircle, Building2, Calendar, FileBarChart2, Layers3, LogOut, Megaphone, RotateCcw, UserCog, Users } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getDashboardEcole, getImpayes, relancerImpayeApprenant, relancerImpayesGroupe } from '../../../services/api';
 
@@ -190,6 +190,10 @@ export default function BackOfficeScreen() {
           <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleUtilisateursScreen')}>
             <UserCog size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Utilisateurs</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleRapportsScreen')}>
+            <FileBarChart2 size={18} color="#0B2545" />
+            <Text style={styles.quickActionTxt}>Rapports</Text>
           </TouchableOpacity>
         </View>
 
