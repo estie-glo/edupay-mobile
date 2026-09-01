@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AlertCircle, Building2, Calendar, Layers3, LogOut, Megaphone, Users } from 'lucide-react-native';
+import { AlertCircle, Building2, Calendar, Layers3, LogOut, Megaphone, RotateCcw, UserCog, Users } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getDashboardEcole, getImpayes, relancerImpayeApprenant, relancerImpayesGroupe } from '../../../services/api';
 
@@ -183,6 +183,14 @@ export default function BackOfficeScreen() {
             <Layers3 size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Frais & échéanciers</Text>
           </TouchableOpacity>
+          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleRemboursementsScreen')}>
+            <RotateCcw size={18} color="#0B2545" />
+            <Text style={styles.quickActionTxt}>Remboursements</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleUtilisateursScreen')}>
+            <UserCog size={18} color="#0B2545" />
+            <Text style={styles.quickActionTxt}>Utilisateurs</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.secHeader}>
@@ -262,8 +270,8 @@ const styles = StyleSheet.create({
   pill: { borderRadius: 12, paddingHorizontal: 10, paddingVertical: 4, flexShrink: 0 },
   pillTxt: { fontSize: 10, fontWeight: '700' },
   kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
-  quickActionsRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
-  quickAction: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 14, borderWidth: 1, borderColor: '#E2E8F0' },
+  quickActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
+  quickAction: { width: '47%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 14, borderWidth: 1, borderColor: '#E2E8F0' },
   quickActionTxt: { fontSize: 12, fontWeight: '700', color: '#0B2545' },
   kpiCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, alignItems: 'center' },
   kpiVal: { fontSize: 15, fontWeight: '800', color: '#1A1A2E' },

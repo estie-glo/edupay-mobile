@@ -291,6 +291,53 @@ export const supprimerEcheancier = async (fraisId: number, echeancierId: number)
   return response.data;
 };
 
+export const getPaiementsEcole = async (page: number = 1) => {
+  const response = await api.get(`/etablissement/paiements?page=${page}`);
+  return response.data;
+};
+
+// ── ECOLE : UTILISATEURS INTERNES (réservé directeur) ────────────
+export const getUtilisateursEcole = async () => {
+  const response = await api.get('/etablissement/utilisateurs');
+  return response.data;
+};
+
+export const inviterUtilisateurEcole = async (data: { prenom: string; nom: string; email: string; role: 'comptable' | 'caissier' }) => {
+  const response = await api.post('/etablissement/utilisateurs', data);
+  return response.data;
+};
+
+export const changerRoleUtilisateur = async (id: number, role: 'comptable' | 'caissier') => {
+  const response = await api.put(`/etablissement/utilisateurs/${id}/role`, { role });
+  return response.data;
+};
+
+export const supprimerUtilisateurEcole = async (id: number) => {
+  const response = await api.delete(`/etablissement/utilisateurs/${id}`);
+  return response.data;
+};
+
+// ── ECOLE : REMBOURSEMENTS ───────────────────────────────────────
+export const getRemboursements = async () => {
+  const response = await api.get('/etablissement/remboursements');
+  return response.data;
+};
+
+export const demanderRemboursement = async (data: { paiement_id: number; motif: string; montant?: number }) => {
+  const response = await api.post('/etablissement/remboursements', data);
+  return response.data;
+};
+
+export const approuverRemboursement = async (id: number) => {
+  const response = await api.post(`/etablissement/remboursements/${id}/approuver`);
+  return response.data;
+};
+
+export const refuserRemboursement = async (id: number, motif?: string) => {
+  const response = await api.post(`/etablissement/remboursements/${id}/refuser`, { motif });
+  return response.data;
+};
+
 // ── TOKEN ─────────────────────────────────────────────────────
 export const saveToken = async (token: string) => {
   await setItem('token', token);
