@@ -404,14 +404,23 @@ export const getFraisEcole = async () => {
 export const creerFraisEcole = async (data: {
   nom: string;
   montant_total: number;
+  annee_scolaire: string;
   fractionnable?: boolean;
   nb_tranches_max?: number;
+  description?: string;
 }) => {
   const response = await api.post('/etablissement/frais', data);
   return response.data;
 };
 
-export const updateFraisEcole = async (id: number, data: { nom?: string; montant_total?: number; fractionnable?: boolean; nb_tranches_max?: number }) => {
+export const updateFraisEcole = async (id: number, data: {
+  nom: string;
+  montant_total: number;
+  annee_scolaire: string;
+  fractionnable?: boolean;
+  nb_tranches_max?: number;
+  description?: string;
+}) => {
   const response = await api.put(`/etablissement/frais/${id}`, data);
   return response.data;
 };
@@ -426,8 +435,13 @@ export const affecterFraisClasse = async (id: number, classe: string) => {
   return response.data;
 };
 
-export const ajouterEcheancier = async (fraisId: number, data: { libelle: string; montant: number; date_echeance?: string }) => {
+export const ajouterEcheancier = async (fraisId: number, data: { libelle?: string; montant: number; date_echeance: string }) => {
   const response = await api.post(`/etablissement/frais/${fraisId}/echeanciers`, data);
+  return response.data;
+};
+
+export const updateEcheancier = async (fraisId: number, echeancierId: number, data: { numero_tranche: number; libelle?: string; montant: number; date_echeance: string }) => {
+  const response = await api.put(`/etablissement/frais/${fraisId}/echeanciers/${echeancierId}`, data);
   return response.data;
 };
 

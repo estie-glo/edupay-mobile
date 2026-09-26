@@ -1,12 +1,32 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, CheckSquare, Layers3, Plus, Square, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, CheckSquare, Layers3, Pencil, Plus, Square, Trash2 } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { affecterFraisClasse, ajouterEcheancier, creerFraisEcole, getFraisEcole, removeFraisEcole, supprimerEcheancier } from '../../../services/api';
+import { affecterFraisClasse, ajouterEcheancier, creerFraisEcole, getFraisEcole, removeFraisEcole, supprimerEcheancier, updateEcheancier, updateFraisEcole } from '../../../services/api';
 
-type Echeancier = { id: number; libelle?: string; montant: number; date_echeance?: string };
-type Frais = { id: number; nom: string; montant_total: number; fractionnable?: boolean; nb_tranches_max?: number; echeanciers?: Echeancier[] };
+// Champs et règles alignés sur FraisStoreRequest / Etablissement/FraisController
+// (vérifiés le 26/09/2026) : annee_scolaire et nb_tranches_max sont TOUJOURS
+// obligatoires côté API (même frais non fractionnable → nb_tranches_max=1),
+// tout comme date_echeance sur un échéancier — ces champs manquaient dans les
+// appels précédents et déclenchaient un 422 systématique à chaque création.
+type Echeancier = { id: number; numero_tranche?: number; libelle?: string; montant: number; date_echeance?: string };
+type Frais = {
+  id: number;
+  nom: string;
+  description?: string;
+  montant_total: number;
+  annee_scolaire?: string;
+  fractionnable?: boolean;
+  nb_tranches_max?: number;
+  echeanciers?: Echeancier[];
+};
+
+function anneeScolaireActuelle() {
+  const maintenant = new Date();
+  const annee = maintenant.getFullYear();
+  return maintenant.getMonth() + 1 >= 9 ? `${annee}-${annee + 1}` : `${annee - 1}-${annee}`;
+}
 
 export default function EcoleFraisScreen() {
   const router = useRouter();
@@ -14,14 +34,17 @@ export default function EcoleFraisScreen() {
   const [frais, setFrais] = useState<Frais[]>([]);
   const [loading, setLoading] = useState(true);
   const [formOuvert, setFormOuvert] = useState(false);
+  const [fraisEnEdition, setFraisEnEdition] = useState<number | null>(null);
   const [envoi, setEnvoi] = useState(false);
   const [ouvert, setOuvert] = useState<number | null>(null);
   const [classePourAffectation, setClassePourAffectation] = useState<Record<number, string>>({});
-  const [nouvelleEcheance, setNouvelleEcheance] = useState<Record<number, { libelle: string; montant: string }>>({});
+  const [nouvelleEcheance, setNouvelleEcheance] = useState<Record<number, { id?: number; numeroTranche?: number; libelle: string; montant: string; date: string }>>({});
   const [envoiEcheance, setEnvoiEcheance] = useState<number | null>(null);
 
   const [nom, setNom] = useState('');
+  const [description, setDescription] = useState('');
   const [montantTotal, setMontantTotal] = useState('');
+  const [anneeScolaire, setAnneeScolaire] = useState(anneeScolaireActuelle());
   const [fractionnable, setFractionnable] = useState(false);
   const [nbTranchesMax, setNbTranchesMax] = useState('3');
 
@@ -48,30 +71,51 @@ export default function EcoleFraisScreen() {
 
   const resetFormulaire = () => {
     setFormOuvert(false);
+    setFraisEnEdition(null);
     setNom('');
+    setDescription('');
     setMontantTotal('');
+    setAnneeScolaire(anneeScolaireActuelle());
     setFractionnable(false);
     setNbTranchesMax('3');
   };
 
+  const ouvrirEdition = (f: Frais) => {
+    setFraisEnEdition(f.id);
+    setNom(f.nom);
+    setDescription(f.description || '');
+    setMontantTotal(String(f.montant_total));
+    setAnneeScolaire(f.annee_scolaire || anneeScolaireActuelle());
+    setFractionnable(!!f.fractionnable);
+    setNbTranchesMax(String(f.nb_tranches_max || 3));
+    setFormOuvert(true);
+  };
+
   const handleCreer = async () => {
     const montant = Number(montantTotal.replace(/\D/g, ''));
-    if (!nom || !montant) {
-      Alert.alert('Erreur', 'Veuillez renseigner le nom et le montant');
+    if (!nom || !montant || !anneeScolaire) {
+      Alert.alert('Erreur', "Veuillez renseigner le nom, le montant et l'année scolaire");
       return;
     }
     setEnvoi(true);
     try {
-      await creerFraisEcole({
+      const donnees = {
         nom,
         montant_total: montant,
+        annee_scolaire: anneeScolaire,
+        description: description || undefined,
         fractionnable,
-        nb_tranches_max: fractionnable ? Number(nbTranchesMax) || 3 : undefined,
-      });
+        nb_tranches_max: fractionnable ? Number(nbTranchesMax) || 2 : 1,
+      };
+      if (fraisEnEdition) {
+        await updateFraisEcole(fraisEnEdition, donnees);
+      } else {
+        await creerFraisEcole(donnees);
+      }
       resetFormulaire();
       charger();
     } catch (error: any) {
-      Alert.alert('Erreur', error.response?.data?.message || 'Impossible de créer cette catégorie de frais');
+      Alert.alert('Erreur', error.response?.data?.message || 'Impossible d\'enregistrer cette catégorie de frais');
     } finally {
       setEnvoi(false);
     }
@@ -110,20 +154,31 @@ export default function EcoleFraisScreen() {
     }
   };
 
-  const handleAjouterEcheance = async (fraisId: number) => {
+  const ouvrirEditionEcheance = (fraisId: number, e: Echeancier) => {
+    setNouvelleEcheance((prev) => ({
+      ...prev,
+      [fraisId]: { id: e.id, numeroTranche: e.numero_tranche, libelle: e.libelle || '', montant: String(e.montant), date: e.date_echeance?.slice(0, 10) || '' },
+    }));
+  };
+
+  const handleEnregistrerEcheance = async (fraisId: number) => {
     const saisie = nouvelleEcheance[fraisId];
     const montant = Number((saisie?.montant || '').replace(/\D/g, ''));
-    if (!saisie?.libelle || !montant) {
-      Alert.alert('Erreur', "Veuillez renseigner l'intitulé et le montant de l'échéance");
+    if (!montant || !saisie?.date || !/^\d{4}-\d{2}-\d{2}$/.test(saisie.date)) {
+      Alert.alert('Erreur', "Veuillez renseigner le montant et une date valide (AAAA-MM-JJ)");
       return;
     }
     setEnvoiEcheance(fraisId);
     try {
-      await ajouterEcheancier(fraisId, { libelle: saisie.libelle, montant });
-      setNouvelleEcheance((prev) => ({ ...prev, [fraisId]: { libelle: '', montant: '' } }));
+      if (saisie.id) {
+        await updateEcheancier(fraisId, saisie.id, { numero_tranche: saisie.numeroTranche || 1, libelle: saisie.libelle || undefined, montant, date_echeance: saisie.date });
+      } else {
+        await ajouterEcheancier(fraisId, { libelle: saisie.libelle || undefined, montant, date_echeance: saisie.date });
+      }
+      setNouvelleEcheance((prev) => ({ ...prev, [fraisId]: { libelle: '', montant: '', date: '' } }));
       charger();
     } catch (error: any) {
-      Alert.alert('Erreur', error.response?.data?.message || "Impossible d'ajouter cette échéance");
+      Alert.alert('Erreur', error.response?.data?.message || "Impossible d'enregistrer cette échéance");
     } finally {
       setEnvoiEcheance(null);
     }
@@ -166,11 +221,15 @@ export default function EcoleFraisScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {formOuvert && (
           <View style={styles.formCard}>
-            <Text style={styles.formTitre}>Nouvelle catégorie de frais</Text>
+            <Text style={styles.formTitre}>{fraisEnEdition ? 'Modifier la catégorie de frais' : 'Nouvelle catégorie de frais'}</Text>
             <Text style={styles.lbl}>Nom *</Text>
             <TextInput style={styles.input} placeholder="ex : Scolarité annuelle" placeholderTextColor="#AAAAAA" value={nom} onChangeText={setNom} />
+            <Text style={styles.lbl}>Description (optionnel)</Text>
+            <TextInput style={styles.input} placeholder="Précisions sur ce frais" placeholderTextColor="#AAAAAA" value={description} onChangeText={setDescription} />
             <Text style={styles.lbl}>Montant total (FCFA) *</Text>
             <TextInput style={styles.input} placeholder="ex : 150000" placeholderTextColor="#AAAAAA" value={montantTotal} onChangeText={setMontantTotal} keyboardType="number-pad" />
+            <Text style={styles.lbl}>Année scolaire *</Text>
+            <TextInput style={styles.input} placeholder="ex : 2026-2027" placeholderTextColor="#AAAAAA" value={anneeScolaire} onChangeText={setAnneeScolaire} />
             <TouchableOpacity style={styles.checkRow} onPress={() => setFractionnable(!fractionnable)}>
               {fractionnable ? <CheckSquare size={18} color="#E8A020" /> : <Square size={18} color="#AAAAAA" />}
               <Text style={styles.checkTxt}>Fractionnable en tranches</Text>
@@ -186,7 +245,7 @@ export default function EcoleFraisScreen() {
                 <Text style={styles.btnAnnulerTxt}>Annuler</Text>
               </TouchableOpacity>
               <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleCreer} disabled={envoi}>
-                {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Créer</Text>}
+                {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>{fraisEnEdition ? 'Enregistrer' : 'Créer'}</Text>}
               </TouchableOpacity>
             </View>
           </View>
@@ -206,9 +265,12 @@ export default function EcoleFraisScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.nom}>{f.nom}</Text>
                     <Text style={styles.sousTitre}>
-                      {f.montant_total.toLocaleString('fr-FR')} FCFA{f.fractionnable ? ` · jusqu'à ${f.nb_tranches_max || 3} tranches` : ''}
+                      {f.montant_total.toLocaleString('fr-FR')} FCFA{f.fractionnable ? ` · jusqu'à ${f.nb_tranches_max || 3} tranches` : ''}{f.annee_scolaire ? ` · ${f.annee_scolaire}` : ''}
                     </Text>
                   </View>
+                  <TouchableOpacity onPress={() => ouvrirEdition(f)} style={{ marginRight: 4 }}>
+                    <Pencil size={15} color="#666666" />
+                  </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleSupprimer(f)}>
                     <Trash2 size={16} color="#D94040" />
                   </TouchableOpacity>
@@ -223,6 +285,9 @@ export default function EcoleFraisScreen() {
                       f.echeanciers!.map((e) => (
                         <View key={e.id} style={styles.echeancierRow}>
                           <Text style={styles.echeancierTxt}>{e.libelle || 'Échéance'} — {e.montant.toLocaleString('fr-FR')} F{e.date_echeance ? ` (${e.date_echeance.slice(0, 10)})` : ''}</Text>
+                          <TouchableOpacity onPress={() => ouvrirEditionEcheance(f.id, e)} style={{ marginRight: 10 }}>
+                            <Pencil size={13} color="#666666" />
+                          </TouchableOpacity>
                           <TouchableOpacity onPress={() => handleSupprimerEcheancier(f.id, e.id)}>
                             <Trash2 size={13} color="#D94040" />
                           </TouchableOpacity>
@@ -235,7 +300,7 @@ export default function EcoleFraisScreen() {
                         placeholder="Intitulé (ex : Tranche 1)"
                         placeholderTextColor="#AAAAAA"
                         value={nouvelleEcheance[f.id]?.libelle || ''}
-                        onChangeText={(t) => setNouvelleEcheance((prev) => ({ ...prev, [f.id]: { libelle: t, montant: prev[f.id]?.montant || '' } }))}
+                        onChangeText={(t) => setNouvelleEcheance((prev) => ({ ...prev, [f.id]: { ...prev[f.id], libelle: t, montant: prev[f.id]?.montant || '', date: prev[f.id]?.date || '' } }))}
                       />
                       <TextInput
                         style={styles.affecterInput}
@@ -243,10 +308,19 @@ export default function EcoleFraisScreen() {
                         placeholderTextColor="#AAAAAA"
                         keyboardType="number-pad"
                         value={nouvelleEcheance[f.id]?.montant || ''}
-                        onChangeText={(t) => setNouvelleEcheance((prev) => ({ ...prev, [f.id]: { libelle: prev[f.id]?.libelle || '', montant: t } }))}
+                        onChangeText={(t) => setNouvelleEcheance((prev) => ({ ...prev, [f.id]: { ...prev[f.id], libelle: prev[f.id]?.libelle || '', montant: t, date: prev[f.id]?.date || '' } }))}
                       />
-                      <TouchableOpacity style={styles.affecterBtn} onPress={() => handleAjouterEcheance(f.id)} disabled={envoiEcheance === f.id}>
-                        {envoiEcheance === f.id ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.affecterBtnTxt}>+ Échéance</Text>}
+                    </View>
+                    <View style={styles.affecterRow}>
+                      <TextInput
+                        style={styles.affecterInput}
+                        placeholder="Date limite AAAA-MM-JJ"
+                        placeholderTextColor="#AAAAAA"
+                        value={nouvelleEcheance[f.id]?.date || ''}
+                        onChangeText={(t) => setNouvelleEcheance((prev) => ({ ...prev, [f.id]: { ...prev[f.id], libelle: prev[f.id]?.libelle || '', montant: prev[f.id]?.montant || '', date: t } }))}
+                      />
+                      <TouchableOpacity style={styles.affecterBtn} onPress={() => handleEnregistrerEcheance(f.id)} disabled={envoiEcheance === f.id}>
+                        {envoiEcheance === f.id ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Text style={styles.affecterBtnTxt}>{nouvelleEcheance[f.id]?.id ? 'Enregistrer' : '+ Échéance'}</Text>}
                       </TouchableOpacity>
                     </View>
 
