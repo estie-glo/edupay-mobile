@@ -472,6 +472,39 @@ export const getAbonnement = async () => {
   return response.data;
 };
 
+// ── ECOLE : PARAMÈTRES ÉTABLISSEMENT ─────────────────────────────
+export const getParametresEcole = async () => {
+  const response = await api.get('/etablissement/parametres');
+  return response.data;
+};
+
+export const updateParametresEcole = async (data: {
+  nom: string; type: string; statut_juridique?: string; numero_agrement?: string;
+  nb_eleves?: string; region?: string; ville: string; quartier?: string; boite_postale?: string;
+  telephone: string; email: string; site_web?: string; description?: string;
+  mobile_money_principal: 'mtn' | 'orange' | 'les_deux'; numero_momo_reversement?: string;
+  operateur_momo_reversement?: 'mtn' | 'orange'; annee_scolaire_active?: string;
+  logo?: { uri: string; name: string; mimeType?: string };
+  document_agrement?: { uri: string; name: string; mimeType?: string };
+}) => {
+  const formData = new FormData();
+  const { logo, document_agrement, ...champs } = data;
+  Object.entries(champs).forEach(([cle, valeur]) => {
+    if (valeur !== undefined && valeur !== null) formData.append(cle, String(valeur));
+  });
+  if (logo) formData.append('logo', { uri: logo.uri, name: logo.name, type: logo.mimeType || 'image/png' } as any);
+  if (document_agrement) {
+    formData.append('document_agrement', { uri: document_agrement.uri, name: document_agrement.name, type: document_agrement.mimeType || 'application/pdf' } as any);
+  }
+  // PUT + multipart n'est pas fiable côté PHP : on passe par le spoofing Laravel standard (_method).
+  formData.append('_method', 'PUT');
+
+  const response = await api.post('/etablissement/parametres', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
 // ── ECOLE : MULTI-SITES (plans Standard/Premium) ─────────────────
 export const getSites = async () => {
   const response = await api.get('/etablissement/sites');

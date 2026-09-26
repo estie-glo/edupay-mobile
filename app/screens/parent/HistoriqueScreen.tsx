@@ -54,10 +54,9 @@ export default function HistoriqueScreen() {
     else setLoadingPlus(true);
     try {
       const response = await getHistorique(pageAcharger);
-      const pagination = response.data ?? response;
-      const items: Paiement[] = Array.isArray(pagination) ? pagination : pagination.data ?? [];
+      const items: Paiement[] = response.data ?? [];
       setPaiements((prev) => (pageAcharger === 1 ? items : [...prev, ...items]));
-      setDernierePage(pagination.last_page ?? pageAcharger);
+      setDernierePage(response.meta?.last_page ?? pageAcharger);
       setPage(pageAcharger);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Impossible de charger l\'historique');
