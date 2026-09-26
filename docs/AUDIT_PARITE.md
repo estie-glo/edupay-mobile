@@ -1,8 +1,24 @@
 # Audit de parité web ↔ mobile
 
 Dernier audit complet : **27/09/2026**, contre le backend
-`stevetelecom/edupay-cameroun` (commit `f841c50`, tous les commits
-"audit" D à U vérifiés individuellement).
+`stevetelecom/edupay-cameroun` (commit `e2a7552`, tous les commits
+"audit" D à U + les 2 commits i18n suivants vérifiés individuellement).
+
+## À savoir pour le futur chantier de traduction FR/EN
+
+Deux commits i18n (`64e58b4`, `e2a7552`) sont sans impact mobile — le
+2e ne touche que des vues Blade web ; le 1er ajoute des messages
+d'erreur API traduits FR/EN (401/403/404/422/429), **mais uniquement si
+le client signale explicitement une langue** (`?lang=en`, session ou
+cookie `locale` — jamais `Accept-Language`, exprès pour ne rien changer
+aux clients existants). Vérifié en réel : sans ce signal, le mobile
+reçoit toujours le français, mot pour mot, comme avant.
+
+Point utile pour le chantier de traduction reporté (voir README) :
+le rétablissement mobile pourrait profiter de messages d'erreur en
+anglais gratuitement en ajoutant `?lang=en` à ses requêtes quand la
+préférence de langue est EN — sans attendre une traduction complète de
+l'UI. Ne couvre que les messages d'erreur, pas les données.
 
 ## Test en conditions réelles (27/09/2026)
 
