@@ -46,7 +46,6 @@ const FOOTER_COLONNES = [
   {
     titre: 'PRODUIT',
     liens: [
-      { label: 'Fonctionnalités', route: '/screens/commun/FonctionnalitesScreen' },
       { label: 'Témoignages', route: '/screens/commun/TemoignagesScreen' },
       { label: 'Tarifs', route: '/screens/commun/TarifsScreen' },
     ],
@@ -167,9 +166,6 @@ export default function AccueilInviteScreen() {
                 <Text style={styles.heroBtnSecondaryTxt}>Inscrire mon établissement</Text>
               </TouchableOpacity>
             </View>
-            <TouchableOpacity style={styles.commentLien} onPress={() => router.push('/screens/commun/CommentScreen')}>
-              <Text style={styles.commentLienTxt}>Comment ça marche ?</Text>
-            </TouchableOpacity>
           </View>
 
           {/* Stats live via GET /stats (route publique confirmée) — repli sur des
@@ -375,8 +371,6 @@ const styles = StyleSheet.create({
   heroAccent: { color: '#0D9E75' },
   heroDesc: { fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 18, marginBottom: 24 },
   heroBtns: { gap: 10 },
-  commentLien: { marginTop: 14, alignItems: 'center' },
-  commentLienTxt: { fontSize: 12, color: 'rgba(255,255,255,0.7)', fontWeight: '600', textDecorationLine: 'underline' },
   heroBtnPrimary: { backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
   heroBtnPrimaryTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   heroBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 14, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },

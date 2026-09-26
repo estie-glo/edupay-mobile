@@ -11,9 +11,6 @@ export default function RootLayout() {
       <Stack.Screen name="screens/commun/AideScreen" />
       <Stack.Screen name="screens/commun/OfflineScreen" />
       <Stack.Screen name="screens/commun/EcolesScreen" />
-      <Stack.Screen name="screens/commun/SimulateurScreen" />
-      <Stack.Screen name="screens/commun/CommentScreen" />
-      <Stack.Screen name="screens/commun/FonctionnalitesScreen" />
       <Stack.Screen name="screens/commun/AProposScreen" />
       <Stack.Screen name="screens/commun/TemoignagesScreen" />
       <Stack.Screen name="screens/commun/TarifsScreen" />
