@@ -91,7 +91,7 @@ export default function DashboardScreen() {
         <View style={styles.headerTop}>
           <Text style={styles.logo}>Edu<Text style={styles.logoAccent}>Pay</Text></Text>
           <View style={styles.headerRight}>
-            <TouchableOpacity style={styles.notifBtn}>
+            <TouchableOpacity style={styles.notifBtn} onPress={() => router.push('/screens/parent/NotificationsScreen')}>
               <Bell size={20} color="#FFFFFF" />
               {nbNotifs > 0 && <View style={styles.notifBadge} />}
             </TouchableOpacity>

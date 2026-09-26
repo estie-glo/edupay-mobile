@@ -250,8 +250,13 @@ export const getNotifications = async () => {
   return response.data;
 };
 
-export const marquerNotificationsLues = async () => {
-  const response = await api.post('/notifications/lire');
+export const marquerNotificationsLues = async (ids?: number[]) => {
+  const response = await api.post('/notifications/lire', ids?.length ? { ids } : {});
+  return response.data;
+};
+
+export const marquerNotificationLue = async (id: number) => {
+  const response = await api.post(`/notifications/${id}/lue`);
   return response.data;
 };
 
