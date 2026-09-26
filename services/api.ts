@@ -317,13 +317,15 @@ export const getImpayes = async () => {
   return response.data;
 };
 
-export const relancerImpayesGroupe = async (data: { filtre?: any; message?: string }) => {
+// `force` outrepasse le délai anti-spam de 24h entre deux relances au même
+// parent (audit U) — sans lui, une 2e tentative dans les 24h renvoie 429.
+export const relancerImpayesGroupe = async (data: { filtre?: any; message?: string; force?: boolean }) => {
   const response = await api.post('/etablissement/impayes/relancer', data);
   return response.data;
 };
 
-export const relancerImpayeApprenant = async (apprenantId: number) => {
-  const response = await api.post(`/etablissement/impayes/apprenants/${apprenantId}/relancer`);
+export const relancerImpayeApprenant = async (apprenantId: number, force?: boolean) => {
+  const response = await api.post(`/etablissement/impayes/apprenants/${apprenantId}/relancer`, { force });
   return response.data;
 };
 
@@ -565,12 +567,25 @@ export const getSites = async () => {
   return response.data;
 };
 
-export const creerSite = async (data: { nom: string; ville: string; adresse?: string; telephone?: string }) => {
+// Champs alignés sur SiteController::store/update (vérifiés le 27/09/2026) :
+// email et téléphone obligatoires (pas "adresse", c'est "quartier"). La
+// création d'un site crée aussi un compte directeur dédié — les 3 champs
+// directeur_* sont donc obligatoires uniquement à la création.
+export const creerSite = async (data: {
+  nom: string;
+  ville: string;
+  quartier?: string;
+  telephone: string;
+  email: string;
+  directeur_prenom: string;
+  directeur_nom: string;
+  directeur_email: string;
+}) => {
   const response = await api.post('/etablissement/sites', data);
   return response.data;
 };
 
-export const updateSite = async (id: number, data: { nom?: string; ville?: string; adresse?: string; telephone?: string }) => {
+export const updateSite = async (id: number, data: { nom: string; ville: string; quartier?: string; telephone: string; email: string }) => {
   const response = await api.put(`/etablissement/sites/${id}`, data);
   return response.data;
 };

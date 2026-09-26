@@ -80,11 +80,11 @@ export default function BackOfficeScreen() {
     }
   };
 
-  const handleRelanceGroupee = () => {
+  const handleRelanceGroupee = (force = false) => {
     if (impayes.length === 0) return;
     Alert.alert(
       'Envoyer une relance groupée ?',
-      `Un SMS sera envoyé aux familles des apprenants en impayé.`,
+      `Un email sera envoyé aux familles des apprenants en impayé.`,
       [
         { text: 'Annuler', style: 'cancel' },
         {
@@ -92,10 +92,17 @@ export default function BackOfficeScreen() {
           onPress: async () => {
             setEnvoiRelance(true);
             try {
-              await relancerImpayesGroupe({});
+              await relancerImpayesGroupe({ force });
               Alert.alert('Envoyé', 'La relance groupée a été envoyée.');
             } catch (error: any) {
-              Alert.alert('Erreur', error.response?.data?.message || "Échec de l'envoi de la relance");
+              if (error.response?.status === 429) {
+                Alert.alert('Déjà relancé récemment', error.response?.data?.message || 'Une relance a déjà été envoyée dans les dernières 24h.', [
+                  { text: 'Annuler', style: 'cancel' },
+                  { text: 'Forcer l\'envoi', onPress: () => handleRelanceGroupee(true) },
+                ]);
+              } else {
+                Alert.alert('Erreur', error.response?.data?.message || "Échec de l'envoi de la relance");
+              }
             } finally {
               setEnvoiRelance(false);
             }
@@ -105,14 +112,21 @@ export default function BackOfficeScreen() {
     );
   };
 
-  const handleRelanceApprenant = async (apprenantId?: number) => {
+  const handleRelanceApprenant = async (apprenantId?: number, force = false) => {
     if (!apprenantId) return;
     setRelanceApprenantId(apprenantId);
     try {
-      await relancerImpayeApprenant(apprenantId);
-      Alert.alert('Envoyé', 'Relance SMS envoyée à la famille.');
+      await relancerImpayeApprenant(apprenantId, force);
+      Alert.alert('Envoyé', 'Relance envoyée par email à la famille.');
     } catch (error: any) {
-      Alert.alert('Erreur', error.response?.data?.message || "Échec de l'envoi de la relance");
+      if (error.response?.status === 429) {
+        Alert.alert('Déjà relancé récemment', error.response?.data?.message || 'Une relance a déjà été envoyée dans les dernières 24h.', [
+          { text: 'Annuler', style: 'cancel' },
+          { text: 'Forcer l\'envoi', onPress: () => handleRelanceApprenant(apprenantId, true) },
+        ]);
+      } else {
+        Alert.alert('Erreur', error.response?.data?.message || "Échec de l'envoi de la relance");
+      }
     } finally {
       setRelanceApprenantId(null);
     }
@@ -228,7 +242,7 @@ export default function BackOfficeScreen() {
         <View style={styles.secHeader}>
           <Text style={styles.sec}>Impayés récents</Text>
           {impayes.length > 0 && (
-            <TouchableOpacity style={styles.relanceBtn} onPress={handleRelanceGroupee} disabled={envoiRelance}>
+            <TouchableOpacity style={styles.relanceBtn} onPress={() => handleRelanceGroupee()} disabled={envoiRelance}>
               {envoiRelance ? <ActivityIndicator size="small" color="#E8A020" /> : <Megaphone size={13} color="#E8A020" />}
               <Text style={styles.relanceTxt}>Relance groupée</Text>
             </TouchableOpacity>

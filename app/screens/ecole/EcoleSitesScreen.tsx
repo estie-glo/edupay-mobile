@@ -5,7 +5,8 @@ import { ArrowLeft, Building2, Lock, MapPinned, Pencil, Plus, Trash2 } from 'luc
 import { useAuth } from '../../../context/AuthContext';
 import { creerSite, getSites, supprimerSite, updateSite } from '../../../services/api';
 
-type Site = { id: number; nom: string; ville: string; adresse?: string; telephone?: string };
+// Champs alignés sur SiteController::formaterSite (vérifiés le 27/09/2026).
+type Site = { id: number; nom: string; ville: string; quartier?: string; telephone?: string; email?: string };
 
 export default function EcoleSitesScreen() {
   const router = useRouter();
@@ -19,8 +20,12 @@ export default function EcoleSitesScreen() {
 
   const [nom, setNom] = useState('');
   const [ville, setVille] = useState('');
-  const [adresse, setAdresse] = useState('');
+  const [quartier, setQuartier] = useState('');
   const [telephone, setTelephone] = useState('');
+  const [email, setEmail] = useState('');
+  const [directeurPrenom, setDirecteurPrenom] = useState('');
+  const [directeurNom, setDirecteurNom] = useState('');
+  const [directeurEmail, setDirecteurEmail] = useState('');
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -52,31 +57,42 @@ export default function EcoleSitesScreen() {
     setSiteEnEdition(null);
     setNom('');
     setVille('');
-    setAdresse('');
+    setQuartier('');
     setTelephone('');
+    setEmail('');
+    setDirecteurPrenom('');
+    setDirecteurNom('');
+    setDirecteurEmail('');
   };
 
   const ouvrirEdition = (s: Site) => {
     setSiteEnEdition(s.id);
     setNom(s.nom);
     setVille(s.ville);
-    setAdresse(s.adresse || '');
+    setQuartier(s.quartier || '');
     setTelephone(s.telephone || '');
+    setEmail(s.email || '');
     setFormOuvert(true);
   };
 
   const handleCreer = async () => {
-    if (!nom || !ville) {
-      Alert.alert('Erreur', 'Veuillez renseigner le nom et la ville');
+    if (!nom || !ville || !telephone || !email) {
+      Alert.alert('Erreur', 'Veuillez renseigner le nom, la ville, le téléphone et l\'email du site');
+      return;
+    }
+    if (!siteEnEdition && (!directeurPrenom || !directeurNom || !directeurEmail)) {
+      Alert.alert('Erreur', 'Un nouveau site crée un compte directeur : prénom, nom et email sont obligatoires');
       return;
     }
     setEnvoi(true);
     try {
-      const donnees = { nom, ville, adresse: adresse || undefined, telephone: telephone || undefined };
       if (siteEnEdition) {
-        await updateSite(siteEnEdition, donnees);
+        await updateSite(siteEnEdition, { nom, ville, quartier: quartier || undefined, telephone, email });
       } else {
-        await creerSite(donnees);
+        await creerSite({
+          nom, ville, quartier: quartier || undefined, telephone, email,
+          directeur_prenom: directeurPrenom, directeur_nom: directeurNom, directeur_email: directeurEmail,
+        });
       }
       resetFormulaire();
       charger();
@@ -144,10 +160,25 @@ export default function EcoleSitesScreen() {
                 <TextInput style={styles.input} placeholder="ex : Campus Bastos" placeholderTextColor="#AAAAAA" value={nom} onChangeText={setNom} />
                 <Text style={styles.lbl}>Ville *</Text>
                 <TextInput style={styles.input} placeholder="ex : Yaoundé" placeholderTextColor="#AAAAAA" value={ville} onChangeText={setVille} />
-                <Text style={styles.lbl}>Adresse (optionnel)</Text>
-                <TextInput style={styles.input} placeholder="Quartier, rue..." placeholderTextColor="#AAAAAA" value={adresse} onChangeText={setAdresse} />
-                <Text style={styles.lbl}>Téléphone (optionnel)</Text>
+                <Text style={styles.lbl}>Quartier (optionnel)</Text>
+                <TextInput style={styles.input} placeholder="ex : Bastos" placeholderTextColor="#AAAAAA" value={quartier} onChangeText={setQuartier} />
+                <Text style={styles.lbl}>Téléphone *</Text>
                 <TextInput style={styles.input} placeholder="6XXXXXXXX" placeholderTextColor="#AAAAAA" value={telephone} onChangeText={setTelephone} keyboardType="phone-pad" />
+                <Text style={styles.lbl}>Email du site *</Text>
+                <TextInput style={styles.input} placeholder="site@ecole.cm" placeholderTextColor="#AAAAAA" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+
+                {!siteEnEdition && (
+                  <>
+                    <Text style={[styles.lbl, { marginTop: 16 }]}>DIRECTEUR DU SITE (nouveau compte créé)</Text>
+                    <Text style={styles.lbl}>Prénom *</Text>
+                    <TextInput style={styles.input} placeholder="ex : Paul" placeholderTextColor="#AAAAAA" value={directeurPrenom} onChangeText={setDirecteurPrenom} />
+                    <Text style={styles.lbl}>Nom *</Text>
+                    <TextInput style={styles.input} placeholder="ex : ATEBA" placeholderTextColor="#AAAAAA" value={directeurNom} onChangeText={setDirecteurNom} />
+                    <Text style={styles.lbl}>Email du directeur *</Text>
+                    <TextInput style={styles.input} placeholder="directeur@ecole.cm" placeholderTextColor="#AAAAAA" value={directeurEmail} onChangeText={setDirecteurEmail} keyboardType="email-address" autoCapitalize="none" />
+                  </>
+                )}
+
                 <View style={styles.formBtns}>
                   <TouchableOpacity style={styles.btnAnnuler} onPress={resetFormulaire}>
                     <Text style={styles.btnAnnulerTxt}>Annuler</Text>
@@ -171,7 +202,7 @@ export default function EcoleSitesScreen() {
                     <Text style={styles.nom}>{s.nom}</Text>
                     <View style={styles.villeRow}>
                       <MapPinned size={11} color="#888888" />
-                      <Text style={styles.ville}>{s.ville}{s.adresse ? ` · ${s.adresse}` : ''}</Text>
+                      <Text style={styles.ville}>{s.ville}{s.quartier ? ` · ${s.quartier}` : ''}</Text>
                     </View>
                   </View>
                   <TouchableOpacity onPress={() => ouvrirEdition(s)} style={{ marginRight: 4 }}>

@@ -37,6 +37,8 @@ export default function EcoleRemboursementsScreen() {
   const [motif, setMotif] = useState('');
   const [envoi, setEnvoi] = useState(false);
   const [traitementId, setTraitementId] = useState<number | null>(null);
+  const [refusOuvertId, setRefusOuvertId] = useState<number | null>(null);
+  const [motifRefus, setMotifRefus] = useState('');
 
   const peutApprouver = user?.role === 'directeur' || user?.role === 'comptable';
 
@@ -104,25 +106,22 @@ export default function EcoleRemboursementsScreen() {
     }
   };
 
-  const handleRefuser = (r: Remboursement) => {
-    Alert.alert('Refuser ce remboursement ?', '', [
-      { text: 'Annuler', style: 'cancel' },
-      {
-        text: 'Refuser',
-        style: 'destructive',
-        onPress: async () => {
-          setTraitementId(r.id);
-          try {
-            await refuserRemboursement(r.id);
-            charger();
-          } catch (error: any) {
-            Alert.alert('Erreur', error.response?.data?.message || 'Refus impossible');
-          } finally {
-            setTraitementId(null);
-          }
-        },
-      },
-    ]);
+  const handleConfirmerRefus = async (r: Remboursement) => {
+    if (!motifRefus.trim()) {
+      Alert.alert('Erreur', 'Le motif du refus est obligatoire');
+      return;
+    }
+    setTraitementId(r.id);
+    try {
+      await refuserRemboursement(r.id, motifRefus.trim());
+      setRefusOuvertId(null);
+      setMotifRefus('');
+      charger();
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || 'Refus impossible');
+    } finally {
+      setTraitementId(null);
+    }
   };
 
   if (loading) {
@@ -198,15 +197,35 @@ export default function EcoleRemboursementsScreen() {
                 </View>
                 <Text style={styles.cardMotif}>{r.motif}</Text>
                 <Text style={styles.cardMontant}>{(r.montant ?? r.paiement?.montant ?? 0).toLocaleString('fr-FR')} FCFA</Text>
-                {enAttente && peutApprouver && (
+                {enAttente && peutApprouver && refusOuvertId !== r.id && (
                   <View style={styles.actionsRow}>
                     <TouchableOpacity style={styles.btnApprouver} onPress={() => handleApprouver(r)} disabled={traitementId === r.id}>
                       {traitementId === r.id ? <ActivityIndicator size="small" color="#FFFFFF" /> : <><CircleCheck size={14} color="#FFFFFF" /><Text style={styles.btnApprouverTxt}>Approuver</Text></>}
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.btnRefuser} onPress={() => handleRefuser(r)} disabled={traitementId === r.id}>
+                    <TouchableOpacity style={styles.btnRefuser} onPress={() => { setRefusOuvertId(r.id); setMotifRefus(''); }} disabled={traitementId === r.id}>
                       <CircleX size={14} color="#D94040" />
                       <Text style={styles.btnRefuserTxt}>Refuser</Text>
                     </TouchableOpacity>
+                  </View>
+                )}
+                {enAttente && peutApprouver && refusOuvertId === r.id && (
+                  <View style={styles.refusForm}>
+                    <TextInput
+                      style={styles.refusInput}
+                      placeholder="Motif du refus (obligatoire)"
+                      placeholderTextColor="#AAAAAA"
+                      value={motifRefus}
+                      onChangeText={setMotifRefus}
+                      multiline
+                    />
+                    <View style={styles.actionsRow}>
+                      <TouchableOpacity style={styles.btnAnnulerRefus} onPress={() => setRefusOuvertId(null)}>
+                        <Text style={styles.btnAnnulerRefusTxt}>Annuler</Text>
+                      </TouchableOpacity>
+                      <TouchableOpacity style={styles.btnRefuser} onPress={() => handleConfirmerRefus(r)} disabled={traitementId === r.id}>
+                        {traitementId === r.id ? <ActivityIndicator size="small" color="#D94040" /> : <><CircleX size={14} color="#D94040" /><Text style={styles.btnRefuserTxt}>Confirmer le refus</Text></>}
+                      </TouchableOpacity>
+                    </View>
                   </View>
                 )}
                 {!!r.motif_refus && (
@@ -244,6 +263,10 @@ const styles = StyleSheet.create({
   btnApprouverTxt: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
   btnRefuser: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: '#FBEAEA', borderRadius: 8, paddingVertical: 9 },
   btnRefuserTxt: { color: '#D94040', fontSize: 11, fontWeight: '700' },
+  refusForm: { marginTop: 10, gap: 8 },
+  refusInput: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 12, color: '#1A1A2E', minHeight: 50, textAlignVertical: 'top' },
+  btnAnnulerRefus: { flex: 1, paddingVertical: 9, borderRadius: 8, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
+  btnAnnulerRefusTxt: { color: '#666666', fontSize: 11, fontWeight: '700' },
   refusBox: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FBEAEA', borderRadius: 8, padding: 8, marginTop: 4 },
   refusTxt: { fontSize: 11, color: '#9B2C2C', flex: 1 },
   formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
