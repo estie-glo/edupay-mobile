@@ -17,7 +17,7 @@ import {
   Wallet,
 } from 'lucide-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ETABLISSEMENTS } from '../../../data/etablissements';
+import { ETABLISSEMENTS, TYPES_ETABLISSEMENT } from '../../../data/etablissements';
 import { getStatsPubliques } from '../../../services/api';
 
 const COULEURS_AVATAR = ['#0B2545', '#0D9E75', '#1a472a', '#E8A020'];
@@ -86,13 +86,17 @@ type Stats = { nb_etablissements?: number; nb_apprenants?: number; nb_paiements?
 export default function AccueilInviteScreen() {
   const router = useRouter();
   const [recherche, setRecherche] = useState('');
+  const [typeChoisi, setTypeChoisi] = useState<string | null>(null);
   const [stats, setStats] = useState<Stats | null>(null);
 
   const ecoles = useMemo(() => {
     const q = recherche.trim().toLowerCase();
-    if (!q) return ETABLISSEMENTS;
-    return ETABLISSEMENTS.filter((e) => e.nom.toLowerCase().includes(q) || e.ville.toLowerCase().includes(q));
-  }, [recherche]);
+    return ETABLISSEMENTS.filter((e) => {
+      const matchQ = !q || e.nom.toLowerCase().includes(q) || e.ville.toLowerCase().includes(q);
+      const matchType = !typeChoisi || e.type === typeChoisi;
+      return matchQ && matchType;
+    });
+  }, [recherche, typeChoisi]);
 
   useEffect(() => {
     getStatsPubliques()
@@ -219,6 +223,16 @@ export default function AccueilInviteScreen() {
                 value={recherche}
                 onChangeText={setRecherche}
               />
+            </View>
+            <View style={styles.filtresRow}>
+              <TouchableOpacity style={[styles.filtreChip, !typeChoisi && styles.filtreChipActive]} onPress={() => setTypeChoisi(null)}>
+                <Text style={[styles.filtreChipTxt, !typeChoisi && styles.filtreChipTxtActive]}>Tous types</Text>
+              </TouchableOpacity>
+              {TYPES_ETABLISSEMENT.map((t) => (
+                <TouchableOpacity key={t} style={[styles.filtreChip, typeChoisi === t && styles.filtreChipActive]} onPress={() => setTypeChoisi(t)}>
+                  <Text style={[styles.filtreChipTxt, typeChoisi === t && styles.filtreChipTxtActive]}>{t}</Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
 
@@ -383,7 +397,12 @@ const styles = StyleSheet.create({
   secDesc: { fontSize: 13, color: '#555555', marginBottom: 16, lineHeight: 18 },
 
   searchRow: { marginBottom: 16 },
-  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, gap: 8 },
+  searchBox: { flexDirection: 'row', alignItems: 'center', backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, gap: 8, marginBottom: 10 },
+  filtresRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
+  filtreChip: { backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6 },
+  filtreChipActive: { backgroundColor: '#0D9E75', borderColor: '#0D9E75' },
+  filtreChipTxt: { fontSize: 11, fontWeight: '600', color: '#1A1A2E' },
+  filtreChipTxtActive: { color: '#FFFFFF' },
   searchInput: { flex: 1, fontSize: 13, color: '#1A1A2E' },
   vide: { fontSize: 12, color: '#888888', textAlign: 'center', marginTop: 12 },
 

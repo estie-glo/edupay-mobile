@@ -9,7 +9,7 @@ const ONGLETS: { cle: Onglet; label: string; Icone: typeof Home; route: string }
   { cle: 'paiement', label: 'Paiement', Icone: CreditCard, route: '/screens/parent/PaiementScreen' },
   { cle: 'historique', label: 'Historique', Icone: ScrollText, route: '/screens/parent/HistoriqueScreen' },
   { cle: 'reclamations', label: 'Réclamations', Icone: MessageSquareWarning, route: '/screens/parent/ReclamationsScreen' },
-  { cle: 'profil', label: 'Profil', Icone: User, route: '/screens/parent/DashboardScreen' },
+  { cle: 'profil', label: 'Profil', Icone: User, route: '/screens/parent/ProfilScreen' },
 ];
 
 export default function BottomNavParent({ actif }: { actif: Onglet }) {

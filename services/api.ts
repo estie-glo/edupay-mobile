@@ -146,8 +146,21 @@ export const getProfil = async () => {
   return response.data;
 };
 
-export const updateProfil = async (data: any) => {
+export const updateProfil = async (data: {
+  prenom?: string; nom?: string; ville?: string; quartier?: string; email?: string;
+  notif_sms?: boolean; notif_email?: boolean; notif_rappel_echeance?: boolean;
+}) => {
   const response = await api.put('/profil', data);
+  return response.data;
+};
+
+export const updateProfilNotifications = async (data: { notif_sms?: boolean; notif_email?: boolean; notif_rappel_echeance?: boolean }) => {
+  const response = await api.put('/profil/notifications', data);
+  return response.data;
+};
+
+export const updateProfilPassword = async (data: { current_password: string; password: string; password_confirmation: string }) => {
+  const response = await api.put('/profil/password', data);
   return response.data;
 };
 
@@ -435,6 +448,27 @@ export const approuverRemboursement = async (id: number) => {
 
 export const refuserRemboursement = async (id: number, motif?: string) => {
   const response = await api.post(`/etablissement/remboursements/${id}/refuser`, { motif });
+  return response.data;
+};
+
+// ── ECOLE : PROFIL COMPTE, ABONNEMENT ────────────────────────────
+export const getProfilEcole = async () => {
+  const response = await api.get('/etablissement/profil');
+  return response.data;
+};
+
+export const updateProfilEcole = async (data: { prenom: string; nom: string; telephone: string; email?: string; ville?: string }) => {
+  const response = await api.put('/etablissement/profil', data);
+  return response.data;
+};
+
+export const updateProfilPasswordEcole = async (data: { current_password: string; password: string; password_confirmation: string }) => {
+  const response = await api.put('/etablissement/profil/password', data);
+  return response.data;
+};
+
+export const getAbonnement = async () => {
+  const response = await api.get('/etablissement/abonnement');
   return response.data;
 };
 

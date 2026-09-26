@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AlertCircle, Building2, Calendar, FileBarChart2, Layers3, LogOut, MapPinned, Megaphone, RotateCcw, UserCog, Users } from 'lucide-react-native';
+import { AlertCircle, Building2, Calendar, FileBarChart2, Layers3, LogOut, MapPinned, Megaphone, RotateCcw, UserCog, UserRound, Users } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getDashboardEcole, getImpayes, relancerImpayeApprenant, relancerImpayesGroupe } from '../../../services/api';
 
@@ -128,11 +128,18 @@ export default function BackOfficeScreen() {
             <Building2 size={18} color="#FFFFFF" />
             <Text style={styles.titre}>{dashboard.nom_etablissement || 'Back-office'}</Text>
           </View>
-          <TouchableOpacity onPress={signOut}>
-            <LogOut size={20} color="#FFFFFF" />
-          </TouchableOpacity>
+          <View style={styles.headerActions}>
+            <TouchableOpacity onPress={() => router.push('/screens/ecole/EcoleProfilScreen')}>
+              <UserRound size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={signOut}>
+              <LogOut size={20} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
         </View>
-        <Text style={styles.sousTitre}>{user?.prenom} {user?.nom}</Text>
+        <TouchableOpacity onPress={() => router.push('/screens/ecole/EcoleProfilScreen')}>
+          <Text style={styles.sousTitre}>{user?.prenom} {user?.nom}</Text>
+        </TouchableOpacity>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -267,6 +274,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F6F7' },
   header: { backgroundColor: '#0B2545', paddingTop: 52, paddingBottom: 20, paddingHorizontal: 20 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
+  headerActions: { flexDirection: 'row', alignItems: 'center', gap: 14 },
   headerTitreRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
   titre: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', flexShrink: 1 },
   sousTitre: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
