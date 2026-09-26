@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { AlertCircle, Building2, Calendar, CreditCard, FileBarChart2, Layers3, LogOut, MapPinned, Megaphone, RotateCcw, Settings, UserCog, UserRound, Users } from 'lucide-react-native';
+import { AlertCircle, Building2, Calendar, CreditCard, FileBarChart2, HelpCircle, Layers3, LogOut, MapPinned, Megaphone, RotateCcw, Settings, UserCog, UserRound, Users } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getDashboardEcole, getImpayes, relancerImpayeApprenant, relancerImpayesGroupe } from '../../../services/api';
 
@@ -213,6 +213,10 @@ export default function BackOfficeScreen() {
           <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleParametresScreen')}>
             <Settings size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Paramètres</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleAideScreen')}>
+            <HelpCircle size={18} color="#0B2545" />
+            <Text style={styles.quickActionTxt}>Aide</Text>
           </TouchableOpacity>
         </View>
 
