@@ -119,8 +119,8 @@ export default function EnfantsScreen() {
       Alert.alert('Erreur', 'Veuillez renseigner le matricule');
       return;
     }
-    if (!modeConnuMatricule && !nomRecherche && !prenomRecherche) {
-      Alert.alert('Erreur', 'Veuillez renseigner au moins le nom ou le prénom');
+    if (!modeConnuMatricule && !nomRecherche) {
+      Alert.alert('Erreur', "Veuillez renseigner le nom de l'enfant (obligatoire pour la recherche)");
       return;
     }
     setEnvoi(true);
@@ -273,10 +273,10 @@ export default function EnfantsScreen() {
                   </>
                 ) : (
                   <>
-                    <Text style={styles.lbl}>Prénom</Text>
-                    <TextInput style={styles.input} placeholder="ex : Brice" placeholderTextColor="#AAAAAA" value={prenomRecherche} onChangeText={setPrenomRecherche} />
-                    <Text style={styles.lbl}>Nom</Text>
+                    <Text style={styles.lbl}>Nom *</Text>
                     <TextInput style={styles.input} placeholder="ex : FONO" placeholderTextColor="#AAAAAA" value={nomRecherche} onChangeText={setNomRecherche} />
+                    <Text style={styles.lbl}>Prénom (optionnel, affine la recherche)</Text>
+                    <TextInput style={styles.input} placeholder="ex : Brice" placeholderTextColor="#AAAAAA" value={prenomRecherche} onChangeText={setPrenomRecherche} />
                     <Text style={styles.lbl}>Classe (optionnel, affine la recherche)</Text>
                     <TextInput style={styles.input} placeholder="ex : 3eme A" placeholderTextColor="#AAAAAA" value={classeRecherche} onChangeText={setClasseRecherche} />
                   </>
