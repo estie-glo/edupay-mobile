@@ -1,7 +1,32 @@
 # Audit de parité web ↔ mobile
 
 Dernier audit complet : **27/09/2026**, contre le backend
-`stevetelecom/edupay-cameroun` (commit `7808b55`).
+`stevetelecom/edupay-cameroun` (commit `f841c50`).
+
+## Test en conditions réelles (27/09/2026)
+
+Le flux de paiement corrigé (voir plus bas) a été testé en direct contre la
+production (`https://edupay.mekontso.gsi2026.com`), avec le compte de test
+`690001122` / `TestClaude@2026` (id=41) :
+
+- Rattachement d'un apprenant réel (mode matricule et mode recherche) : OK.
+- `POST /paiements/initier` avec `mode_paiement` + `type_paiement` (les
+  champs corrigés) : **201, statut `en_attente`**, message de confirmation
+  USSD — la requête n'échoue plus en 422.
+- Montant client falsifié : rejeté ou ignoré selon le cas, le serveur
+  calcule toujours le montant réel côté serveur (reste_du) — le paiement est
+  transmis à l'agrégateur avec le bon montant, jamais celui envoyé par le
+  client.
+- `POST /paiements/{id}/verifier` (polling) : fonctionne, statut `echoue`
+  correctement affiché sans crash (numéro de test sans solde réel côté
+  agrégateur — comportement attendu, pas un bug mobile).
+
+À cette occasion, un nouvel écart introduit par un correctif backend plus
+récent que le dernier audit (sécurité "audit T", cloisonnement du
+rattachement par établissement) a été trouvé et corrigé : le rattachement
+en mode recherche exige désormais `nom` obligatoirement (avant, `prénom`
+seul suffisait). Confirme, une fois de plus, qu'il faut réauditer après
+chaque vague de correctifs backend plutôt que de supposer une stabilité.
 
 ## Méthode
 
