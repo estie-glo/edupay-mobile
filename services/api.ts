@@ -297,8 +297,13 @@ export const getDashboardEcole = async () => {
   return response.data;
 };
 
-export const getApprenantsEcole = async (params?: string) => {
-  const response = await api.get(`/etablissement/apprenants${params || ''}`);
+export const getApprenantsEcole = async (filtres?: { q?: string; classe?: string; statut_paiement?: string; page?: number }) => {
+  const params = new URLSearchParams();
+  if (filtres?.q) params.set('q', filtres.q);
+  if (filtres?.classe) params.set('classe', filtres.classe);
+  if (filtres?.statut_paiement) params.set('statut_paiement', filtres.statut_paiement);
+  params.set('page', String(filtres?.page || 1));
+  const response = await api.get(`/etablissement/apprenants?${params.toString()}`);
   return response.data;
 };
 

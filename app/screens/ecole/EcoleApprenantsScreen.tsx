@@ -2,36 +2,54 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, CheckSquare, FileSpreadsheet, Plus, Square, Trash2, UserCheck, UserX, X } from 'lucide-react-native';
+import { ArrowLeft, CheckSquare, FileSpreadsheet, Plus, Search, Square, Trash2, UserCheck, UserX, X } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { bulkDestroyApprenantsEcole, creerApprenantEcole, getApprenantsEcole, getUrlModeleImportCsv, importerApprenantsCsv, rejeterApprenant, removeApprenantEcole, validerApprenant } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 
+// Champs alignés sur ApprenantResource / Etablissement/ApprenantController::index
+// (vérifiés le 26/09/2026) : pas de champ "statut" de rattachement — l'attente de
+// validation se lit sur valide_par_etablissement (false = en attente de validation
+// par l'établissement, uniquement pour les apprenants source=payeur).
 type Apprenant = {
   id: number;
   prenom: string;
   nom: string;
   matricule?: string;
   classe?: string;
-  statut?: string; // valide | en_attente | rejete
+  statut_paiement?: string; // a_jour | partiel | impaye
+  valide_par_etablissement?: boolean;
 };
 
-const STATUT_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
-  valide: { bg: '#E0F5EE', fg: '#085041', label: 'Validé' },
-  en_attente: { bg: '#FEF3DC', fg: '#8B5E10', label: 'En attente' },
-  rejete: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Rejeté' },
+const STATUT_PAIEMENT_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
+  a_jour: { bg: '#E0F5EE', fg: '#085041', label: 'À jour' },
+  partiel: { bg: '#FEF3DC', fg: '#8B5E10', label: 'Partiel' },
+  impaye: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Impayé' },
 };
 
-function styleStatut(statut?: string) {
-  return STATUT_STYLE[(statut || 'valide').toLowerCase()] || { bg: '#F0F2F5', fg: '#666666', label: statut || '—' };
+function styleStatutPaiement(statut?: string) {
+  return STATUT_PAIEMENT_STYLE[(statut || 'a_jour').toLowerCase()] || { bg: '#F0F2F5', fg: '#666666', label: statut || '—' };
 }
+
+const STATUTS_PAIEMENT_FILTRE = [
+  { valeur: '', label: 'Tous' },
+  { valeur: 'a_jour', label: 'À jour' },
+  { valeur: 'partiel', label: 'Partiel' },
+  { valeur: 'impaye', label: 'Impayé' },
+];
 
 export default function EcoleApprenantsScreen() {
   const router = useRouter();
   const { token, isLoading: authLoading } = useAuth();
   const [apprenants, setApprenants] = useState<Apprenant[]>([]);
+  const [classes, setClasses] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingPlus, setLoadingPlus] = useState(false);
+  const [page, setPage] = useState(1);
+  const [dernierePage, setDernierePage] = useState(1);
   const [recherche, setRecherche] = useState('');
+  const [classeFiltre, setClasseFiltre] = useState('');
+  const [statutFiltre, setStatutFiltre] = useState('');
   const [formOuvert, setFormOuvert] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [enTraitement, setEnTraitement] = useState<number | null>(null);
@@ -51,20 +69,35 @@ export default function EcoleApprenantsScreen() {
       router.replace('/screens/ecole/LoginEcoleScreen');
       return;
     }
-    if (token) charger();
+    if (token) charger(1);
   }, [token, authLoading]);
 
-  const charger = async () => {
-    setLoading(true);
+  const charger = async (pageAcharger: number, q = recherche, cls = classeFiltre, statut = statutFiltre) => {
+    if (pageAcharger === 1) setLoading(true);
+    else setLoadingPlus(true);
     try {
-      const response = await getApprenantsEcole();
-      const data = response.data ?? response;
-      setApprenants(Array.isArray(data) ? data : data.apprenants ?? []);
+      const response = await getApprenantsEcole({ q: q || undefined, classe: cls || undefined, statut_paiement: statut || undefined, page: pageAcharger });
+      const items: Apprenant[] = response.data ?? [];
+      setApprenants((prev) => (pageAcharger === 1 ? items : [...prev, ...items]));
+      setDernierePage(response.meta?.last_page ?? pageAcharger);
+      setPage(pageAcharger);
+      if (response.classes) setClasses(response.classes.filter(Boolean));
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Impossible de charger les apprenants');
     } finally {
       setLoading(false);
+      setLoadingPlus(false);
     }
+  };
+
+  const lancerRecherche = () => charger(1, recherche, classeFiltre, statutFiltre);
+  const changerClasse = (v: string) => {
+    setClasseFiltre(v);
+    charger(1, recherche, v, statutFiltre);
+  };
+  const changerStatut = (v: string) => {
+    setStatutFiltre(v);
+    charger(1, recherche, classeFiltre, v);
   };
 
   const resetFormulaire = () => {
@@ -94,7 +127,7 @@ export default function EcoleApprenantsScreen() {
     try {
       const reponse = await importerApprenantsCsv({ uri: fichier.uri, name: fichier.name, mimeType: fichier.mimeType });
       Alert.alert('Import terminé', reponse.message || `${reponse.importes ?? 0} apprenant(s) importé(s).`);
-      charger();
+      charger(1);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || "Échec de l'import du fichier");
     } finally {
@@ -111,7 +144,7 @@ export default function EcoleApprenantsScreen() {
     try {
       await creerApprenantEcole({ prenom, nom, matricule, classe });
       resetFormulaire();
-      charger();
+      charger(1);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || "Impossible d'ajouter cet apprenant");
     } finally {
@@ -123,7 +156,7 @@ export default function EcoleApprenantsScreen() {
     setEnTraitement(a.id);
     try {
       await validerApprenant(a.id);
-      charger();
+      charger(1);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Validation impossible');
     } finally {
@@ -141,7 +174,7 @@ export default function EcoleApprenantsScreen() {
           setEnTraitement(a.id);
           try {
             await rejeterApprenant(a.id);
-            charger();
+            charger(1);
           } catch (error: any) {
             Alert.alert('Erreur', error.response?.data?.message || 'Rejet impossible');
           } finally {
@@ -161,7 +194,7 @@ export default function EcoleApprenantsScreen() {
         onPress: async () => {
           try {
             await removeApprenantEcole(a.id);
-            charger();
+            charger(1);
           } catch (error: any) {
             Alert.alert('Erreur', error.response?.data?.message || 'Suppression impossible');
           }
@@ -194,7 +227,7 @@ export default function EcoleApprenantsScreen() {
             try {
               await bulkDestroyApprenantsEcole(selection);
               annulerSelection();
-              charger();
+              charger(1);
             } catch (error: any) {
               Alert.alert('Erreur', error.response?.data?.message || 'Suppression impossible');
             } finally {
@@ -205,12 +238,6 @@ export default function EcoleApprenantsScreen() {
       ]
     );
   };
-
-  const filtres = apprenants.filter((a) => {
-    const q = recherche.trim().toLowerCase();
-    if (!q) return true;
-    return `${a.prenom} ${a.nom} ${a.matricule || ''}`.toLowerCase().includes(q);
-  });
 
   if (loading) {
     return <ActivityIndicator size="large" color="#E8A020" style={{ flex: 1 }} />;
@@ -239,13 +266,37 @@ export default function EcoleApprenantsScreen() {
         )}
       </View>
       <View style={styles.searchZone}>
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Rechercher un nom, un matricule..."
-          placeholderTextColor="#AAAAAA"
-          value={recherche}
-          onChangeText={setRecherche}
-        />
+        <View style={styles.rechercheBox}>
+          <Search size={14} color="#AAAAAA" />
+          <TextInput
+            style={styles.rechercheInput}
+            placeholder="Rechercher un nom, un matricule..."
+            placeholderTextColor="#AAAAAA"
+            value={recherche}
+            onChangeText={setRecherche}
+            onSubmitEditing={lancerRecherche}
+            returnKeyType="search"
+          />
+        </View>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chipsRow}>
+          {STATUTS_PAIEMENT_FILTRE.map((s) => (
+            <TouchableOpacity key={s.valeur} style={[styles.chip, statutFiltre === s.valeur && styles.chipActive]} onPress={() => changerStatut(s.valeur)}>
+              <Text style={[styles.chipTxt, statutFiltre === s.valeur && styles.chipTxtActive]}>{s.label}</Text>
+            </TouchableOpacity>
+          ))}
+          {classes.length > 0 && (
+            <>
+              <TouchableOpacity style={[styles.chip, classeFiltre === '' && styles.chipActive]} onPress={() => changerClasse('')}>
+                <Text style={[styles.chipTxt, classeFiltre === '' && styles.chipTxtActive]}>Toutes classes</Text>
+              </TouchableOpacity>
+              {classes.map((c) => (
+                <TouchableOpacity key={c} style={[styles.chip, classeFiltre === c && styles.chipActive]} onPress={() => changerClasse(c)}>
+                  <Text style={[styles.chipTxt, classeFiltre === c && styles.chipTxtActive]}>{c}</Text>
+                </TouchableOpacity>
+              ))}
+            </>
+          )}
+        </ScrollView>
         <View style={styles.importRow}>
           <TouchableOpacity style={styles.importBtn} onPress={handleImporterCsv} disabled={importEnCours}>
             {importEnCours ? <ActivityIndicator size="small" color="#FFFFFF" /> : <FileSpreadsheet size={13} color="#FFFFFF" />}
@@ -280,12 +331,12 @@ export default function EcoleApprenantsScreen() {
           </View>
         )}
 
-        {filtres.length === 0 ? (
+        {apprenants.length === 0 ? (
           <Text style={styles.vide}>Aucun apprenant trouvé.</Text>
         ) : (
-          filtres.map((a) => {
-            const s = styleStatut(a.statut);
-            const enAttente = (a.statut || '').toLowerCase() === 'en_attente';
+          apprenants.map((a) => {
+            const s = styleStatutPaiement(a.statut_paiement);
+            const enAttente = a.valide_par_etablissement === false;
             const selectionne = selection.includes(a.id);
             return (
               <TouchableOpacity
@@ -333,6 +384,12 @@ export default function EcoleApprenantsScreen() {
             );
           })
         )}
+
+        {page < dernierePage && (
+          <TouchableOpacity style={styles.btnPlus} onPress={() => charger(page + 1)} disabled={loadingPlus}>
+            {loadingPlus ? <ActivityIndicator color="#E8A020" /> : <Text style={styles.btnPlusTxt}>Charger plus</Text>}
+          </TouchableOpacity>
+        )}
       </ScrollView>
     </View>
   );
@@ -346,6 +403,15 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: '#E8A020', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   searchZone: { backgroundColor: '#0B2545', paddingHorizontal: 16, paddingBottom: 16 },
   searchInput: { backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10, fontSize: 13, color: '#1A1A2E', marginBottom: 10 },
+  rechercheBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFFFFF', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10, marginBottom: 10 },
+  rechercheInput: { flex: 1, fontSize: 13, color: '#1A1A2E' },
+  chipsRow: { flexDirection: 'row', marginBottom: 10 },
+  chip: { backgroundColor: 'rgba(255,255,255,0.12)', borderRadius: 20, paddingHorizontal: 12, paddingVertical: 6, marginRight: 6 },
+  chipActive: { backgroundColor: '#E8A020' },
+  chipTxt: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.8)' },
+  chipTxtActive: { color: '#FFFFFF' },
+  btnPlus: { alignItems: 'center', paddingVertical: 14, marginTop: 4 },
+  btnPlusTxt: { color: '#E8A020', fontSize: 13, fontWeight: '700' },
   importRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   importBtn: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 7 },
   importBtnTxt: { fontSize: 11, fontWeight: '700', color: '#FFFFFF' },
