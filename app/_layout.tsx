@@ -33,6 +33,7 @@ export default function RootLayout() {
       <Stack.Screen name="screens/parent/ReclamationsScreen" />
       <Stack.Screen name="screens/parent/ProfilScreen" />
       <Stack.Screen name="screens/parent/NotificationsScreen" />
+      <Stack.Screen name="screens/parent/RecusScreen" />
       <Stack.Screen name="screens/ecole/LoginEcoleScreen" />
       <Stack.Screen name="screens/ecole/RegisterEcoleScreen" />
       <Stack.Screen name="screens/ecole/BackOfficeScreen" />

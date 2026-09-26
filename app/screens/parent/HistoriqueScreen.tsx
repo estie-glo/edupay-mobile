@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, ArrowLeftRight, CreditCard, Download, SlidersHorizontal, XCircle } from 'lucide-react-native';
+import { ArrowLeft, ArrowLeftRight, CreditCard, Download, Receipt, XCircle } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { annulerPaiement, getHistorique } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
@@ -109,8 +109,8 @@ export default function HistoriqueScreen() {
           <ArrowLeft size={18} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.titre}>Historique</Text>
-        <TouchableOpacity>
-          <SlidersHorizontal size={20} color="#FFFFFF" />
+        <TouchableOpacity onPress={() => router.push('/screens/parent/RecusScreen')}>
+          <Receipt size={20} color="#FFFFFF" />
         </TouchableOpacity>
       </View>
 
