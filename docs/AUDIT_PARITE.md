@@ -1,7 +1,8 @@
 # Audit de parité web ↔ mobile
 
 Dernier audit complet : **27/09/2026**, contre le backend
-`stevetelecom/edupay-cameroun` (commit `f841c50`).
+`stevetelecom/edupay-cameroun` (commit `f841c50`, tous les commits
+"audit" D à U vérifiés individuellement).
 
 ## Test en conditions réelles (27/09/2026)
 
@@ -27,6 +28,27 @@ rattachement par établissement) a été trouvé et corrigé : le rattachement
 en mode recherche exige désormais `nom` obligatoirement (avant, `prénom`
 seul suffisait). Confirme, une fois de plus, qu'il faut réauditer après
 chaque vague de correctifs backend plutôt que de supposer une stabilité.
+
+**Annulation de paiement** (`POST /paiements/{id}/annuler`) testée le
+27/09/2026 avec un paiement `en_attente` réel (créé puis annulé
+immédiatement, avant que l'agrégateur ne le résolve lui-même — les
+paiements de test se résolvent en `echoue` en quelques secondes) :
+succès (200, statut `annulé`), 2e tentative correctement rejetée (422,
+idempotent), l'historique reflète bien le nouveau statut.
+
+**Audit complet des 8 commits "audit" du backend** (D, E-F, G-H, I-J-K,
+L-M-N-O, Q-R, T, U — pas seulement les 3 premiers) : 2 bugs
+supplémentaires trouvés, préexistants et indépendants de ces correctifs :
+
+| Écran | Bug | Impact |
+|-------|-----|--------|
+| `EcoleSitesScreen` | Création/édition d'un site sans `email` ni les 3 champs `directeur_*` (obligatoires — créer un site crée aussi un compte directeur), `adresse` au lieu de `quartier` | Toute création de site échouait en 422 |
+| `EcoleRemboursementsScreen` | "Refuser" un remboursement n'envoyait jamais de motif, obligatoire côté API (audit N) | Tout refus échouait en 422 (corrigé par un formulaire inline — `Alert.alert` ne permet pas de saisie sur Android) |
+
+Corrections mineures liées à l'audit U (traçabilité + anti-spam des
+relances) : ajout de `force` pour retenter après un 429 "déjà relancé
+dans les 24h", et correction du texte "SMS" en "email" (les relances
+partent bien par email).
 
 ## Méthode
 
