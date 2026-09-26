@@ -50,6 +50,31 @@ relances) : ajout de `force` pour retenter après un 429 "déjà relancé
 dans les 24h", et correction du texte "SMS" en "email" (les relances
 partent bien par email).
 
+**Relances et remboursements testés en réel (27/09/2026)**, avec le
+compte directeur de seed (`677000001` / `password`, Lycée Bilingue de
+Melen — la seule paire d'identifiants côté établissement disponible ;
+aucun compte de test directeur/comptable n'existait avant, découvert
+dans `database/seeders/DatabaseSeeder.php` du backend) :
+
+- Relance individuelle et groupée : `422` tant que le parent n'a pas
+  d'email (comportement correct, pas un bug) ; `200` une fois un email
+  renseigné sur le compte payeur de test, `derniere_relance` correctement
+  renseignée ensuite (`{date, canal: "email"}`, confirmant l'audit U).
+- Anti-spam 24h : `429` confirmé sur une 2e relance immédiate, `force:
+  true` confirmé pour l'outrepasser — les deux chemins fonctionnent tels
+  qu'implémentés côté mobile.
+- Demande de remboursement : bug réel trouvé et corrigé (`montant`
+  obligatoire jamais envoyé, 422 systématique) — voir tableau plus haut.
+  Une fois corrigé, la requête passe la validation ; seule la règle
+  métier "paiement validé requis" bloque ensuite.
+- **Limite du test** : impossible de tester le cycle complet approuver/
+  refuser un remboursement — aucun paiement de test n'atteint jamais le
+  statut `valide` dans le bac à sable de l'agrégateur (les numéros
+  fictifs résolvent systématiquement en `echoue`). Le code d'approbation/
+  refus (motif obligatoire, formulaire inline) a été vérifié par lecture
+  du contrôleur réel, mais pas exécuté de bout en bout avec un vrai
+  paiement validé.
+
 ## Méthode
 
 Le backend évolue vite (plusieurs commits par jour). Ne jamais se fier à une
