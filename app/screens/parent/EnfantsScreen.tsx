@@ -304,7 +304,7 @@ export default function EnfantsScreen() {
               <TouchableOpacity
                 key={a.id}
                 style={styles.card}
-                onPress={() => router.push({ pathname: '/screens/parent/EcheancierScreen', params: { apprenantId: String(a.id) } })}
+                onPress={() => router.push({ pathname: '/screens/parent/EcheancierScreen', params: { apprenantId: String(a.id), apprenantNom: `${a.prenom} ${a.nom}` } })}
               >
                 <View style={styles.cardTop}>
                   <View style={{ flex: 1 }}>

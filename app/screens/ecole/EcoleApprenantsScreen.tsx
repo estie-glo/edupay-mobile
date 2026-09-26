@@ -8,17 +8,19 @@ import { bulkDestroyApprenantsEcole, creerApprenantEcole, getApprenantsEcole, ge
 import { telechargerEtPartager } from '../../../services/fichiers';
 
 // Champs alignés sur ApprenantResource / Etablissement/ApprenantController::index
-// (vérifiés le 26/09/2026) : pas de champ "statut" de rattachement — l'attente de
-// validation se lit sur valide_par_etablissement (false = en attente de validation
-// par l'établissement, uniquement pour les apprenants source=payeur).
+// (vérifiés le 27/09/2026, après le correctif backend "audit E-F") : `statut`
+// (en_attente | valide | actif — dérivé de Apprenant::statutRattachement(),
+// pas de valeur "rejete" car le rejet supprime l'apprenant) pilote l'affichage
+// Valider/Rejeter ; total_du/total_paye/solde_du sont désormais exposés aussi.
 type Apprenant = {
   id: number;
   prenom: string;
   nom: string;
   matricule?: string;
   classe?: string;
+  statut?: 'en_attente' | 'valide' | 'actif';
   statut_paiement?: string; // a_jour | partiel | impaye
-  valide_par_etablissement?: boolean;
+  solde_du?: number;
 };
 
 const STATUT_PAIEMENT_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
@@ -336,7 +338,7 @@ export default function EcoleApprenantsScreen() {
         ) : (
           apprenants.map((a) => {
             const s = styleStatutPaiement(a.statut_paiement);
-            const enAttente = a.valide_par_etablissement === false;
+            const enAttente = a.statut === 'en_attente';
             const selectionne = selection.includes(a.id);
             return (
               <TouchableOpacity
@@ -355,6 +357,7 @@ export default function EcoleApprenantsScreen() {
                   <View style={{ flex: 1 }}>
                     <Text style={styles.nom}>{a.prenom} {a.nom}</Text>
                     <Text style={styles.sousTitre}>{a.matricule || '—'}{a.classe ? ` · ${a.classe}` : ''}</Text>
+                    {!!a.solde_du && <Text style={styles.soldeDu}>Reste dû : {a.solde_du.toLocaleString('fr-FR')} FCFA</Text>}
                   </View>
                   <View style={[styles.pill, { backgroundColor: s.bg }]}>
                     <Text style={[styles.pillTxt, { color: s.fg }]}>{s.label}</Text>
@@ -423,6 +426,7 @@ const styles = StyleSheet.create({
   selectBtn: { backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   nom: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
   sousTitre: { fontSize: 11, color: '#888888', marginTop: 2 },
+  soldeDu: { fontSize: 11, color: '#D94040', fontWeight: '600', marginTop: 3 },
   pill: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, flexShrink: 0 },
   pillTxt: { fontSize: 10, fontWeight: '700' },
   actionsRow: { flexDirection: 'row', gap: 8 },

@@ -187,7 +187,7 @@ export default function DashboardScreen() {
                     </View>
                     <TouchableOpacity
                       style={[styles.payEnfantBtn, a.a_impayes && { backgroundColor: '#D94040' }]}
-                      onPress={() => router.push({ pathname: '/screens/parent/EcheancierScreen', params: { apprenantId: String(a.id) } })}
+                      onPress={() => router.push({ pathname: '/screens/parent/EcheancierScreen', params: { apprenantId: String(a.id), apprenantNom: `${a.prenom} ${a.nom}` } })}
                     >
                       <Text style={styles.payEnfantBtnTxt}>{a.a_impayes ? 'Payer maintenant →' : 'Voir l\'échéancier →'}</Text>
                     </TouchableOpacity>

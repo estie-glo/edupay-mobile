@@ -206,10 +206,17 @@ export const getHistorique = async (page: number = 1) => {
   return response.data;
 };
 
+// Champs alignés sur InitierPaiementRequest (vérifié le 27/09/2026, suite au
+// correctif backend "audit D") : `mode_paiement` (pas `mode`), `montant` est
+// purement informatif — le serveur recalcule toujours lui-même la somme
+// réellement débitée (App\Support\MontantPaiement) à partir de
+// frais_apprenant_id + type_paiement + echeancier_id, jamais depuis ce champ.
 export const initierPaiement = async (data: {
   frais_apprenant_id: number;
-  montant: number;
-  mode: 'mtn_momo' | 'orange_money' | 'carte';
+  montant?: number;
+  mode_paiement: 'mtn_momo' | 'orange_money' | 'carte';
+  type_paiement?: 'integral' | 'tranche';
+  echeancier_id?: number;
   telephone?: string;
 }) => {
   const response = await api.post('/paiements/initier', data);

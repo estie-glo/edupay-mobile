@@ -5,35 +5,40 @@ import { AlertCircle, Building2, Calendar, CreditCard, FileBarChart2, HelpCircle
 import { useAuth } from '../../../context/AuthContext';
 import { getDashboardEcole, getImpayes, relancerImpayeApprenant, relancerImpayesGroupe } from '../../../services/api';
 
+// Forme exacte de Api/Etablissement/DashboardController::index et ImpayeController::
+// index (vérifiée le 27/09/2026, après les correctifs "audit G-H" du backend qui ont
+// aplati les KPI sous data.kpis et transformé les impayés en tableau plat).
 type Impaye = {
-  id: number;
-  apprenant?: { id?: number; prenom?: string; nom?: string };
-  montant: number;
+  apprenant_id: number;
+  nom: string;
   classe?: string;
+  montant_du: number;
+  dernier_paiement?: { montant: number; date?: string } | null;
+  telephone_parent?: string;
 };
 
 type Abonnement = {
   plan?: string;
   statut?: string;
   date_fin?: string;
-  jours_restants?: number;
 };
 
 type Paiement = {
   id: number;
   apprenant?: { prenom?: string; nom?: string };
   montant: number;
-  mode?: string;
-  date?: string;
-  created_at?: string;
+  mode_paiement?: string;
+  date_paiement?: string;
 };
 
 type DashboardEcole = {
-  nom_etablissement?: string;
-  total_encaisse?: number;
-  total_impaye?: number;
-  nb_apprenants?: number;
-  nb_dossiers_impayes?: number;
+  etablissement?: { nom?: string };
+  kpis?: {
+    total_encaisse_mois?: number;
+    total_impaye?: number;
+    nb_apprenants?: number;
+    nb_dossiers_impayes?: number;
+  };
   abonnement?: Abonnement;
   derniers_paiements?: Paiement[];
 };
@@ -126,7 +131,7 @@ export default function BackOfficeScreen() {
         <View style={styles.headerTop}>
           <View style={styles.headerTitreRow}>
             <Building2 size={18} color="#FFFFFF" />
-            <Text style={styles.titre}>{dashboard.nom_etablissement || 'Back-office'}</Text>
+            <Text style={styles.titre}>{dashboard.etablissement?.nom || 'Back-office'}</Text>
           </View>
           <View style={styles.headerActions}>
             <TouchableOpacity onPress={() => router.push('/screens/ecole/EcoleProfilScreen')}>
@@ -151,7 +156,7 @@ export default function BackOfficeScreen() {
                 <View style={styles.aboDateRow}>
                   <Calendar size={11} color="#888888" />
                   <Text style={styles.aboDate}>
-                    Jusqu'au {abo.date_fin.slice(0, 10)}{abo.jours_restants != null ? ` (${abo.jours_restants} j. restants)` : ''}
+                    Jusqu'au {abo.date_fin.slice(0, 10)}
                   </Text>
                 </View>
               )}
@@ -164,19 +169,19 @@ export default function BackOfficeScreen() {
 
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
-            <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{(dashboard.total_encaisse ?? 0).toLocaleString('fr-FR')}</Text>
-            <Text style={styles.kpiLbl}>FCFA encaissés</Text>
+            <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{(dashboard.kpis?.total_encaisse_mois ?? 0).toLocaleString('fr-FR')}</Text>
+            <Text style={styles.kpiLbl}>FCFA encaissés (mois)</Text>
           </View>
           <View style={styles.kpiCard}>
-            <Text style={[styles.kpiVal, { color: '#D94040' }]}>{(dashboard.total_impaye ?? 0).toLocaleString('fr-FR')}</Text>
+            <Text style={[styles.kpiVal, { color: '#D94040' }]}>{(dashboard.kpis?.total_impaye ?? 0).toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA impayés</Text>
           </View>
           <View style={styles.kpiCard}>
-            <Text style={styles.kpiVal}>{dashboard.nb_apprenants ?? 0}</Text>
+            <Text style={styles.kpiVal}>{dashboard.kpis?.nb_apprenants ?? 0}</Text>
             <Text style={styles.kpiLbl}>Apprenants</Text>
           </View>
           <View style={styles.kpiCard}>
-            <Text style={styles.kpiVal}>{dashboard.nb_dossiers_impayes ?? 0}</Text>
+            <Text style={styles.kpiVal}>{dashboard.kpis?.nb_dossiers_impayes ?? 0}</Text>
             <Text style={styles.kpiLbl}>Dossiers impayés</Text>
           </View>
         </View>
@@ -235,21 +240,21 @@ export default function BackOfficeScreen() {
         ) : (
           <View style={styles.card}>
             {impayes.map((imp) => (
-              <View key={imp.id} style={styles.row}>
+              <View key={imp.apprenant_id} style={styles.row}>
                 <View style={styles.rowIco}>
                   <AlertCircle size={16} color="#D94040" />
                 </View>
                 <View style={{ flex: 1 }}>
-                  <Text style={styles.rowTitre}>{imp.apprenant ? `${imp.apprenant.prenom} ${imp.apprenant.nom}` : 'Apprenant'}</Text>
+                  <Text style={styles.rowTitre}>{imp.nom || 'Apprenant'}</Text>
                   {!!imp.classe && <Text style={styles.rowSub}>{imp.classe}</Text>}
                 </View>
                 <View style={{ alignItems: 'flex-end', gap: 4 }}>
-                  <Text style={styles.rowMontant}>{imp.montant.toLocaleString('fr-FR')} F</Text>
+                  <Text style={styles.rowMontant}>{(imp.montant_du ?? 0).toLocaleString('fr-FR')} F</Text>
                   <TouchableOpacity
-                    onPress={() => handleRelanceApprenant(imp.apprenant?.id)}
-                    disabled={relanceApprenantId === imp.apprenant?.id}
+                    onPress={() => handleRelanceApprenant(imp.apprenant_id)}
+                    disabled={relanceApprenantId === imp.apprenant_id}
                   >
-                    {relanceApprenantId === imp.apprenant?.id ? (
+                    {relanceApprenantId === imp.apprenant_id ? (
                       <ActivityIndicator size="small" color="#D94040" />
                     ) : (
                       <Text style={styles.relancerLien}>Relancer</Text>
@@ -269,7 +274,7 @@ export default function BackOfficeScreen() {
                 <View key={p.id} style={styles.row}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.rowTitre}>{p.apprenant ? `${p.apprenant.prenom} ${p.apprenant.nom}` : 'Paiement'}</Text>
-                    <Text style={styles.rowSub}>{(p.date || p.created_at || '').slice(0, 10)}{p.mode ? ` · ${p.mode}` : ''}</Text>
+                    <Text style={styles.rowSub}>{(p.date_paiement || '').slice(0, 10)}{p.mode_paiement ? ` · ${p.mode_paiement}` : ''}</Text>
                   </View>
                   <Text style={[styles.rowMontant, { color: '#0D9E75' }]}>{p.montant.toLocaleString('fr-FR')} F</Text>
                 </View>

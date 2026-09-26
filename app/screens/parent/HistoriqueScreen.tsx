@@ -24,6 +24,7 @@ const STATUT_STYLE: Record<string, { bg: string; fg: string; label: string }> = 
   reussi: { bg: '#E0F5EE', fg: '#085041', label: 'Validé' },
   rembourse: { bg: '#FEF3DC', fg: '#8B5E10', label: 'Remboursé' },
   echoue: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Échoué' },
+  annule: { bg: '#F0F2F5', fg: '#666666', label: 'Annulé' },
   en_attente: { bg: '#FEF3DC', fg: '#8B5E10', label: 'En attente' },
 };
 

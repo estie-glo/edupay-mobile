@@ -36,10 +36,9 @@ function styleStatut(statut?: string) {
 
 export default function EcheancierScreen() {
   const router = useRouter();
-  const { apprenantId } = useLocalSearchParams<{ apprenantId?: string }>();
+  const { apprenantId, apprenantNom } = useLocalSearchParams<{ apprenantId?: string; apprenantNom?: string }>();
   const { token, isLoading: authLoading } = useAuth();
   const [frais, setFrais] = useState<FraisApprenant[]>([]);
-  const [nomApprenant, setNomApprenant] = useState('');
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,8 +54,7 @@ export default function EcheancierScreen() {
     try {
       const response = await getFraisApprenant(Number(apprenantId));
       const data = response.data ?? response;
-      setFrais(data.frais ?? (Array.isArray(data) ? data : []));
-      setNomApprenant(data.apprenant ? `${data.apprenant.prenom} ${data.apprenant.nom}` : '');
+      setFrais(Array.isArray(data) ? data : data.frais ?? []);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || "Impossible de charger l'échéancier");
     } finally {
@@ -73,7 +71,7 @@ export default function EcheancierScreen() {
         montant: String(reste),
         montantTranche: f.fractionnable && f.nb_tranches_max ? String(Math.round(reste / f.nb_tranches_max)) : '',
         libelle: f.categorieFrais?.nom || 'Frais scolaires',
-        apprenantNom: nomApprenant,
+        apprenantNom: apprenantNom,
       },
     });
   };
@@ -91,7 +89,7 @@ export default function EcheancierScreen() {
         <Text style={styles.titre}>Échéancier</Text>
         <View style={{ width: 32 }} />
       </View>
-      {!!nomApprenant && <Text style={styles.sousTitre}>{nomApprenant}</Text>}
+      {!!apprenantNom && <Text style={styles.sousTitre}>{apprenantNom}</Text>}
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {frais.length === 0 ? (

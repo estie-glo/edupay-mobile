@@ -47,7 +47,8 @@ export default function PaiementScreen() {
     try {
       const response = await initierPaiement({
         frais_apprenant_id: Number(params.fraisApprenantId),
-        mode: modePaiement,
+        mode_paiement: modePaiement,
+        type_paiement: typePaiement,
         montant,
         telephone: modePaiement === 'carte' ? undefined : telephone,
       });
