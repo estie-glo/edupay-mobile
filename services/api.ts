@@ -184,6 +184,12 @@ export const removeApprenant = async (id: number) => {
   return response.data;
 };
 
+// Annuaire des établissements actifs, pour la recherche lors du rattachement d'un enfant.
+export const getEtablissementsPourRattachement = async () => {
+  const response = await api.get('/apprenants/etablissements');
+  return response.data;
+};
+
 // ── FRAIS & PAIEMENTS ─────────────────────────────────────────
 export const getFraisApprenant = async (apprenant_id: number) => {
   const response = await api.get(`/frais/${apprenant_id}`);

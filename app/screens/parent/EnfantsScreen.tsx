@@ -1,11 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, Award, ChevronRight, Trash2, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, Award, ChevronRight, School, Search, Trash2, UserPlus } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { getApprenants, rattacherApprenant, removeApprenant } from '../../../services/api';
+import { getApprenants, getEtablissementsPourRattachement, rattacherApprenant, removeApprenant } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 import BottomNavParent from '../../../components/BottomNavParent';
+
+type EtablissementAnnuaire = { id: number; nom: string; ville?: string; type?: string; code_etablissement: string };
 
 type Apprenant = {
   id: number;
@@ -35,7 +37,9 @@ export default function EnfantsScreen() {
   const [formOuvert, setFormOuvert] = useState(false);
   const [envoi, setEnvoi] = useState(false);
 
-  const [codeEtablissement, setCodeEtablissement] = useState('');
+  const [annuaire, setAnnuaire] = useState<EtablissementAnnuaire[]>([]);
+  const [rechercheEtab, setRechercheEtab] = useState('');
+  const [etablissementChoisi, setEtablissementChoisi] = useState<EtablissementAnnuaire | null>(null);
   const [matricule, setMatricule] = useState('');
   const [certificatEnCoursId, setCertificatEnCoursId] = useState<number | null>(null);
 
@@ -44,8 +48,16 @@ export default function EnfantsScreen() {
       router.replace('/screens/parent/LoginParentScreen');
       return;
     }
-    if (token) chargerApprenants();
+    if (token) {
+      chargerApprenants();
+      getEtablissementsPourRattachement().then((r) => setAnnuaire(r.data ?? r)).catch(() => setAnnuaire([]));
+    }
   }, [token, authLoading]);
+
+  const etablissementsFiltres = annuaire.filter((e) => {
+    const q = rechercheEtab.trim().toLowerCase();
+    return !q || e.nom.toLowerCase().includes(q) || (e.ville || '').toLowerCase().includes(q);
+  });
 
   const chargerApprenants = async () => {
     setLoading(true);
@@ -62,18 +74,19 @@ export default function EnfantsScreen() {
 
   const resetFormulaire = () => {
     setFormOuvert(false);
-    setCodeEtablissement('');
+    setRechercheEtab('');
+    setEtablissementChoisi(null);
     setMatricule('');
   };
 
   const handleAjouter = async () => {
-    if (!codeEtablissement || !matricule) {
-      Alert.alert('Erreur', "Veuillez renseigner le code établissement et le matricule");
+    if (!etablissementChoisi || !matricule) {
+      Alert.alert('Erreur', "Veuillez choisir l'établissement et renseigner le matricule");
       return;
     }
     setEnvoi(true);
     try {
-      await rattacherApprenant({ code_etablissement: codeEtablissement, matricule });
+      await rattacherApprenant({ code_etablissement: etablissementChoisi.code_etablissement, matricule });
       resetFormulaire();
       chargerApprenants();
     } catch (error: any) {
@@ -137,9 +150,41 @@ export default function EnfantsScreen() {
         {formOuvert && (
           <View style={styles.formCard}>
             <Text style={styles.formTitre}>Rattacher un enfant</Text>
-            <Text style={styles.formSousTitre}>Ces informations vous sont fournies par l'établissement de l'enfant.</Text>
-            <Text style={styles.lbl}>Code établissement *</Text>
-            <TextInput style={styles.input} placeholder="Fourni par l'école" placeholderTextColor="#AAAAAA" value={codeEtablissement} onChangeText={setCodeEtablissement} autoCapitalize="characters" />
+            <Text style={styles.formSousTitre}>Recherchez l'établissement de l'enfant, puis renseignez son matricule.</Text>
+
+            <Text style={styles.lbl}>Établissement *</Text>
+            {etablissementChoisi ? (
+              <TouchableOpacity style={styles.etabChoisi} onPress={() => setEtablissementChoisi(null)}>
+                <School size={16} color="#0D9E75" />
+                <Text style={styles.etabChoisiTxt}>{etablissementChoisi.nom} · {etablissementChoisi.ville}</Text>
+                <Text style={styles.etabChoisiChanger}>Changer</Text>
+              </TouchableOpacity>
+            ) : (
+              <>
+                <View style={styles.rechercheBox}>
+                  <Search size={14} color="#AAAAAA" />
+                  <TextInput
+                    style={styles.rechercheInput}
+                    placeholder="Nom ou ville de l'établissement"
+                    placeholderTextColor="#AAAAAA"
+                    value={rechercheEtab}
+                    onChangeText={setRechercheEtab}
+                  />
+                </View>
+                <View style={styles.listeEtabs}>
+                  {etablissementsFiltres.slice(0, 6).map((e) => (
+                    <TouchableOpacity key={e.id} style={styles.etabItem} onPress={() => setEtablissementChoisi(e)}>
+                      <School size={14} color="#888888" />
+                      <Text style={styles.etabItemTxt}>{e.nom} · {e.ville}</Text>
+                    </TouchableOpacity>
+                  ))}
+                  {rechercheEtab.length > 0 && etablissementsFiltres.length === 0 && (
+                    <Text style={styles.etabVide}>Aucun établissement trouvé.</Text>
+                  )}
+                </View>
+              </>
+            )}
+
             <Text style={styles.lbl}>Matricule de l'enfant *</Text>
             <TextInput style={styles.input} placeholder="ex : 2026-0451" placeholderTextColor="#AAAAAA" value={matricule} onChangeText={setMatricule} />
 
@@ -220,6 +265,15 @@ const styles = StyleSheet.create({
   formSousTitre: { fontSize: 11, color: '#888888', marginBottom: 4, lineHeight: 15 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
   input: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
+  rechercheBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 12, paddingVertical: 10 },
+  rechercheInput: { flex: 1, fontSize: 13, color: '#1A1A2E' },
+  listeEtabs: { marginTop: 6, maxHeight: 180 },
+  etabItem: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F2F5' },
+  etabItemTxt: { fontSize: 12, color: '#333333', flexShrink: 1 },
+  etabVide: { fontSize: 11, color: '#AAAAAA', textAlign: 'center', paddingVertical: 10 },
+  etabChoisi: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#E0F5EE', borderRadius: 10, padding: 12 },
+  etabChoisiTxt: { flex: 1, fontSize: 12, fontWeight: '700', color: '#085041' },
+  etabChoisiChanger: { fontSize: 11, fontWeight: '700', color: '#0D9E75', textDecorationLine: 'underline' },
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },
