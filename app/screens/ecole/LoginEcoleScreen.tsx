@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, School, Users } from 'lucide-react-native';
+import { ArrowLeft, KeyRound, School, Users } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { login } from '../../../services/api';
+import { envoyerOtp, login, verifierOtp } from '../../../services/api';
 
 const ROLES = ['Directeur', 'Comptable', 'Caissier'];
 
@@ -14,6 +14,11 @@ export default function LoginEcoleScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  const [modeOtp, setModeOtp] = useState(false);
+  const [codeEnvoye, setCodeEnvoye] = useState(false);
+  const [otpCode, setOtpCode] = useState('');
+  const [otpLoading, setOtpLoading] = useState(false);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -30,6 +35,46 @@ export default function LoginEcoleScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleEnvoyerOtp = async () => {
+    if (!email) {
+      Alert.alert('Erreur', 'Veuillez renseigner votre email');
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      await envoyerOtp(email);
+      setCodeEnvoye(true);
+      Alert.alert('Code envoyé', 'Vérifiez votre boîte mail.');
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || "Impossible d'envoyer le code");
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const handleVerifierOtp = async () => {
+    if (!otpCode) {
+      Alert.alert('Erreur', 'Veuillez saisir le code reçu par email');
+      return;
+    }
+    setOtpLoading(true);
+    try {
+      const response = await verifierOtp(email, otpCode);
+      await signIn(response.token, response.user);
+      router.replace('/screens/ecole/BackOfficeScreen');
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || 'Code incorrect ou expiré');
+    } finally {
+      setOtpLoading(false);
+    }
+  };
+
+  const basculerMode = () => {
+    setModeOtp((v) => !v);
+    setCodeEnvoye(false);
+    setOtpCode('');
   };
 
   return (
@@ -57,33 +102,79 @@ export default function LoginEcoleScreen() {
           </View>
         </View>
 
-        <Text style={styles.lbl}>Email professionnel</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="directeur@ecole.cm"
-          placeholderTextColor="#AAAAAA"
-          value={email}
-          onChangeText={setEmail}
-          keyboardType="email-address"
-          autoCapitalize="none"
-        />
+        {!modeOtp ? (
+          <>
+            <Text style={styles.lbl}>Email professionnel</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="directeur@ecole.cm"
+              placeholderTextColor="#AAAAAA"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+            />
 
-        <Text style={styles.lbl}>Mot de passe</Text>
-        <TextInput
-          style={styles.input}
-          placeholder="Votre mot de passe"
-          placeholderTextColor="#AAAAAA"
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={true}
-        />
+            <Text style={styles.lbl}>Mot de passe</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Votre mot de passe"
+              placeholderTextColor="#AAAAAA"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={true}
+            />
 
-        <TouchableOpacity style={styles.oublie}>
-          <Text style={styles.oublieTxt}>Mot de passe oublié ?</Text>
-        </TouchableOpacity>
+            <TouchableOpacity style={styles.oublie}>
+              <Text style={styles.oublieTxt}>Mot de passe oublié ?</Text>
+            </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.btnConnexion, loading && { opacity: 0.7 }]} onPress={handleLogin} disabled={loading}>
-          {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Se connecter</Text>}
+            <TouchableOpacity style={[styles.btnConnexion, loading && { opacity: 0.7 }]} onPress={handleLogin} disabled={loading}>
+              {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Se connecter</Text>}
+            </TouchableOpacity>
+          </>
+        ) : (
+          <>
+            <Text style={styles.lbl}>Email professionnel</Text>
+            <TextInput
+              style={[styles.input, codeEnvoye && styles.inputDisabled]}
+              placeholder="directeur@ecole.cm"
+              placeholderTextColor="#AAAAAA"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              editable={!codeEnvoye}
+            />
+            {!codeEnvoye ? (
+              <TouchableOpacity style={[styles.btnConnexion, otpLoading && { opacity: 0.7 }]} onPress={handleEnvoyerOtp} disabled={otpLoading}>
+                {otpLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Recevoir un code par email</Text>}
+              </TouchableOpacity>
+            ) : (
+              <>
+                <Text style={styles.lbl}>Code reçu par email</Text>
+                <TextInput
+                  style={styles.input}
+                  placeholder="123456"
+                  placeholderTextColor="#AAAAAA"
+                  value={otpCode}
+                  onChangeText={setOtpCode}
+                  keyboardType="number-pad"
+                />
+                <TouchableOpacity style={[styles.btnConnexion, otpLoading && { opacity: 0.7 }]} onPress={handleVerifierOtp} disabled={otpLoading}>
+                  {otpLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Valider le code</Text>}
+                </TouchableOpacity>
+                <TouchableOpacity style={styles.oublie} onPress={handleEnvoyerOtp} disabled={otpLoading}>
+                  <Text style={styles.oublieTxt}>Renvoyer le code</Text>
+                </TouchableOpacity>
+              </>
+            )}
+          </>
+        )}
+
+        <TouchableOpacity style={styles.otpToggle} onPress={basculerMode}>
+          <KeyRound size={14} color="#E8A020" />
+          <Text style={styles.otpToggleTxt}>{modeOtp ? 'Se connecter avec un mot de passe' : 'Se connecter par code (email)'}</Text>
         </TouchableOpacity>
 
         <View style={styles.sep}>
@@ -134,6 +225,9 @@ const styles = StyleSheet.create({
   roleBtnTxtInactive: { fontSize: 11, fontWeight: '600', color: '#888888' },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 14 },
   input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
+  inputDisabled: { backgroundColor: '#F0F2F5', color: '#888888' },
+  otpToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 },
+  otpToggleTxt: { color: '#E8A020', fontSize: 12, fontWeight: '700' },
   oublie: { alignSelf: 'flex-end', marginTop: 8, marginBottom: 4 },
   oublieTxt: { color: '#0D9E75', fontSize: 12, fontWeight: '600' },
   btnConnexion: { backgroundColor: '#E8A020', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 20 },
