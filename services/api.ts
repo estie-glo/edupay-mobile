@@ -154,11 +154,6 @@ export const updateProfil = async (data: {
   return response.data;
 };
 
-export const updateProfilNotifications = async (data: { notif_sms?: boolean; notif_email?: boolean; notif_rappel_echeance?: boolean }) => {
-  const response = await api.put('/profil/notifications', data);
-  return response.data;
-};
-
 export const updateProfilPassword = async (data: { current_password: string; password: string; password_confirmation: string }) => {
   const response = await api.put('/profil/password', data);
   return response.data;
@@ -170,10 +165,20 @@ export const getApprenants = async () => {
   return response.data;
 };
 
-// Rattachement par code établissement + matricule (fournis par l'école au parent)
+// Rattachement d'un apprenant — deux modes réels côté API (RattacherApprenantRequest,
+// vérifié le 26/09/2026) : 'matricule' (exact, rattache directement) et 'recherche'
+// (nom/prénom/classe, rattache directement si un seul résultat, sinon renvoie la
+// liste des candidats à désambiguïser). `lien` distingue un parent qui rattache son
+// enfant ('parent', défaut serveur) d'un compte élève/étudiant qui se rattache
+// lui-même ('soi-meme').
 export const rattacherApprenant = async (data: {
   code_etablissement: string;
-  matricule: string;
+  mode?: 'matricule' | 'recherche';
+  matricule?: string;
+  nom?: string;
+  prenom?: string;
+  classe?: string;
+  lien?: 'parent' | 'soi-meme';
 }) => {
   const response = await api.post('/apprenants/rattacher', data);
   return response.data;
@@ -279,13 +284,6 @@ export const envoyerContact = async (data: {
   message: string;
 }) => {
   const response = await api.post('/contact', data);
-  return response.data;
-};
-
-// Recherche publique — endpoint non confirmé par le backend, gardé en fallback.
-export const searchEtablissements = async (q: string, type?: string) => {
-  const params = type ? `?q=${q}&type=${type}` : `?q=${q}`;
-  const response = await api.get(`/etablissements/search${params}`);
   return response.data;
 };
 

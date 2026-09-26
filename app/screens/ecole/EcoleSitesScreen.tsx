@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, Building2, Lock, MapPinned, Plus, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, Building2, Lock, MapPinned, Pencil, Plus, Trash2 } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { creerSite, getSites, supprimerSite } from '../../../services/api';
+import { creerSite, getSites, supprimerSite, updateSite } from '../../../services/api';
 
 type Site = { id: number; nom: string; ville: string; adresse?: string; telephone?: string };
 
@@ -14,6 +14,7 @@ export default function EcoleSitesScreen() {
   const [loading, setLoading] = useState(true);
   const [nonEligible, setNonEligible] = useState(false);
   const [formOuvert, setFormOuvert] = useState(false);
+  const [siteEnEdition, setSiteEnEdition] = useState<number | null>(null);
   const [envoi, setEnvoi] = useState(false);
 
   const [nom, setNom] = useState('');
@@ -48,10 +49,20 @@ export default function EcoleSitesScreen() {
 
   const resetFormulaire = () => {
     setFormOuvert(false);
+    setSiteEnEdition(null);
     setNom('');
     setVille('');
     setAdresse('');
     setTelephone('');
+  };
+
+  const ouvrirEdition = (s: Site) => {
+    setSiteEnEdition(s.id);
+    setNom(s.nom);
+    setVille(s.ville);
+    setAdresse(s.adresse || '');
+    setTelephone(s.telephone || '');
+    setFormOuvert(true);
   };
 
   const handleCreer = async () => {
@@ -61,11 +72,16 @@ export default function EcoleSitesScreen() {
     }
     setEnvoi(true);
     try {
-      await creerSite({ nom, ville, adresse: adresse || undefined, telephone: telephone || undefined });
+      const donnees = { nom, ville, adresse: adresse || undefined, telephone: telephone || undefined };
+      if (siteEnEdition) {
+        await updateSite(siteEnEdition, donnees);
+      } else {
+        await creerSite(donnees);
+      }
       resetFormulaire();
       charger();
     } catch (error: any) {
-      Alert.alert('Erreur', error.response?.data?.message || 'Impossible de créer ce site');
+      Alert.alert('Erreur', error.response?.data?.message || 'Impossible d\'enregistrer ce site');
     } finally {
       setEnvoi(false);
     }
@@ -123,7 +139,7 @@ export default function EcoleSitesScreen() {
           <>
             {formOuvert && (
               <View style={styles.formCard}>
-                <Text style={styles.formTitre}>Nouveau site</Text>
+                <Text style={styles.formTitre}>{siteEnEdition ? 'Modifier le site' : 'Nouveau site'}</Text>
                 <Text style={styles.lbl}>Nom du site *</Text>
                 <TextInput style={styles.input} placeholder="ex : Campus Bastos" placeholderTextColor="#AAAAAA" value={nom} onChangeText={setNom} />
                 <Text style={styles.lbl}>Ville *</Text>
@@ -137,7 +153,7 @@ export default function EcoleSitesScreen() {
                     <Text style={styles.btnAnnulerTxt}>Annuler</Text>
                   </TouchableOpacity>
                   <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleCreer} disabled={envoi}>
-                    {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Créer</Text>}
+                    {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>{siteEnEdition ? 'Enregistrer' : 'Créer'}</Text>}
                   </TouchableOpacity>
                 </View>
               </View>
@@ -158,6 +174,9 @@ export default function EcoleSitesScreen() {
                       <Text style={styles.ville}>{s.ville}{s.adresse ? ` · ${s.adresse}` : ''}</Text>
                     </View>
                   </View>
+                  <TouchableOpacity onPress={() => ouvrirEdition(s)} style={{ marginRight: 4 }}>
+                    <Pencil size={15} color="#666666" />
+                  </TouchableOpacity>
                   <TouchableOpacity onPress={() => handleSupprimer(s)}>
                     <Trash2 size={16} color="#D94040" />
                   </TouchableOpacity>
