@@ -115,7 +115,7 @@ export default function EcoleSitesScreen() {
             </View>
             <Text style={styles.upsellTitre}>Fonctionnalité Standard / Premium</Text>
             <Text style={styles.upsellDesc}>La gestion multi-sites permet de piloter plusieurs campus depuis un seul compte. Passez à la formule Standard ou Premium pour l'activer.</Text>
-            <TouchableOpacity style={styles.upsellBtn} onPress={() => router.push('/screens/commun/TarifsScreen')}>
+            <TouchableOpacity style={styles.upsellBtn} onPress={() => router.push('/screens/ecole/EcoleAbonnementScreen')}>
               <Text style={styles.upsellBtnTxt}>Voir les formules →</Text>
             </TouchableOpacity>
           </View>

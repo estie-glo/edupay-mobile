@@ -144,7 +144,7 @@ export default function BackOfficeScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {!!abo && (
-          <View style={[styles.aboCard, { borderColor: aboStyle.fg + '33' }]}>
+          <TouchableOpacity style={[styles.aboCard, { borderColor: aboStyle.fg + '33' }]} onPress={() => router.push('/screens/ecole/EcoleAbonnementScreen')}>
             <View style={{ flex: 1 }}>
               <Text style={styles.aboPlan}>Abonnement {abo.plan || ''}</Text>
               {!!abo.date_fin && (
@@ -159,7 +159,7 @@ export default function BackOfficeScreen() {
             <View style={[styles.pill, { backgroundColor: aboStyle.bg }]}>
               <Text style={[styles.pillTxt, { color: aboStyle.fg }]}>{aboStyle.label}</Text>
             </View>
-          </View>
+          </TouchableOpacity>
         )}
 
         <View style={styles.kpiRow}>

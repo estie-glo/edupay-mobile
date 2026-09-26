@@ -139,12 +139,12 @@ export default function EcoleProfilScreen() {
         )}
 
         {!!abonnement && (
-          <View style={styles.aboCard}>
+          <TouchableOpacity style={styles.aboCard} onPress={() => router.push('/screens/ecole/EcoleAbonnementScreen')}>
             <Calendar size={14} color="#888888" />
             <Text style={styles.aboTxt}>
               Formule {abonnement.plan_nom || '—'}{abonnement.jours_restants != null ? ` · ${abonnement.jours_restants} j. restants` : ''}
             </Text>
-          </View>
+          </TouchableOpacity>
         )}
 
         <Text style={styles.secLabel}>INFORMATIONS DU COMPTE</Text>
