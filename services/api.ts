@@ -341,6 +341,22 @@ export const removeApprenantEcole = async (id: number) => {
   return response.data;
 };
 
+// Fiche détaillée : apprenant + parents rattachés + frais/échéanciers.
+export const getApprenantEcole = async (id: number) => {
+  const response = await api.get(`/etablissement/apprenants/${id}`);
+  return response.data;
+};
+
+export const desaffecterFraisApprenant = async (apprenantId: number, fraisApprenantId: number) => {
+  const response = await api.delete(`/etablissement/apprenants/${apprenantId}/frais/${fraisApprenantId}`);
+  return response.data;
+};
+
+export const bulkDestroyApprenantsEcole = async (ids: number[]) => {
+  const response = await api.post('/etablissement/apprenants/bulk-destroy', { ids });
+  return response.data;
+};
+
 export const validerApprenant = async (id: number) => {
   const response = await api.post(`/etablissement/apprenants/${id}/valider`);
   return response.data;

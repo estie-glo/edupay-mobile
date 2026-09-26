@@ -36,6 +36,7 @@ export default function RootLayout() {
       <Stack.Screen name="screens/ecole/RegisterEcoleScreen" />
       <Stack.Screen name="screens/ecole/BackOfficeScreen" />
       <Stack.Screen name="screens/ecole/EcoleApprenantsScreen" />
+      <Stack.Screen name="screens/ecole/EcoleApprenantDetailScreen" />
       <Stack.Screen name="screens/ecole/EcoleFraisScreen" />
       <Stack.Screen name="screens/ecole/EcoleUtilisateursScreen" />
       <Stack.Screen name="screens/ecole/EcoleRemboursementsScreen" />

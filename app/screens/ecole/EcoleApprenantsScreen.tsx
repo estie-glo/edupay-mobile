@@ -2,9 +2,9 @@ import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, FileSpreadsheet, Plus, Trash2, UserCheck, UserX } from 'lucide-react-native';
+import { ArrowLeft, CheckSquare, FileSpreadsheet, Plus, Square, Trash2, UserCheck, UserX, X } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { creerApprenantEcole, getApprenantsEcole, getUrlModeleImportCsv, importerApprenantsCsv, rejeterApprenant, removeApprenantEcole, validerApprenant } from '../../../services/api';
+import { bulkDestroyApprenantsEcole, creerApprenantEcole, getApprenantsEcole, getUrlModeleImportCsv, importerApprenantsCsv, rejeterApprenant, removeApprenantEcole, validerApprenant } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 
 type Apprenant = {
@@ -37,6 +37,9 @@ export default function EcoleApprenantsScreen() {
   const [enTraitement, setEnTraitement] = useState<number | null>(null);
   const [importEnCours, setImportEnCours] = useState(false);
   const [modeleEnCours, setModeleEnCours] = useState(false);
+  const [modeSelection, setModeSelection] = useState(false);
+  const [selection, setSelection] = useState<number[]>([]);
+  const [suppressionEnCours, setSuppressionEnCours] = useState(false);
 
   const [prenom, setPrenom] = useState('');
   const [nom, setNom] = useState('');
@@ -167,6 +170,42 @@ export default function EcoleApprenantsScreen() {
     ]);
   };
 
+  const basculerSelection = (id: number) => {
+    setSelection((prev) => (prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]));
+  };
+
+  const annulerSelection = () => {
+    setModeSelection(false);
+    setSelection([]);
+  };
+
+  const handleSupprimerSelection = () => {
+    if (selection.length === 0) return;
+    Alert.alert(
+      'Supprimer les apprenants sélectionnés ?',
+      `${selection.length} apprenant(s) seront retirés de l'annuaire.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Supprimer',
+          style: 'destructive',
+          onPress: async () => {
+            setSuppressionEnCours(true);
+            try {
+              await bulkDestroyApprenantsEcole(selection);
+              annulerSelection();
+              charger();
+            } catch (error: any) {
+              Alert.alert('Erreur', error.response?.data?.message || 'Suppression impossible');
+            } finally {
+              setSuppressionEnCours(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const filtres = apprenants.filter((a) => {
     const q = recherche.trim().toLowerCase();
     if (!q) return true;
@@ -180,13 +219,24 @@ export default function EcoleApprenantsScreen() {
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-          <ArrowLeft size={18} color="#FFFFFF" />
+        <TouchableOpacity style={styles.backBtn} onPress={() => (modeSelection ? annulerSelection() : router.back())}>
+          {modeSelection ? <X size={18} color="#FFFFFF" /> : <ArrowLeft size={18} color="#FFFFFF" />}
         </TouchableOpacity>
-        <Text style={styles.titre}>Apprenants</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setFormOuvert(true)}>
-          <Plus size={18} color="#FFFFFF" />
-        </TouchableOpacity>
+        <Text style={styles.titre}>{modeSelection ? `${selection.length} sélectionné(s)` : 'Apprenants'}</Text>
+        {modeSelection ? (
+          <TouchableOpacity style={styles.addBtn} onPress={handleSupprimerSelection} disabled={suppressionEnCours || selection.length === 0}>
+            {suppressionEnCours ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Trash2 size={16} color="#FFFFFF" />}
+          </TouchableOpacity>
+        ) : (
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity style={styles.selectBtn} onPress={() => setModeSelection(true)}>
+              <CheckSquare size={16} color="#FFFFFF" />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.addBtn} onPress={() => setFormOuvert(true)}>
+              <Plus size={18} color="#FFFFFF" />
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
       <View style={styles.searchZone}>
         <TextInput
@@ -236,9 +286,21 @@ export default function EcoleApprenantsScreen() {
           filtres.map((a) => {
             const s = styleStatut(a.statut);
             const enAttente = (a.statut || '').toLowerCase() === 'en_attente';
+            const selectionne = selection.includes(a.id);
             return (
-              <View key={a.id} style={styles.card}>
+              <TouchableOpacity
+                key={a.id}
+                style={styles.card}
+                onPress={() => (modeSelection ? basculerSelection(a.id) : router.push({ pathname: '/screens/ecole/EcoleApprenantDetailScreen', params: { id: String(a.id) } }))}
+                onLongPress={() => {
+                  setModeSelection(true);
+                  basculerSelection(a.id);
+                }}
+              >
                 <View style={styles.cardTop}>
+                  {modeSelection && (
+                    selectionne ? <CheckSquare size={18} color="#E8A020" /> : <Square size={18} color="#AAAAAA" />
+                  )}
                   <View style={{ flex: 1 }}>
                     <Text style={styles.nom}>{a.prenom} {a.nom}</Text>
                     <Text style={styles.sousTitre}>{a.matricule || '—'}{a.classe ? ` · ${a.classe}` : ''}</Text>
@@ -247,25 +309,27 @@ export default function EcoleApprenantsScreen() {
                     <Text style={[styles.pillTxt, { color: s.fg }]}>{s.label}</Text>
                   </View>
                 </View>
-                <View style={styles.actionsRow}>
-                  {enAttente ? (
-                    <>
-                      <TouchableOpacity style={styles.actionBtnValider} onPress={() => handleValider(a)} disabled={enTraitement === a.id}>
-                        {enTraitement === a.id ? <ActivityIndicator size="small" color="#FFFFFF" /> : <><UserCheck size={14} color="#FFFFFF" /><Text style={styles.actionBtnTxt}>Valider</Text></>}
+                {!modeSelection && (
+                  <View style={styles.actionsRow}>
+                    {enAttente ? (
+                      <>
+                        <TouchableOpacity style={styles.actionBtnValider} onPress={() => handleValider(a)} disabled={enTraitement === a.id}>
+                          {enTraitement === a.id ? <ActivityIndicator size="small" color="#FFFFFF" /> : <><UserCheck size={14} color="#FFFFFF" /><Text style={styles.actionBtnTxt}>Valider</Text></>}
+                        </TouchableOpacity>
+                        <TouchableOpacity style={styles.actionBtnRejeter} onPress={() => handleRejeter(a)} disabled={enTraitement === a.id}>
+                          <UserX size={14} color="#D94040" />
+                          <Text style={styles.actionBtnRejeterTxt}>Rejeter</Text>
+                        </TouchableOpacity>
+                      </>
+                    ) : (
+                      <TouchableOpacity style={styles.supprimerBtn} onPress={() => handleSupprimer(a)}>
+                        <Trash2 size={14} color="#D94040" />
+                        <Text style={styles.actionBtnRejeterTxt}>Retirer</Text>
                       </TouchableOpacity>
-                      <TouchableOpacity style={styles.actionBtnRejeter} onPress={() => handleRejeter(a)} disabled={enTraitement === a.id}>
-                        <UserX size={14} color="#D94040" />
-                        <Text style={styles.actionBtnRejeterTxt}>Rejeter</Text>
-                      </TouchableOpacity>
-                    </>
-                  ) : (
-                    <TouchableOpacity style={styles.supprimerBtn} onPress={() => handleSupprimer(a)}>
-                      <Trash2 size={14} color="#D94040" />
-                      <Text style={styles.actionBtnRejeterTxt}>Retirer</Text>
-                    </TouchableOpacity>
-                  )}
-                </View>
-              </View>
+                    )}
+                  </View>
+                )}
+              </TouchableOpacity>
             );
           })
         )}
@@ -289,7 +353,8 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
-  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
+  cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 10 },
+  selectBtn: { backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   nom: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
   sousTitre: { fontSize: 11, color: '#888888', marginTop: 2 },
   pill: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3, flexShrink: 0 },
