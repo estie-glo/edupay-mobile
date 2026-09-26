@@ -410,8 +410,11 @@ export const supprimerEcheancier = async (fraisId: number, echeancierId: number)
   return response.data;
 };
 
-export const getPaiementsEcole = async (page: number = 1) => {
-  const response = await api.get(`/etablissement/paiements?page=${page}`);
+export const getPaiementsEcole = async (page: number = 1, filtres?: { q?: string; statut?: string }) => {
+  const params = new URLSearchParams({ page: String(page) });
+  if (filtres?.q) params.set('q', filtres.q);
+  if (filtres?.statut) params.set('statut', filtres.statut);
+  const response = await api.get(`/etablissement/paiements?${params.toString()}`);
   return response.data;
 };
 
