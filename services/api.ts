@@ -3,7 +3,9 @@ import { router } from 'expo-router';
 import { deleteItem, getItem, setItem } from './storage';
 
 // Contrat confirmé par l'équipe backend (API REST v1, Laravel + Sanctum) le 30/08/2026.
-const API_URL = 'https://edupay.mekontso.gsi2026.com/api/v1';
+// Basculer via .env (EXPO_PUBLIC_API_URL) — prod par défaut, local ex. http://10.0.2.2:8000/api/v1
+const API_URL =
+  process.env.EXPO_PUBLIC_API_URL ?? 'https://edupay.mekontso.gsi2026.com/api/v1';
 
 const api = axios.create({
   baseURL: API_URL,
