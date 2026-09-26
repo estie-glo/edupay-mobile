@@ -60,6 +60,9 @@ quand disponible), aucun appel `axios` direct hors de `services/api.ts`.
   certaines API (fichiers, notifications...) ont changé de forme depuis les
   versions antérieures.
 
+Voir [`docs/AUDIT_PARITE.md`](docs/AUDIT_PARITE.md) pour l'état détaillé de la
+parité avec le web (dernier audit, méthode à suivre pour le refaire).
+
 ## Limites connues (côté backend, pas des bugs mobile)
 
 - Pas de route publique listant tous les établissements (seul `GET /etablissements/{code}`,
