@@ -37,6 +37,8 @@ type Dashboard = {
   nb_recus: number;
   derniers_paiements: Paiement[];
   notifications_non_lues: { id: number }[];
+  est_solo?: boolean;
+  pourcentage_global?: number;
 };
 
 const STATUT_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
@@ -82,6 +84,9 @@ export default function DashboardScreen() {
 
   const initiales = `${user?.prenom?.charAt(0) || ''}${user?.nom?.charAt(0) || ''}`.toUpperCase() || 'U';
   const nbNotifs = dashboard.notifications_non_lues?.length ?? 0;
+  // Vue Solo (élève/étudiant, son propre dossier) vs vue Famille (parent, plusieurs
+  // enfants) — miroir de DashboardController::index (est_solo, vérifié le 26/09/2026).
+  const estSolo = !!dashboard.est_solo;
 
   return (
     <View style={styles.container}>
@@ -102,7 +107,9 @@ export default function DashboardScreen() {
         </View>
         <Text style={styles.bonjour}>Bonjour, {user?.prenom || ''}</Text>
         <Text style={styles.sousTitre}>
-          {dashboard.nb_enfants_dus > 0 ? `${dashboard.nb_enfants_dus} enfant${dashboard.nb_enfants_dus > 1 ? 's' : ''} avec un solde dû` : 'Tout est à jour'}
+          {estSolo
+            ? `${dashboard.pourcentage_global ?? 0}% de vos frais sont réglés`
+            : dashboard.nb_enfants_dus > 0 ? `${dashboard.nb_enfants_dus} enfant${dashboard.nb_enfants_dus > 1 ? 's' : ''} avec un solde dû` : 'Tout est à jour'}
         </Text>
       </View>
 
@@ -119,8 +126,17 @@ export default function DashboardScreen() {
             <Text style={styles.kpiLbl}>FCFA payés</Text>
           </View>
           <View style={styles.kpiCard}>
-            <Text style={styles.kpiVal}>{dashboard.apprenants.length}</Text>
-            <Text style={styles.kpiLbl}>Enfants suivis</Text>
+            {estSolo ? (
+              <>
+                <Text style={styles.kpiVal}>{dashboard.pourcentage_global ?? 0}%</Text>
+                <Text style={styles.kpiLbl}>Réglé</Text>
+              </>
+            ) : (
+              <>
+                <Text style={styles.kpiVal}>{dashboard.apprenants.length}</Text>
+                <Text style={styles.kpiLbl}>Enfants suivis</Text>
+              </>
+            )}
           </View>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{dashboard.nb_recus}</Text>
@@ -134,14 +150,14 @@ export default function DashboardScreen() {
           <Text style={styles.payBtnTxt}>Effectuer un paiement →</Text>
         </TouchableOpacity>
 
-        {/* Mes enfants */}
-        <Text style={styles.sec}>Mes enfants</Text>
+        {/* Mon dossier (solo) / Mes enfants (famille) */}
+        <Text style={styles.sec}>{estSolo ? 'Mon dossier' : 'Mes enfants'}</Text>
         {dashboard.apprenants.length === 0 ? (
           <TouchableOpacity style={styles.videCard} onPress={() => router.push('/screens/parent/EnfantsScreen')}>
-            <Text style={styles.videTxt}>Rattacher un enfant →</Text>
+            <Text style={styles.videTxt}>{estSolo ? 'Rattacher mon dossier →' : 'Rattacher un enfant →'}</Text>
           </TouchableOpacity>
         ) : (
-          dashboard.apprenants.map((a) => {
+          (estSolo ? dashboard.apprenants.slice(0, 1) : dashboard.apprenants).map((a) => {
             const s = styleStatut(a.statut_paiement);
             const total = a.total_du + a.total_paye;
             const pourcentPaye = total > 0 ? Math.round((a.total_paye / total) * 100) : 0;
