@@ -125,7 +125,7 @@ export default function LoginEcoleScreen() {
               secureTextEntry={true}
             />
 
-            <TouchableOpacity style={styles.oublie}>
+            <TouchableOpacity style={styles.oublie} onPress={() => router.push('/screens/commun/MotDePasseOublieScreen')}>
               <Text style={styles.oublieTxt}>Mot de passe oublié ?</Text>
             </TouchableOpacity>
 
