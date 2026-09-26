@@ -1,5 +1,6 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { getToken, logout, removeToken, saveToken } from '../services/api';
+import { AppState } from 'react-native';
+import { getMe, getToken, logout, removeToken, saveToken } from '../services/api';
 import { deleteItem, getItem, setItem } from '../services/storage';
 
 export type AuthUser = {
@@ -18,6 +19,7 @@ type AuthContextType = {
   isLoading: boolean;
   signIn: (token: string, user: AuthUser) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshUser: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -62,8 +64,28 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const refreshUser = async () => {
+    if (!token) return;
+    try {
+      const reponse = await getMe();
+      const donnees = reponse.data ?? reponse;
+      setUser((precedent) => ({ ...precedent, ...donnees }));
+      await setItem('user', JSON.stringify({ ...user, ...donnees }));
+    } catch {
+      // Rafraîchissement silencieux : une panne réseau ne doit pas déconnecter l'utilisateur
+    }
+  };
+
+  useEffect(() => {
+    if (!token) return;
+    const abonnement = AppState.addEventListener('change', (etat) => {
+      if (etat === 'active') refreshUser();
+    });
+    return () => abonnement.remove();
+  }, [token]);
+
   return (
-    <AuthContext.Provider value={{ user, token, isLoading, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, token, isLoading, signIn, signOut, refreshUser }}>
       {children}
     </AuthContext.Provider>
   );

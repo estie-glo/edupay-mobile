@@ -10,7 +10,7 @@ const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).+$/;
 
 export default function ProfilScreen() {
   const router = useRouter();
-  const { token, isLoading: authLoading, signOut } = useAuth();
+  const { token, isLoading: authLoading, signOut, refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [enregistrement, setEnregistrement] = useState(false);
   const [changementMdp, setChangementMdp] = useState(false);
@@ -69,6 +69,7 @@ export default function ProfilScreen() {
         prenom, nom, ville: ville || undefined, quartier: quartier || undefined, email: email || undefined,
         notif_sms: notifSms, notif_email: notifEmail, notif_rappel_echeance: notifRappel,
       });
+      await refreshUser();
       Alert.alert('Profil mis à jour', 'Vos informations ont été enregistrées.');
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Mise à jour impossible');

@@ -101,7 +101,10 @@ export default function AccueilInviteScreen() {
   useEffect(() => {
     getStatsPubliques()
       .then((response) => setStats(response.data ?? response))
-      .catch(() => setStats(null));
+      .catch((error) => {
+        console.warn('[AccueilInviteScreen] GET /stats a échoué, repli sur des valeurs statiques :', error?.message || error);
+        setStats(null);
+      });
   }, []);
 
   return (

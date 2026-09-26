@@ -27,10 +27,18 @@ export default function ContactScreen() {
       setEmail('');
       setTelephone('');
       setMessage('');
-    } catch {
-      // Repli si l'API est indisponible : ouvre le client mail avec le message pré-rempli.
-      const corps = `Nom : ${nom}\nEmail : ${email}\nTéléphone : ${telephone}\nSujet : ${sujet}\n\n${message}`;
-      Linking.openURL(`mailto:contact@edupay.cm?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`);
+    } catch (error: any) {
+      if (error.response) {
+        // Erreur applicative (validation 422, etc.) : l'API a répondu, on affiche son message réel.
+        const messagesValidation = error.response.data?.errors
+          ? Object.values(error.response.data.errors).flat().join('\n')
+          : null;
+        Alert.alert('Erreur', messagesValidation || error.response.data?.message || 'Votre message n\'a pas pu être envoyé.');
+      } else {
+        // Aucune réponse du serveur (hors ligne) : repli sur le client mail.
+        const corps = `Nom : ${nom}\nEmail : ${email}\nTéléphone : ${telephone}\nSujet : ${sujet}\n\n${message}`;
+        Linking.openURL(`mailto:contact@edupay.cm?subject=${encodeURIComponent(sujet)}&body=${encodeURIComponent(corps)}`);
+      }
     } finally {
       setEnvoi(false);
     }

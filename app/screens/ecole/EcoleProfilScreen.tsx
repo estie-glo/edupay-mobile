@@ -11,7 +11,7 @@ type Abonnement = { plan_nom?: string; statut?: string; date_fin?: string; jours
 
 export default function EcoleProfilScreen() {
   const router = useRouter();
-  const { token, isLoading: authLoading, signOut } = useAuth();
+  const { token, isLoading: authLoading, signOut, refreshUser } = useAuth();
   const [loading, setLoading] = useState(true);
   const [enregistrement, setEnregistrement] = useState(false);
   const [changementMdp, setChangementMdp] = useState(false);
@@ -70,6 +70,7 @@ export default function EcoleProfilScreen() {
     setEnregistrement(true);
     try {
       await updateProfilEcole({ prenom, nom, telephone, email: email || undefined, ville: ville || undefined });
+      await refreshUser();
       Alert.alert('Profil mis à jour', 'Vos informations ont été enregistrées.');
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Mise à jour impossible');
