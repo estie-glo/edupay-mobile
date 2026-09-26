@@ -3,29 +3,30 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ArrowLeft, ChartPie, FileDown, FileSpreadsheet } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { getRapports } from '../../../services/api';
+import { getRapports, getUrlExportRapportExcel, getUrlExportRapportPdf } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 
-type Repartition = { libelle: string; montant: number };
+type RepartitionMoyen = { mode: string; pourcentage: number };
+type RepartitionClasse = { nom: string; nb_apprenants: number; taux: number };
 
+// Forme exacte de RapportController::index sur le backend (vérifiée le 26/09/2026).
 type Rapport = {
-  total_encaisse?: number;
-  total_impaye?: number;
-  nb_paiements?: number;
+  annee_scolaire?: string;
+  total_encaisse_annee?: number;
+  total_impaye_annee?: number;
+  total_attendu?: number;
   taux_recouvrement?: number;
-  par_categorie?: Repartition[];
-  par_mode_paiement?: Repartition[];
+  nb_apprenants?: number;
+  repartition_moyens?: RepartitionMoyen[];
+  repartition_classes?: RepartitionClasse[];
 };
 
-// Chemins d'export non confirmés par le backend (la doc mentionne "export PDF"
-// et "export CSV" sans donner la route exacte) : on réutilise /etablissement/rapports
-// avec un paramètre format, à ajuster si le backend expose une route dédiée.
 export default function EcoleRapportsScreen() {
   const router = useRouter();
   const { token, isLoading: authLoading } = useAuth();
   const [rapport, setRapport] = useState<Rapport | null>(null);
   const [loading, setLoading] = useState(true);
-  const [exportEnCours, setExportEnCours] = useState<'pdf' | 'csv' | null>(null);
+  const [exportEnCours, setExportEnCours] = useState<'pdf' | 'excel' | null>(null);
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -47,13 +48,15 @@ export default function EcoleRapportsScreen() {
     }
   };
 
-  const handleExporter = async (format: 'pdf' | 'csv') => {
+  const handleExporter = async (format: 'pdf' | 'excel') => {
     setExportEnCours(format);
     try {
-      const nomFichier = `rapport-edupay-${new Date().toISOString().slice(0, 10)}.${format}`;
-      await telechargerEtPartager(`/etablissement/rapports?format=${format}`, nomFichier);
+      const extension = format === 'pdf' ? 'pdf' : 'csv';
+      const nomFichier = `rapport-financier-${new Date().toISOString().slice(0, 10)}.${extension}`;
+      const url = format === 'pdf' ? getUrlExportRapportPdf() : getUrlExportRapportExcel();
+      await telechargerEtPartager(url, nomFichier);
     } catch (error: any) {
-      Alert.alert('Erreur', error.response?.data?.message || `Export ${format.toUpperCase()} impossible pour le moment`);
+      Alert.alert('Erreur', error.response?.data?.message || `Export impossible pour le moment`);
     } finally {
       setExportEnCours(null);
     }
@@ -72,66 +75,68 @@ export default function EcoleRapportsScreen() {
         <Text style={styles.titre}>Rapports</Text>
         <View style={{ width: 32 }} />
       </View>
+      {!!rapport.annee_scolaire && <Text style={styles.sousTitre}>Année scolaire {rapport.annee_scolaire}</Text>}
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={styles.kpiRow}>
           <View style={styles.kpiCard}>
-            <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{(rapport.total_encaisse ?? 0).toLocaleString('fr-FR')}</Text>
+            <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{(rapport.total_encaisse_annee ?? 0).toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA encaissés</Text>
           </View>
           <View style={styles.kpiCard}>
-            <Text style={[styles.kpiVal, { color: '#D94040' }]}>{(rapport.total_impaye ?? 0).toLocaleString('fr-FR')}</Text>
+            <Text style={[styles.kpiVal, { color: '#D94040' }]}>{(rapport.total_impaye_annee ?? 0).toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA impayés</Text>
           </View>
           <View style={styles.kpiCard}>
-            <Text style={styles.kpiVal}>{rapport.nb_paiements ?? 0}</Text>
-            <Text style={styles.kpiLbl}>Paiements</Text>
+            <Text style={styles.kpiVal}>{(rapport.total_attendu ?? 0).toLocaleString('fr-FR')}</Text>
+            <Text style={styles.kpiLbl}>FCFA attendus</Text>
           </View>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{rapport.taux_recouvrement != null ? `${rapport.taux_recouvrement}%` : '—'}</Text>
             <Text style={styles.kpiLbl}>Recouvrement</Text>
           </View>
         </View>
+        <Text style={styles.apprenantsTxt}>{rapport.nb_apprenants ?? 0} apprenant(s) suivi(s)</Text>
 
         <View style={styles.exportRow}>
           <TouchableOpacity style={styles.exportBtn} onPress={() => handleExporter('pdf')} disabled={exportEnCours !== null}>
             {exportEnCours === 'pdf' ? <ActivityIndicator size="small" color="#0B2545" /> : <FileDown size={16} color="#0B2545" />}
             <Text style={styles.exportBtnTxt}>Export PDF</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.exportBtn} onPress={() => handleExporter('csv')} disabled={exportEnCours !== null}>
-            {exportEnCours === 'csv' ? <ActivityIndicator size="small" color="#0B2545" /> : <FileSpreadsheet size={16} color="#0B2545" />}
-            <Text style={styles.exportBtnTxt}>Export CSV</Text>
+          <TouchableOpacity style={styles.exportBtn} onPress={() => handleExporter('excel')} disabled={exportEnCours !== null}>
+            {exportEnCours === 'excel' ? <ActivityIndicator size="small" color="#0B2545" /> : <FileSpreadsheet size={16} color="#0B2545" />}
+            <Text style={styles.exportBtnTxt}>Export Excel</Text>
           </TouchableOpacity>
         </View>
 
-        {!!rapport.par_categorie?.length && (
-          <>
-            <View style={styles.secHeader}>
-              <ChartPie size={14} color="#888888" />
-              <Text style={styles.sec}>Par catégorie de frais</Text>
-            </View>
-            <View style={styles.card}>
-              {rapport.par_categorie.map((r) => (
-                <View key={r.libelle} style={styles.row}>
-                  <Text style={styles.rowTxt}>{r.libelle}</Text>
-                  <Text style={styles.rowMontant}>{r.montant.toLocaleString('fr-FR')} F</Text>
-                </View>
-              ))}
-            </View>
-          </>
-        )}
-
-        {!!rapport.par_mode_paiement?.length && (
+        {!!rapport.repartition_moyens?.length && (
           <>
             <View style={styles.secHeader}>
               <ChartPie size={14} color="#888888" />
               <Text style={styles.sec}>Par moyen de paiement</Text>
             </View>
             <View style={styles.card}>
-              {rapport.par_mode_paiement.map((r) => (
-                <View key={r.libelle} style={styles.row}>
-                  <Text style={styles.rowTxt}>{r.libelle}</Text>
-                  <Text style={styles.rowMontant}>{r.montant.toLocaleString('fr-FR')} F</Text>
+              {rapport.repartition_moyens.map((r) => (
+                <View key={r.mode} style={styles.row}>
+                  <Text style={styles.rowTxt}>{r.mode}</Text>
+                  <Text style={styles.rowMontant}>{r.pourcentage}%</Text>
+                </View>
+              ))}
+            </View>
+          </>
+        )}
+
+        {!!rapport.repartition_classes?.length && (
+          <>
+            <View style={styles.secHeader}>
+              <ChartPie size={14} color="#888888" />
+              <Text style={styles.sec}>Recouvrement par classe</Text>
+            </View>
+            <View style={styles.card}>
+              {rapport.repartition_classes.map((c) => (
+                <View key={c.nom} style={styles.row}>
+                  <Text style={styles.rowTxt}>{c.nom} · {c.nb_apprenants} apprenant(s)</Text>
+                  <Text style={styles.rowMontant}>{c.taux}%</Text>
                 </View>
               ))}
             </View>
@@ -144,14 +149,16 @@ export default function EcoleRapportsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F6F7' },
-  header: { backgroundColor: '#0B2545', paddingTop: 52, paddingBottom: 20, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { backgroundColor: '#0B2545', paddingTop: 52, paddingBottom: 12, paddingHorizontal: 20, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   backBtn: { backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   titre: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
+  sousTitre: { backgroundColor: '#0B2545', color: 'rgba(255,255,255,0.6)', fontSize: 12, textAlign: 'center', paddingBottom: 16 },
   content: { flex: 1, padding: 16 },
-  kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 16 },
+  kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
   kpiCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, alignItems: 'center' },
   kpiVal: { fontSize: 15, fontWeight: '800', color: '#1A1A2E' },
   kpiLbl: { fontSize: 9, color: '#888888', marginTop: 2, textAlign: 'center' },
+  apprenantsTxt: { fontSize: 11, color: '#888888', textAlign: 'center', marginBottom: 16 },
   exportRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
   exportBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', borderRadius: 10, paddingVertical: 12, borderWidth: 1, borderColor: '#E2E8F0' },
   exportBtnTxt: { fontSize: 12, fontWeight: '700', color: '#0B2545' },

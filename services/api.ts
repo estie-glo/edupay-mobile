@@ -87,6 +87,54 @@ export const resetPassword = async (data: {
   return response.data;
 };
 
+// Connexion par code (email uniquement — 422 si le compte n'a pas d'email renseigné).
+export const envoyerOtp = async (login: string) => {
+  const response = await api.post('/auth/otp', { login });
+  return response.data;
+};
+
+export const verifierOtp = async (login: string, otp_code: string) => {
+  const response = await api.post('/auth/otp/verify', { login, otp_code });
+  return response.data;
+};
+
+// Inscription établissement — endpoint unique multipart (fichiers inclus), pas de
+// token en retour : le compte directeur est créé mais l'établissement reste
+// 'en_attente' jusqu'à validation manuelle par l'équipe EduPay.
+export const inscrireEtablissement = async (data: {
+  nom: string; type: string; statut_juridique: string; numero_agrement: string;
+  nb_eleves?: string; region: string; ville: string; quartier?: string; boite_postale?: string;
+  telephone: string; email: string; site_web?: string;
+  mobile_money_principal: 'mtn' | 'orange'; numero_momo_reversement: string;
+  resp_prenom: string; resp_nom: string; resp_telephone: string; resp_email: string;
+  resp_password: string; resp_password_confirmation: string;
+  document_agrement: { uri: string; name: string; mimeType?: string };
+  logo?: { uri: string; name: string; mimeType?: string };
+  description?: string;
+  cgu_accepted: boolean; certification_accepted: boolean;
+}) => {
+  const formData = new FormData();
+  const { document_agrement, logo, ...champs } = data;
+  Object.entries(champs).forEach(([cle, valeur]) => {
+    if (valeur !== undefined && valeur !== null) formData.append(cle, String(valeur));
+  });
+  formData.append('document_agrement', { uri: document_agrement.uri, name: document_agrement.name, type: document_agrement.mimeType || 'application/pdf' } as any);
+  if (logo) formData.append('logo', { uri: logo.uri, name: logo.name, type: logo.mimeType || 'image/png' } as any);
+
+  const response = await api.post('/auth/inscription-etablissement', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
+  return response.data;
+};
+
+// Dashboard payeur consolidé (apprenants + soldes + derniers paiements +
+// notifications + liste des établissements actifs) — évite de composer
+// manuellement à partir de /apprenants + /paiements.
+export const getDashboard = async () => {
+  const response = await api.get('/dashboard');
+  return response.data;
+};
+
 // ── PROFIL ────────────────────────────────────────────────────
 export const getMe = async () => {
   const response = await api.get('/me');
@@ -245,10 +293,13 @@ export const relancerImpayeApprenant = async (apprenantId: number) => {
   return response.data;
 };
 
-export const getRapports = async (params?: string) => {
-  const response = await api.get(`/etablissement/rapports${params ? `?${params}` : ''}`);
+export const getRapports = async () => {
+  const response = await api.get('/etablissement/rapports');
   return response.data;
 };
+
+export const getUrlExportRapportPdf = () => '/etablissement/rapports/export/pdf';
+export const getUrlExportRapportExcel = () => '/etablissement/rapports/export/excel';
 
 // ── ECOLE : APPRENANTS ──────────────────────────────────────────
 export const creerApprenantEcole = async (data: {
@@ -281,10 +332,12 @@ export const rejeterApprenant = async (id: number) => {
   return response.data;
 };
 
-// Import en masse via un fichier CSV (uri local choisi par expo-document-picker)
+// Import en masse via un fichier CSV (uri local choisi par expo-document-picker).
+// Colonnes attendues (sans en-tête personnalisable) : nom, prenom, classe,
+// matricule (optionnel), date_naissance AAAA-MM-JJ (optionnel), sexe M/F (optionnel).
 export const importerApprenantsCsv = async (fichier: { uri: string; name: string; mimeType?: string }) => {
   const formData = new FormData();
-  formData.append('fichier', {
+  formData.append('fichier_csv', {
     uri: fichier.uri,
     name: fichier.name,
     type: fichier.mimeType || 'text/csv',
@@ -294,6 +347,8 @@ export const importerApprenantsCsv = async (fichier: { uri: string; name: string
   });
   return response.data;
 };
+
+export const getUrlModeleImportCsv = () => '/etablissement/apprenants/import/model';
 
 // ── ECOLE : FRAIS & ECHEANCIERS ──────────────────────────────────
 export const getFraisEcole = async () => {

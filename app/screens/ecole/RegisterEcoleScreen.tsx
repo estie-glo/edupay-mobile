@@ -3,13 +3,13 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ArrowLeft, CheckSquare, FileCheck2, School, Square, Upload } from 'lucide-react-native';
+import { inscrireEtablissement } from '../../../services/api';
 
-// Wizard identique au flux réel du site (RegisterEcolController sur main) :
-// 4 étapes en session côté serveur, une seule route de soumission finale.
-// Le mobile n'a pas d'équivalent API pour l'instant (aucune route
-// /etablissement/* annoncée, et /auth/register n'accepte que
-// parent|eleve|etudiant) — les données sont donc capturées mais la
-// soumission finale reste un TODO explicite tant que l'API n'existe pas.
+// Wizard identique au flux réel du site (RegisterEcolController sur main),
+// mais soumis en un seul appel à POST /auth/inscription-etablissement
+// (endpoint API dédié, confirmé le 26/09/2026 — pas de token en retour,
+// le compte directeur est créé mais l'établissement reste 'en_attente'
+// jusqu'à validation manuelle par l'équipe EduPay).
 
 const TYPES = [
   { valeur: 'maternelle', label: 'Maternelle' },
@@ -160,17 +160,34 @@ export default function RegisterEcoleScreen() {
       Alert.alert('Erreur', "Vous devez accepter les CGU et certifier l'exactitude des informations");
       return;
     }
+    if (!documentAgrement) {
+      Alert.alert('Erreur', "Le document d'agrément est obligatoire");
+      return;
+    }
     setEnvoi(true);
-    // Aucune route API pour l'inscription établissement n'est encore annoncée
-    // (register n'accepte que parent|eleve|etudiant, /etablissement/* renvoie 404).
-    setTimeout(() => {
-      setEnvoi(false);
+    try {
+      const reponse = await inscrireEtablissement({
+        nom, type, statut_juridique: statutJuridique, numero_agrement: numeroAgrement,
+        nb_eleves: nbEleves || undefined, region, ville, quartier: quartier || undefined, boite_postale: boitePostale || undefined,
+        telephone, email, site_web: siteWeb || undefined,
+        mobile_money_principal: mobileMoneyPrincipal as 'mtn' | 'orange', numero_momo_reversement: numeroMomoReversement,
+        resp_prenom: respPrenom, resp_nom: respNom, resp_telephone: respTelephone, resp_email: respEmail,
+        resp_password: respPassword, resp_password_confirmation: respPasswordConfirmation,
+        document_agrement: documentAgrement,
+        logo: logo || undefined,
+        description: description || undefined,
+        cgu_accepted: cguAccepted, certification_accepted: certificationAccepted,
+      });
       Alert.alert(
-        'Dossier prêt, envoi indisponible',
-        "Toutes les informations sont saisies, mais l'API ne propose pas encore de route d'inscription établissement. Contactez l'équipe backend pour finaliser cette étape.",
+        'Dossier envoyé !',
+        `${reponse.message}\n\nCode établissement : ${reponse.code_etablissement}`,
         [{ text: 'Retour à la connexion', onPress: () => router.replace('/screens/ecole/LoginEcoleScreen') }]
       );
-    }, 600);
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || "Impossible d'envoyer le dossier d'inscription");
+    } finally {
+      setEnvoi(false);
+    }
   };
 
   const renderEtape1 = () => (

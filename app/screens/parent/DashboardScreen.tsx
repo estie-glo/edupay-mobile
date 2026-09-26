@@ -3,45 +3,45 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Bell, CreditCard, TriangleAlert } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { getApprenants, getHistorique } from '../../../services/api';
+import { getDashboard } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
 
-type Frais = { montant_total: number; montant_paye: number };
-
+// Forme exacte de GET /dashboard (DashboardController::index, vérifiée le 26/09/2026).
 type Apprenant = {
   id: number;
   prenom: string;
   nom: string;
-  etablissement?: { nom?: string };
   classe?: string;
-  frais?: Frais[];
-  solde_du?: number;
-  montant_total?: number;
-  statut?: string;
-  prochaine_echeance?: { libelle?: string; date?: string };
+  etablissement?: { nom?: string };
+  statut_paiement?: string;
+  total_du: number;
+  total_paye: number;
+  a_impayes: boolean;
 };
 
 type Paiement = {
   id: number;
-  libelle?: string;
-  description?: string;
   montant: number;
   mode_paiement?: string;
   statut?: string;
-  date?: string;
-  created_at?: string;
+  date_paiement?: string;
+  apprenant?: { prenom?: string; nom?: string };
+  frais?: { nom?: string };
 };
 
 type Dashboard = {
   apprenants: Apprenant[];
   total_du: number;
   total_paye: number;
+  nb_enfants_dus: number;
   nb_recus: number;
   derniers_paiements: Paiement[];
+  notifications_non_lues: { id: number }[];
 };
 
 const STATUT_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
   a_jour: { bg: '#E0F5EE', fg: '#085041', label: 'À jour' },
+  regle: { bg: '#E0F5EE', fg: '#085041', label: 'À jour' },
   partiel: { bg: '#FEF3DC', fg: '#8B5E10', label: 'Partiel' },
   impaye: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Impayé' },
 };
@@ -64,52 +64,16 @@ export default function DashboardScreen() {
     if (token) chargerDashboard();
   }, [token, authLoading]);
 
-  // Pas d'endpoint /dashboard consolidé côté API : on compose à partir de
-  // GET /apprenants et GET /paiements. GET /paiements renvoie parfois une
-  // 500 côté serveur (bug confirmé, remonté à l'équipe backend) — on ne
-  // laisse pas ça bloquer l'affichage des apprenants, qui eux fonctionnent.
   const chargerDashboard = async () => {
     setLoading(true);
-    const [apprenantsResult, paiementsResult] = await Promise.allSettled([getApprenants(), getHistorique(1)]);
-
-    if (apprenantsResult.status === 'rejected') {
-      Alert.alert('Erreur', apprenantsResult.reason?.response?.data?.message || 'Impossible de charger vos enfants');
+    try {
+      const response = await getDashboard();
+      setDashboard(response.data ?? response);
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || 'Impossible de charger le tableau de bord');
+    } finally {
       setLoading(false);
-      return;
     }
-
-    const apprenantsData = apprenantsResult.value.data ?? apprenantsResult.value;
-    const apprenants: Apprenant[] = Array.isArray(apprenantsData) ? apprenantsData : apprenantsData.apprenants ?? [];
-
-    let paiements: Paiement[] = [];
-    if (paiementsResult.status === 'fulfilled') {
-      const paiementsPagination = paiementsResult.value.data ?? paiementsResult.value;
-      paiements = Array.isArray(paiementsPagination) ? paiementsPagination : paiementsPagination.data ?? [];
-    }
-
-    let totalDu = 0;
-    let totalPaye = 0;
-    apprenants.forEach((a) => {
-      if (a.frais) {
-        a.frais.forEach((f) => {
-          totalDu += Math.max(0, f.montant_total - f.montant_paye);
-          totalPaye += f.montant_paye;
-        });
-      } else {
-        totalDu += a.solde_du ?? 0;
-        totalPaye += (a.montant_total ?? 0) - (a.solde_du ?? 0);
-      }
-    });
-    const nbRecus = paiements.filter((p) => (p.statut || '').toLowerCase() === 'valide').length;
-
-    setDashboard({
-      apprenants,
-      total_du: totalDu,
-      total_paye: totalPaye,
-      nb_recus: nbRecus,
-      derniers_paiements: paiements.slice(0, 5),
-    });
-    setLoading(false);
   };
 
   if (loading || !dashboard) {
@@ -117,7 +81,7 @@ export default function DashboardScreen() {
   }
 
   const initiales = `${user?.prenom?.charAt(0) || ''}${user?.nom?.charAt(0) || ''}`.toUpperCase() || 'U';
-  const apprenantsEnAttente = dashboard.apprenants.filter((a) => (a.statut || '').toLowerCase() !== 'a_jour').length;
+  const nbNotifs = dashboard.notifications_non_lues?.length ?? 0;
 
   return (
     <View style={styles.container}>
@@ -129,7 +93,7 @@ export default function DashboardScreen() {
           <View style={styles.headerRight}>
             <TouchableOpacity style={styles.notifBtn}>
               <Bell size={20} color="#FFFFFF" />
-              {apprenantsEnAttente > 0 && <View style={styles.notifBadge} />}
+              {nbNotifs > 0 && <View style={styles.notifBadge} />}
             </TouchableOpacity>
             <View style={styles.avatar}>
               <Text style={styles.avatarTxt}>{initiales}</Text>
@@ -138,7 +102,7 @@ export default function DashboardScreen() {
         </View>
         <Text style={styles.bonjour}>Bonjour, {user?.prenom || ''}</Text>
         <Text style={styles.sousTitre}>
-          {apprenantsEnAttente > 0 ? `${apprenantsEnAttente} paiement${apprenantsEnAttente > 1 ? 's' : ''} en attente` : 'Tout est à jour'}
+          {dashboard.nb_enfants_dus > 0 ? `${dashboard.nb_enfants_dus} enfant${dashboard.nb_enfants_dus > 1 ? 's' : ''} avec un solde dû` : 'Tout est à jour'}
         </Text>
       </View>
 
@@ -178,10 +142,9 @@ export default function DashboardScreen() {
           </TouchableOpacity>
         ) : (
           dashboard.apprenants.map((a) => {
-            const s = styleStatut(a.statut);
-            const soldeDu = a.solde_du ?? 0;
-            const pourcentPaye = a.montant_total ? Math.round(((a.montant_total - soldeDu) / a.montant_total) * 100) : 0;
-            const enRetard = (a.statut || '').toLowerCase() === 'impaye';
+            const s = styleStatut(a.statut_paiement);
+            const total = a.total_du + a.total_paye;
+            const pourcentPaye = total > 0 ? Math.round((a.total_paye / total) * 100) : 0;
             return (
               <View key={a.id} style={[styles.enfantCard, { borderLeftColor: s.fg }]}>
                 <View style={styles.enfantTop}>
@@ -193,28 +156,24 @@ export default function DashboardScreen() {
                     <Text style={[styles.pillTxt, { color: s.fg }]}>{s.label}</Text>
                   </View>
                 </View>
-                {soldeDu > 0 && (
+                {a.total_du > 0 && (
                   <>
                     <Text style={styles.enfantReste}>
-                      Reste : <Text style={{ fontWeight: '700' }}>{soldeDu.toLocaleString('fr-FR')} FCFA</Text>
-                      {a.montant_total ? ` sur ${a.montant_total.toLocaleString('fr-FR')} FCFA` : ''}
+                      Reste : <Text style={{ fontWeight: '700' }}>{a.total_du.toLocaleString('fr-FR')} FCFA</Text>
+                      {total > 0 ? ` sur ${total.toLocaleString('fr-FR')} FCFA` : ''}
                     </Text>
                     <View style={styles.prog}>
                       <View style={[styles.progFill, { width: `${Math.min(100, Math.max(0, pourcentPaye))}%` }]} />
                     </View>
-                    {a.prochaine_echeance && (
-                      <View style={styles.echeanceRow}>
-                        {enRetard && <TriangleAlert size={11} color="#D94040" />}
-                        <Text style={[styles.enfantEcheance, enRetard && { color: '#D94040' }]}>
-                          {pourcentPaye}% réglé · {a.prochaine_echeance.libelle} {a.prochaine_echeance.date ? `due le ${a.prochaine_echeance.date.slice(0, 10)}` : ''}
-                        </Text>
-                      </View>
-                    )}
+                    <View style={styles.echeanceRow}>
+                      {a.a_impayes && <TriangleAlert size={11} color="#D94040" />}
+                      <Text style={[styles.enfantEcheance, a.a_impayes && { color: '#D94040' }]}>{pourcentPaye}% réglé</Text>
+                    </View>
                     <TouchableOpacity
-                      style={[styles.payEnfantBtn, enRetard && { backgroundColor: '#D94040' }]}
+                      style={[styles.payEnfantBtn, a.a_impayes && { backgroundColor: '#D94040' }]}
                       onPress={() => router.push({ pathname: '/screens/parent/EcheancierScreen', params: { apprenantId: String(a.id) } })}
                     >
-                      <Text style={styles.payEnfantBtnTxt}>{enRetard ? 'Payer maintenant →' : 'Voir l\'échéancier →'}</Text>
+                      <Text style={styles.payEnfantBtnTxt}>{a.a_impayes ? 'Payer maintenant →' : 'Voir l\'échéancier →'}</Text>
                     </TouchableOpacity>
                   </>
                 )}
@@ -237,8 +196,8 @@ export default function DashboardScreen() {
             {dashboard.derniers_paiements.map((p) => (
               <View key={p.id} style={styles.row}>
                 <View>
-                  <Text style={styles.rowTitre}>{p.libelle || p.description || 'Paiement'}</Text>
-                  <Text style={styles.rowSub}>{(p.date || p.created_at || '').slice(0, 10)}{p.mode_paiement ? ` · ${p.mode_paiement}` : ''}</Text>
+                  <Text style={styles.rowTitre}>{p.frais?.nom || 'Paiement'}</Text>
+                  <Text style={styles.rowSub}>{(p.date_paiement || '').slice(0, 10)}{p.mode_paiement ? ` · ${p.mode_paiement}` : ''}</Text>
                 </View>
                 <View style={{ alignItems: 'flex-end' }}>
                   <Text style={[styles.rowMontant, { color: '#0D9E75' }]}>{p.montant.toLocaleString('fr-FR')} F</Text>

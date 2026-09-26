@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { ArrowLeft, FileSpreadsheet, Plus, Trash2, UserCheck, UserX } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { creerApprenantEcole, getApprenantsEcole, importerApprenantsCsv, rejeterApprenant, removeApprenantEcole, validerApprenant } from '../../../services/api';
+import { creerApprenantEcole, getApprenantsEcole, getUrlModeleImportCsv, importerApprenantsCsv, rejeterApprenant, removeApprenantEcole, validerApprenant } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 
 type Apprenant = {
@@ -75,7 +75,7 @@ export default function EcoleApprenantsScreen() {
   const handleTelechargerModele = async () => {
     setModeleEnCours(true);
     try {
-      await telechargerEtPartager('/etablissement/apprenants/import/modele', 'modele-import-apprenants.csv');
+      await telechargerEtPartager(getUrlModeleImportCsv(), 'modele-import-apprenants.csv');
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Téléchargement du modèle impossible');
     } finally {
@@ -90,8 +90,7 @@ export default function EcoleApprenantsScreen() {
     setImportEnCours(true);
     try {
       const reponse = await importerApprenantsCsv({ uri: fichier.uri, name: fichier.name, mimeType: fichier.mimeType });
-      const nbImportes = reponse.data?.nb_importes ?? reponse.nb_importes;
-      Alert.alert('Import terminé', nbImportes != null ? `${nbImportes} apprenant(s) importé(s).` : 'Fichier importé avec succès.');
+      Alert.alert('Import terminé', reponse.message || `${reponse.importes ?? 0} apprenant(s) importé(s).`);
       charger();
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || "Échec de l'import du fichier");

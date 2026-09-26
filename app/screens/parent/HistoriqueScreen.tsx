@@ -7,16 +7,16 @@ import { annulerPaiement, getHistorique } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 import BottomNavParent from '../../../components/BottomNavParent';
 
+// Forme exacte de PaiementResource (vérifiée le 26/09/2026).
 type Paiement = {
   id: number;
-  libelle?: string;
-  description?: string;
+  reference?: string;
+  frais?: { nom?: string };
   apprenant?: { prenom?: string; nom?: string };
   montant: number;
   mode_paiement?: string;
   statut?: string;
-  date?: string;
-  created_at?: string;
+  date_paiement?: string;
 };
 
 const STATUT_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
@@ -134,11 +134,11 @@ export default function HistoriqueScreen() {
                   </View>
                   <View style={styles.rowTexts}>
                     <Text style={styles.rowTitre}>
-                      {p.libelle || p.description || 'Paiement'}
+                      {p.frais?.nom || 'Paiement'}
                       {p.apprenant?.prenom ? ` — ${p.apprenant.prenom}` : ''}
                     </Text>
                     <Text style={styles.rowSub}>
-                      {(p.date || p.created_at || '').slice(0, 10)}{p.mode_paiement ? ` · ${p.mode_paiement}` : ''}
+                      {(p.date_paiement || '').slice(0, 10)}{p.mode_paiement ? ` · ${p.mode_paiement}` : ''}
                     </Text>
                     {estEnAttente && (
                       <TouchableOpacity onPress={() => handleAnnuler(p)} disabled={enCours}>
