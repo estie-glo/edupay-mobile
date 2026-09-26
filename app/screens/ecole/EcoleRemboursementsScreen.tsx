@@ -80,9 +80,17 @@ export default function EcoleRemboursementsScreen() {
       Alert.alert('Erreur', 'Sélectionnez un paiement et indiquez un motif');
       return;
     }
+    const paiementChoisi = paiements.find((p) => p.id === paiementId);
+    if (!paiementChoisi) {
+      Alert.alert('Erreur', 'Paiement introuvable');
+      return;
+    }
     setEnvoi(true);
     try {
-      await demanderRemboursement({ paiement_id: paiementId, motif });
+      // Champ obligatoire côté API (RemboursementController::store, vérifié
+      // le 27/09/2026) : jamais envoyé jusqu'ici → toute demande échouait en
+      // 422. Remboursement intégral par défaut (montant du paiement).
+      await demanderRemboursement({ paiement_id: paiementId, motif, montant: paiementChoisi.montant });
       setFormOuvert(false);
       setPaiementId(null);
       setMotif('');

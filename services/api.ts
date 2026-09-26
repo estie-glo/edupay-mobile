@@ -492,7 +492,10 @@ export const getRemboursements = async () => {
   return response.data;
 };
 
-export const demanderRemboursement = async (data: { paiement_id: number; motif: string; montant?: number }) => {
+// `montant` obligatoire côté API (RemboursementController::store, vérifié le
+// 27/09/2026) — plafonné au montant réel du paiement, jamais un remboursement
+// libre.
+export const demanderRemboursement = async (data: { paiement_id: number; motif: string; montant: number }) => {
   const response = await api.post('/etablissement/remboursements', data);
   return response.data;
 };
