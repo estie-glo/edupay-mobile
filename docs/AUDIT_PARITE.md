@@ -146,15 +146,27 @@ Tous corrigés dans le commit `487127c`.
   et deux bugs 422 systématiques corrigés (`annee_scolaire` et `nb_tranches_max`
   manquants à la création, `date_echeance` manquant à l'ajout d'échéance).
 
+## Limites résolues depuis (27/09/2026, commit backend `026c131`)
+
+Les deux premières limites listées ci-dessous ont été corrigées côté backend
+puis câblées côté mobile le même jour, testées en réel :
+
+- **Export PDF de l'historique** : `GET /paiements/export` (jeton payeur,
+  filtres `du`/`au` optionnels) — câblé dans `HistoriqueScreen`, testé
+  (PDF A4 valide reçu, vérifié avec `pdfinfo`).
+- **Activer/désactiver une catégorie de frais** (`actif`) : accepté sur
+  `POST`/`PUT /etablissement/frais/{id}` — toggle ajouté dans `EcoleFraisScreen`
+  (création + édition) avec badge "Désactivée" sur les catégories inactives
+  (l'API ne les distingue pas dans la liste). Testé en réel (bascule
+  true→false→true confirmée persistée).
+
 ## Limites backend connues (pas des bugs mobile — vérifié dans le vrai code)
 
 | Sujet | Détail |
 |-------|--------|
-| Annuaire public d'établissements | Aucune route ne liste tous les établissements sans authentification — seul `GET /etablissements/{code}` (un seul, avec le code) existe. La recherche d'école sur la landing page utilise donc une liste statique (`data/etablissements.ts`). |
-| Export PDF de l'historique de paiement | Aucune route, ni web ni API. |
-| Activer/désactiver une catégorie de frais (`actif`) | Le champ existe et est renvoyé en lecture, mais aucune route ne permet de le modifier (ni à la création, ni à l'édition). |
+| Annuaire public d'établissements | Aucune route API ne liste tous les établissements sans authentification (seul `GET /etablissements/{code}`, un seul, existe). Le commit `026c131` a corrigé la recherche/pagination de l'annuaire, mais uniquement sur la page web (`Public/LandingController`, vue Blade) — aucune route API ajoutée. La recherche d'école sur la landing mobile utilise donc toujours une liste statique (`data/etablissements.ts`). |
 | Deux adresses de contact | `contact@edupay.cm` (public/payeur) vs `contact@mekontso.gsi2026.com` (page Aide établissement) — fait réel du backend, à clarifier avec l'équipe backend si c'est une erreur de leur côté, pas un bug mobile. |
-| Traduction FR/EN | Le web bascule côté session Laravel (`resources/lang/{fr,en}`). Le mobile n'a aucune couche de traduction — reporté (voir README). |
+| Traduction FR/EN (UI) | Le web bascule côté session Laravel (`resources/lang/{fr,en}`). Le mobile n'a aucune couche de traduction de l'UI — reporté (voir README). Les messages d'erreur API sont déjà traduisibles via `?lang=en` (voir plus haut) — l'UI elle-même ne l'est pas encore. |
 
 ## Écrans retirés (décision produit, pas un écart technique)
 
