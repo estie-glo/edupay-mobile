@@ -6,15 +6,15 @@ import { useAuth } from '../../../context/AuthContext';
 import { creerReclamation, getHistorique, getReclamations } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
 
-// payeur/reclamations.blade.php sur main : sujet libre + paiement lié optionnel
-// (pas de champ "type" à choix fixe), 4 statuts : ouvert/en_cours/resolu/rejetee.
+// Enum réel (migration create_reclamations_table, vérifié le 27/09/2026) :
+// ouvert/en_cours/resolu/rejete (pas de "e" final — la clé "rejetee" ne
+// matchait jamais, une réclamation rejetée retombait sur le style générique).
 type Reclamation = {
   id: number;
   sujet?: string;
   description: string;
   statut?: string;
-  reponse?: string;
-  motif_rejet?: string;
+  reponse_admin?: string;
   created_at?: string;
   numero_ticket?: string;
 };
@@ -25,7 +25,7 @@ const STATUT_STYLE: Record<string, { bg: string; fg: string; label: string }> = 
   ouvert: { bg: '#E6F0FB', fg: '#1A4E8A', label: 'Ouvert' },
   en_cours: { bg: '#FEF3DC', fg: '#8B5E10', label: 'En cours' },
   resolu: { bg: '#E0F5EE', fg: '#085041', label: 'Résolu' },
-  rejetee: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Rejetée' },
+  rejete: { bg: '#FBEAEA', fg: '#9B2C2C', label: 'Rejetée' },
 };
 
 function styleStatut(statut?: string) {
@@ -185,14 +185,11 @@ export default function ReclamationsScreen() {
                 <Text style={styles.cardDate}>
                   Soumis le {(r.created_at || '').slice(0, 10)}{r.numero_ticket ? ` · Ticket #${r.numero_ticket}` : ''}
                 </Text>
-                {r.reponse && (
-                  <View style={styles.reponseBox}>
-                    <Text style={styles.reponseTxt}>Réponse : {r.reponse}</Text>
-                  </View>
-                )}
-                {r.motif_rejet && (
-                  <View style={styles.rejetBox}>
-                    <Text style={styles.rejetTxt}>Motif : {r.motif_rejet}</Text>
+                {!!r.reponse_admin && (
+                  <View style={(r.statut || '').toLowerCase() === 'rejete' ? styles.rejetBox : styles.reponseBox}>
+                    <Text style={(r.statut || '').toLowerCase() === 'rejete' ? styles.rejetTxt : styles.reponseTxt}>
+                      Réponse : {r.reponse_admin}
+                    </Text>
                   </View>
                 )}
               </View>
