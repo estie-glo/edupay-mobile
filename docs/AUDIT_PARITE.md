@@ -4,6 +4,25 @@ Dernier audit complet : **27/09/2026**, contre le backend
 `stevetelecom/edupay-cameroun` (commit `3b3321b`, tous les commits
 "audit" D à U + tous les commits suivants vérifiés individuellement).
 
+## Re-vérification écran par écran (27/09/2026, en attendant un retour)
+
+Pendant l'attente d'un retour de Steve, re-vérification systématique de
+chaque écran contre le contrôleur réel actuel (pas seulement les écrans
+touchés par un commit visible) — deux bugs de plus trouvés, indépendants
+des correctifs récents :
+
+| Écran | Bug | Détail |
+|-------|-----|--------|
+| `ReclamationsScreen` | Style "rejetee" (double e) ne correspondait jamais à l'enum réel `rejete` | Toute réclamation rejetée retombait sur le style générique. |
+| `ReclamationsScreen` | Lisait `r.reponse`/`r.motif_rejet`, aucun des deux n'existe dans `ReclamationResource` (le vrai champ est `reponse_admin`, unique) | La réponse d'un admin n'était **jamais** affichée au payeur, quel que soit le statut. |
+| `ProfilScreen` (payeur) | Changer le mot de passe révoque désormais tous les tokens Sanctum côté serveur (y compris celui de la requête) — correctif sécurité non annoncé | L'app restait "connectée" avec un token mort après un changement de mot de passe réussi, cassant silencieusement tout appel suivant. Corrigé (signOut() après succès). Confirmé en réel (401 si l'ancien token est réutilisé). |
+| `EcoleProfilScreen` | Regex de mot de passe mobile sans exigence de minuscule, alors que le serveur école l'exige | Un mot de passe valide pour le payeur pouvait être rejeté côté école sans que le mobile l'anticipe. Corrigé. **Point notable** : côté école, le changement de mot de passe NE révoque PAS les tokens (vérifié en réel, contrairement au payeur) — aucun signOut() ajouté là, ce serait une déconnexion inutile. |
+
+Écrans re-vérifiés sans écart trouvé : `EcoleUtilisateursScreen` (invitation
++ changement de rôle + suppression, testés en réel de bout en bout),
+`EcoleRapportsScreen` (export PDF + "Excel" confirmés — ce dernier est en
+réalité un CSV, déjà correctement nommé `.csv` côté mobile), `EcoleParametresScreen`.
+
 Derniers commits vérifiés sans impact mobile : double enregistrement
 d'abonnement à la création (intégrité serveur pure), i18n super admin +
 modales abonnements web (hors périmètre mobile), nettoyage de fichiers
