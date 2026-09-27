@@ -1,9 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, CheckSquare, EyeOff, Layers3, Pencil, Plus, Square, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, CheckSquare, Copy, EyeOff, Layers3, Pencil, Plus, Square, Trash2, Trash } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { affecterFraisClasse, ajouterEcheancier, creerFraisEcole, getFraisEcole, removeFraisEcole, supprimerEcheancier, updateEcheancier, updateFraisEcole } from '../../../services/api';
+import { affecterFraisClasse, ajouterEcheancier, creerFraisEcole, dupliquerFraisEcole, getFraisEcole, purgerFraisAnneesPassees, removeFraisEcole, supprimerEcheancier, updateEcheancier, updateFraisEcole } from '../../../services/api';
 
 // Champs et règles alignés sur FraisStoreRequest / Etablissement/FraisController
 // (vérifiés le 26/09/2026) : annee_scolaire et nb_tranches_max sont TOUJOURS
@@ -29,6 +29,12 @@ function anneeScolaireActuelle() {
   return maintenant.getMonth() + 1 >= 9 ? `${annee}-${annee + 1}` : `${annee - 1}-${annee}`;
 }
 
+function anneeSuivante(anneeScolaire?: string): string {
+  const match = (anneeScolaire || anneeScolaireActuelle()).match(/^(\d{4})-(\d{4})$/);
+  if (!match) return anneeScolaireActuelle();
+  return `${Number(match[1]) + 1}-${Number(match[2]) + 1}`;
+}
+
 export default function EcoleFraisScreen() {
   const router = useRouter();
   const { token, isLoading: authLoading } = useAuth();
@@ -41,6 +47,8 @@ export default function EcoleFraisScreen() {
   const [classePourAffectation, setClassePourAffectation] = useState<Record<number, string>>({});
   const [nouvelleEcheance, setNouvelleEcheance] = useState<Record<number, { id?: number; numeroTranche?: number; libelle: string; montant: string; date: string }>>({});
   const [envoiEcheance, setEnvoiEcheance] = useState<number | null>(null);
+  const [dupliquerEnCoursId, setDupliquerEnCoursId] = useState<number | null>(null);
+  const [purgeEnCours, setPurgeEnCours] = useState(false);
 
   const [nom, setNom] = useState('');
   const [description, setDescription] = useState('');
@@ -159,6 +167,58 @@ export default function EcoleFraisScreen() {
     }
   };
 
+  const handleDupliquer = (f: Frais) => {
+    const cible = anneeSuivante(f.annee_scolaire);
+    Alert.alert(
+      'Dupliquer cette catégorie ?',
+      `« ${f.nom} » (+ ses échéanciers, décalés d'un an) sera dupliquée vers l'année ${cible}. Pensez ensuite à l'affecter aux apprenants concernés.`,
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Dupliquer',
+          onPress: async () => {
+            setDupliquerEnCoursId(f.id);
+            try {
+              const reponse = await dupliquerFraisEcole(f.id, cible);
+              Alert.alert('Dupliquée', reponse.message || `Catégorie dupliquée vers ${cible}.`);
+              charger();
+            } catch (error: any) {
+              Alert.alert('Erreur', error.response?.data?.message || 'Duplication impossible');
+            } finally {
+              setDupliquerEnCoursId(null);
+            }
+          },
+        },
+      ]
+    );
+  };
+
+  const handlePurgerAnneesPassees = () => {
+    Alert.alert(
+      'Purger les années passées ?',
+      "Action IRRÉVERSIBLE : supprime définitivement toutes les catégories de frais (et leurs paiements, échéanciers) des années autres que l'année active. Utilisez ceci uniquement si vous êtes sûr de ne plus avoir besoin de cet historique.",
+      [
+        { text: 'Annuler', style: 'cancel' },
+        {
+          text: 'Purger définitivement',
+          style: 'destructive',
+          onPress: async () => {
+            setPurgeEnCours(true);
+            try {
+              const reponse = await purgerFraisAnneesPassees();
+              Alert.alert('Purge effectuée', reponse.message || 'Terminé.');
+              charger();
+            } catch (error: any) {
+              Alert.alert('Erreur', error.response?.data?.message || 'Purge impossible');
+            } finally {
+              setPurgeEnCours(false);
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const ouvrirEditionEcheance = (fraisId: number, e: Echeancier) => {
     setNouvelleEcheance((prev) => ({
       ...prev,
@@ -218,9 +278,14 @@ export default function EcoleFraisScreen() {
           <ArrowLeft size={18} color="#FFFFFF" />
         </TouchableOpacity>
         <Text style={styles.titre}>Frais & échéanciers</Text>
-        <TouchableOpacity style={styles.addBtn} onPress={() => setFormOuvert(true)}>
-          <Plus size={18} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 8 }}>
+          <TouchableOpacity style={styles.purgeBtn} onPress={handlePurgerAnneesPassees} disabled={purgeEnCours}>
+            {purgeEnCours ? <ActivityIndicator size="small" color="#FFFFFF" /> : <Trash size={16} color="#FFFFFF" />}
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.addBtn} onPress={() => setFormOuvert(true)}>
+            <Plus size={18} color="#FFFFFF" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
@@ -342,6 +407,10 @@ export default function EcoleFraisScreen() {
                       </TouchableOpacity>
                     </View>
 
+                    <TouchableOpacity style={styles.btnDupliquer} onPress={() => handleDupliquer(f)} disabled={dupliquerEnCoursId === f.id}>
+                      {dupliquerEnCoursId === f.id ? <ActivityIndicator size="small" color="#0B2545" /> : <><Copy size={13} color="#0B2545" /><Text style={styles.btnDupliquerTxt}>Dupliquer vers {anneeSuivante(f.annee_scolaire)}</Text></>}
+                    </TouchableOpacity>
+
                     <Text style={[styles.detailLabel, { marginTop: 14 }]}>AFFECTER À UNE CLASSE</Text>
                     <View style={styles.affecterRow}>
                       <TextInput
@@ -372,6 +441,9 @@ const styles = StyleSheet.create({
   backBtn: { backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   titre: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
   addBtn: { backgroundColor: '#E8A020', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  purgeBtn: { backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
+  btnDupliquer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: '#0B2545', borderRadius: 8, paddingVertical: 9, marginTop: 12 },
+  btnDupliquerTxt: { color: '#0B2545', fontSize: 11, fontWeight: '700' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },

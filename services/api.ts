@@ -441,6 +441,22 @@ export const removeFraisEcole = async (id: number) => {
   return response.data;
 };
 
+// Duplique une catégorie de frais (+ ses échéanciers, décalés d'un an) vers
+// une nouvelle année scolaire (FraisController::dupliquer, vérifié le
+// 27/09/2026).
+export const dupliquerFraisEcole = async (id: number, nouvelle_annee_scolaire: string) => {
+  const response = await api.post(`/etablissement/frais/${id}/dupliquer`, { nouvelle_annee_scolaire });
+  return response.data;
+};
+
+// Supprime DÉFINITIVEMENT toutes les catégories de frais des années passées
+// (cascade : paiements → frais_apprenant → échéanciers → catégorie).
+// Irréversible — vérifié le 27/09/2026.
+export const purgerFraisAnneesPassees = async () => {
+  const response = await api.post('/etablissement/frais/purger-annees-passees');
+  return response.data;
+};
+
 export const affecterFraisClasse = async (id: number, classe: string) => {
   const response = await api.post(`/etablissement/frais/${id}/affecter`, { classe });
   return response.data;
