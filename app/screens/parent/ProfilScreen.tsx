@@ -90,10 +90,12 @@ export default function ProfilScreen() {
     setChangementMdp(true);
     try {
       await updateProfilPassword({ current_password: mdpActuel, password: mdpNouveau, password_confirmation: mdpConfirmation });
-      Alert.alert('Mot de passe modifié', 'Votre mot de passe a été mis à jour avec succès.');
-      setMdpActuel('');
-      setMdpNouveau('');
-      setMdpConfirmation('');
+      // Le changement de mot de passe révoque tous les tokens Sanctum côté
+      // serveur, y compris celui de cette requête (vérifié le 27/09/2026) :
+      // sans déconnexion locale immédiate, l'app resterait bloquée avec un
+      // token mort jusqu'à la prochaine action.
+      await signOut();
+      Alert.alert('Mot de passe modifié', 'Veuillez vous reconnecter avec votre nouveau mot de passe.');
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Changement de mot de passe impossible');
     } finally {

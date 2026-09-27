@@ -5,7 +5,9 @@ import { ArrowLeft, Building2, Calendar, KeyRound, LogOut, Save, UserRound } fro
 import { useAuth } from '../../../context/AuthContext';
 import { getAbonnement, getProfilEcole, updateProfilEcole, updateProfilPasswordEcole } from '../../../services/api';
 
-const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).+$/;
+// Regex alignée sur Api/Etablissement/ProfilController::updatePassword (vérifié
+// le 27/09/2026) : exige aussi une minuscule, contrairement au payeur.
+const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[a-z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).+$/;
 
 type Abonnement = { plan_nom?: string; statut?: string; date_fin?: string; jours_restants?: number };
 
@@ -81,7 +83,7 @@ export default function EcoleProfilScreen() {
 
   const handleChangerMdp = async () => {
     if (!mdpActuel || mdpNouveau.length < 8 || !PASSWORD_REGEX.test(mdpNouveau)) {
-      Alert.alert('Erreur', 'Le nouveau mot de passe doit contenir au moins 8 caractères, 1 majuscule, 1 chiffre et 1 caractère spécial');
+      Alert.alert('Erreur', 'Le nouveau mot de passe doit contenir au moins 8 caractères, 1 majuscule, 1 minuscule, 1 chiffre et 1 caractère spécial');
       return;
     }
     if (mdpNouveau !== mdpConfirmation) {
@@ -167,7 +169,7 @@ export default function EcoleProfilScreen() {
         <Text style={styles.lbl}>Mot de passe actuel *</Text>
         <TextInput style={styles.input} value={mdpActuel} onChangeText={setMdpActuel} secureTextEntry placeholderTextColor="#AAAAAA" />
         <Text style={styles.lbl}>Nouveau mot de passe *</Text>
-        <TextInput style={styles.input} value={mdpNouveau} onChangeText={setMdpNouveau} secureTextEntry placeholder="Min. 8 car., 1 majuscule, 1 chiffre, 1 spécial" placeholderTextColor="#AAAAAA" />
+        <TextInput style={styles.input} value={mdpNouveau} onChangeText={setMdpNouveau} secureTextEntry placeholder="Min. 8 car., 1 majuscule, 1 minuscule, 1 chiffre, 1 spécial" placeholderTextColor="#AAAAAA" />
         <Text style={styles.lbl}>Confirmer *</Text>
         <TextInput style={styles.input} value={mdpConfirmation} onChangeText={setMdpConfirmation} secureTextEntry placeholderTextColor="#AAAAAA" />
 
