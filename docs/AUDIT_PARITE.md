@@ -4,6 +4,33 @@ Dernier audit complet : **27/09/2026**, contre le backend
 `stevetelecom/edupay-cameroun` (commit `3b3321b`, tous les commits
 "audit" D à U + tous les commits suivants vérifiés individuellement).
 
+## Audit exhaustif des routes (27/09/2026)
+
+Comparaison complète de `routes/api.php` (toutes les routes, avec leur
+préfixe exact résolu manuellement) contre chaque appel de
+`services/api.ts`, plutôt que de se fier aux vérifications ponctuelles
+précédentes. Trois routes entières jamais câblées trouvées et comblées :
+
+- `POST /etablissement/frais/{id}/dupliquer` + `POST /etablissement/
+  frais/purger-annees-passees` — dupliquer une catégorie de frais (+
+  échéanciers, décalés d'un an) vers l'année suivante, et purger
+  définitivement les années passées. Testé en réel (duplication +
+  purge de 6 catégories de test confirmées).
+- `PUT /apprenants/{id}` (`ApprenantController::updateInfo`) — un parent
+  peut modifier prénom/nom/classe/matricule de son enfant ; le web a la
+  page dédiée (`/mes-apprenants/{id}/modifier`), le mobile n'avait que
+  rattacher/détacher. Testé en réel.
+- `GET /frais-apprenants/{id}` (`Api\FraisController::show`) — détail
+  d'un dossier de frais + historique de ses paiements, équivalent web
+  `/paiement/{fraisApprenant}`. Ajouté à `PaiementScreen` en best-effort
+  (n'empêche jamais de payer si l'appel échoue). Testé en réel avec et
+  sans historique.
+
+Route `GET /apprenants/mes-enfants` (`mesEnfants`) : délibérément non
+câblée — `GET /dashboard` (déjà utilisée) couvre le même besoin en plus
+riche (est_solo, premier_frais_impaye_solo). Pas un écart, un doublon
+évité.
+
 ## Re-vérification écran par écran (27/09/2026, en attendant un retour)
 
 Pendant l'attente d'un retour de Steve, re-vérification systématique de
