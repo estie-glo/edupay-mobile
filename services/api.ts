@@ -189,6 +189,17 @@ export const removeApprenant = async (id: number) => {
   return response.data;
 };
 
+// Édition des infos d'un enfant par le parent (ApprenantController::updateInfo,
+// vérifié le 27/09/2026 — équivalent web /mes-apprenants/{id}/modifier).
+// etablissement_id doit toujours être envoyé (celui déjà rattaché) : sinon la
+// validation exige etablissement_nom, et un changement d'établissement est
+// refusé côté serveur si des paiements existent déjà — cet écran ne propose
+// donc jamais de changer d'établissement, seulement prenom/nom/classe/matricule.
+export const updateApprenant = async (id: number, data: { prenom: string; nom: string; classe: string; matricule?: string; etablissement_id: number }) => {
+  const response = await api.put(`/apprenants/${id}`, data);
+  return response.data;
+};
+
 // Annuaire des établissements actifs, pour la recherche lors du rattachement d'un enfant.
 export const getEtablissementsPourRattachement = async () => {
   const response = await api.get('/apprenants/etablissements');

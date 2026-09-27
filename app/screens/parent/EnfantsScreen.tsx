@@ -1,20 +1,23 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, Award, ChevronRight, School, Search, Trash2, UserPlus } from 'lucide-react-native';
+import { ArrowLeft, Award, ChevronRight, Pencil, School, Search, Trash2, UserPlus } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
-import { getApprenants, getEtablissementsPourRattachement, rattacherApprenant, removeApprenant } from '../../../services/api';
+import { getApprenants, getEtablissementsPourRattachement, rattacherApprenant, removeApprenant, updateApprenant } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 import BottomNavParent from '../../../components/BottomNavParent';
 
 type EtablissementAnnuaire = { id: number; nom: string; ville?: string; type?: string; code_etablissement: string };
 
+// Équivalent web /mes-apprenants/{id}/modifier (ApprenantController::updateInfo,
+// vérifié le 27/09/2026) — jamais câblé côté mobile jusqu'ici.
 type Apprenant = {
   id: number;
   prenom: string;
   nom: string;
   classe?: string;
-  etablissement?: { nom?: string; code_etablissement?: string };
+  matricule?: string;
+  etablissement?: { id?: number; nom?: string; code_etablissement?: string };
   solde_du?: number;
   statut?: string;
 };
@@ -49,6 +52,13 @@ export default function EnfantsScreen() {
   const [classeRecherche, setClasseRecherche] = useState('');
   const [candidats, setCandidats] = useState<Candidat[] | null>(null);
   const [certificatEnCoursId, setCertificatEnCoursId] = useState<number | null>(null);
+
+  const [apprenantEnEdition, setApprenantEnEdition] = useState<Apprenant | null>(null);
+  const [editPrenom, setEditPrenom] = useState('');
+  const [editNom, setEditNom] = useState('');
+  const [editClasse, setEditClasse] = useState('');
+  const [editMatricule, setEditMatricule] = useState('');
+  const [envoiEdition, setEnvoiEdition] = useState(false);
 
   const lien: 'parent' | 'soi-meme' = user?.profil === 'eleve' || user?.profil === 'etudiant' ? 'soi-meme' : 'parent';
 
@@ -178,6 +188,39 @@ export default function EnfantsScreen() {
     );
   };
 
+  const ouvrirEdition = (apprenant: Apprenant) => {
+    setApprenantEnEdition(apprenant);
+    setEditPrenom(apprenant.prenom);
+    setEditNom(apprenant.nom);
+    setEditClasse(apprenant.classe || '');
+    setEditMatricule(apprenant.matricule || '');
+  };
+
+  const handleModifier = async () => {
+    if (!apprenantEnEdition || !editPrenom || !editNom || !editClasse) {
+      Alert.alert('Erreur', 'Prénom, nom et classe sont obligatoires');
+      return;
+    }
+    const etablissementId = apprenantEnEdition.etablissement?.id;
+    if (!etablissementId) {
+      Alert.alert('Erreur', "Établissement introuvable pour cet enfant");
+      return;
+    }
+    setEnvoiEdition(true);
+    try {
+      await updateApprenant(apprenantEnEdition.id, {
+        prenom: editPrenom, nom: editNom, classe: editClasse,
+        matricule: editMatricule || undefined, etablissement_id: etablissementId,
+      });
+      setApprenantEnEdition(null);
+      chargerApprenants();
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || 'Modification impossible');
+    } finally {
+      setEnvoiEdition(false);
+    }
+  };
+
   const handleTelechargerCertificat = async (apprenant: Apprenant) => {
     setCertificatEnCoursId(apprenant.id);
     try {
@@ -295,6 +338,28 @@ export default function EnfantsScreen() {
           </View>
         )}
 
+        {!!apprenantEnEdition && (
+          <View style={styles.formCard}>
+            <Text style={styles.formTitre}>Modifier {apprenantEnEdition.prenom}</Text>
+            <Text style={styles.lbl}>Prénom *</Text>
+            <TextInput style={styles.input} value={editPrenom} onChangeText={setEditPrenom} placeholderTextColor="#AAAAAA" />
+            <Text style={styles.lbl}>Nom *</Text>
+            <TextInput style={styles.input} value={editNom} onChangeText={setEditNom} placeholderTextColor="#AAAAAA" />
+            <Text style={styles.lbl}>Classe *</Text>
+            <TextInput style={styles.input} value={editClasse} onChangeText={setEditClasse} placeholderTextColor="#AAAAAA" />
+            <Text style={styles.lbl}>Matricule (optionnel)</Text>
+            <TextInput style={styles.input} value={editMatricule} onChangeText={setEditMatricule} placeholderTextColor="#AAAAAA" />
+            <View style={styles.formBtns}>
+              <TouchableOpacity style={styles.btnAnnuler} onPress={() => setApprenantEnEdition(null)}>
+                <Text style={styles.btnAnnulerTxt}>Annuler</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={[styles.btnEnvoyer, envoiEdition && { opacity: 0.7 }]} onPress={handleModifier} disabled={envoiEdition}>
+                {envoiEdition ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Enregistrer</Text>}
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+
         {apprenants.length === 0 ? (
           <Text style={styles.vide}>Aucun enfant rattaché pour le moment.</Text>
         ) : (
@@ -324,6 +389,9 @@ export default function EnfantsScreen() {
                 <View style={styles.cardBottom}>
                   <Text style={styles.solde}>Reste dû : <Text style={{ fontWeight: '700' }}>{(a.solde_du ?? 0).toLocaleString('fr-FR')} FCFA</Text></Text>
                   <View style={styles.cardActions}>
+                    <TouchableOpacity onPress={() => ouvrirEdition(a)} style={styles.trashBtn}>
+                      <Pencil size={15} color="#666666" />
+                    </TouchableOpacity>
                     <TouchableOpacity onPress={() => handleTelechargerCertificat(a)} style={styles.trashBtn} disabled={certificatEnCoursId === a.id}>
                       {certificatEnCoursId === a.id ? <ActivityIndicator size="small" color="#0D9E75" /> : <Award size={16} color="#0D9E75" />}
                     </TouchableOpacity>
