@@ -212,6 +212,14 @@ export const getFraisApprenant = async (apprenant_id: number) => {
   return response.data;
 };
 
+// Détail d'un dossier de frais précis + historique de ses paiements
+// (Api\FraisController::show, équivalent web /paiement/{fraisApprenant} —
+// vérifié le 27/09/2026, jamais appelée côté mobile jusqu'ici).
+export const getFraisApprenantDetail = async (frais_apprenant_id: number) => {
+  const response = await api.get(`/frais-apprenants/${frais_apprenant_id}`);
+  return response.data;
+};
+
 export const getHistorique = async (page: number = 1) => {
   const response = await api.get(`/paiements?page=${page}`);
   return response.data;

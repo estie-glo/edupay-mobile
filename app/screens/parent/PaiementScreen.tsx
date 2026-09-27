@@ -1,10 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, CreditCard, ShieldCheck, Smartphone } from 'lucide-react-native';
-import { initierPaiement } from '../../../services/api';
+import { ArrowLeft, CreditCard, History, ShieldCheck, Smartphone } from 'lucide-react-native';
+import { getFraisApprenantDetail, initierPaiement } from '../../../services/api';
 
 type ModePaiement = 'mtn_momo' | 'orange_money' | 'carte';
+
+type PaiementPrecedent = { id: number; reference?: string; montant: number; statut?: string; mode_paiement?: string; date_paiement?: string };
 
 export default function PaiementScreen() {
   const router = useRouter();
@@ -20,6 +22,17 @@ export default function PaiementScreen() {
   const [typePaiement, setTypePaiement] = useState<'integral' | 'tranche'>('integral');
   const [telephone, setTelephone] = useState('');
   const [loading, setLoading] = useState(false);
+  const [paiementsPrecedents, setPaiementsPrecedents] = useState<PaiementPrecedent[]>([]);
+
+  // Équivalent web /paiement/{fraisApprenant} (Api\FraisController::show) :
+  // montre les paiements déjà tentés sur ce dossier, pour éviter un double
+  // paiement par erreur — best-effort, n'empêche jamais de payer si ça échoue.
+  useEffect(() => {
+    if (!params.fraisApprenantId) return;
+    getFraisApprenantDetail(Number(params.fraisApprenantId))
+      .then((r) => setPaiementsPrecedents((r.data ?? r)?.paiements ?? []))
+      .catch(() => setPaiementsPrecedents([]));
+  }, [params.fraisApprenantId]);
 
   const montantIntegral = Number(params.montant || 0);
   const montantTranche = params.montantTranche ? Number(params.montantTranche) : null;
@@ -87,6 +100,21 @@ export default function PaiementScreen() {
             <Text style={styles.resumeDevise}>FCFA</Text>
           </View>
         </View>
+
+        {paiementsPrecedents.length > 0 && (
+          <View style={styles.precedentsBox}>
+            <View style={styles.precedentsHeader}>
+              <History size={13} color="#8B5E10" />
+              <Text style={styles.precedentsTitre}>Paiements déjà effectués sur ce dossier</Text>
+            </View>
+            {paiementsPrecedents.map((p) => (
+              <Text key={p.id} style={styles.precedentLigne}>
+                • {(p.montant ?? 0).toLocaleString('fr-FR')} FCFA — {p.statut === 'valide' ? 'Validé' : p.statut === 'en_attente' ? 'En attente' : p.statut}
+                {p.date_paiement ? ` (${p.date_paiement.slice(0, 10)})` : ''}
+              </Text>
+            ))}
+          </View>
+        )}
 
         <Text style={styles.sec}>Option de paiement</Text>
         <View style={styles.optionRow}>
@@ -190,6 +218,10 @@ const styles = StyleSheet.create({
   resumeMontant: { fontSize: 28, fontWeight: '800', color: '#085041' },
   resumeDevise: { fontSize: 11, color: '#0F6E56', textAlign: 'right' },
   sec: { fontSize: 10, fontWeight: '700', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
+  precedentsBox: { backgroundColor: '#FEF3DC', borderRadius: 10, padding: 12, marginBottom: 20, gap: 4 },
+  precedentsHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 4 },
+  precedentsTitre: { fontSize: 11, fontWeight: '700', color: '#8B5E10' },
+  precedentLigne: { fontSize: 11, color: '#8B5E10' },
   optionRow: { flexDirection: 'row', gap: 10, marginBottom: 20 },
   optionCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   optionCardActive: { borderColor: '#0D9E75', backgroundColor: '#E0F5EE' },
