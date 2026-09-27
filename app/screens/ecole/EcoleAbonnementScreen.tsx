@@ -5,7 +5,8 @@ import { AlertTriangle, CheckCircle2, Crown, MessageCircle } from 'lucide-react-
 import { useAuth } from '../../../context/AuthContext';
 import { getAbonnement } from '../../../services/api';
 
-// Forme exacte de DashboardController::abonnement (vérifiée le 26/09/2026).
+// Forme exacte de DashboardController::abonnement (vérifiée le 27/09/2026,
+// après le correctif backend sur les durées/montants d'abonnement).
 // Aucune route de changement de plan côté API : le CTA renvoie vers le
 // formulaire de contact, il n'existe pas de souscription en self-service.
 type Abonnement = {
@@ -14,6 +15,9 @@ type Abonnement = {
   plan_nom?: string;
   date_fin?: string;
   grace_period_fin?: string;
+  duree_mois?: number;
+  montant_mensuel?: number;
+  montant_total?: number;
   est_actif?: boolean;
   en_grace_period?: boolean;
   jours_restants?: number;
@@ -83,6 +87,11 @@ export default function EcoleAbonnementScreen() {
               <Text style={styles.statutSousTitre}>
                 {abonnement?.jours_restants != null ? `${abonnement.jours_restants} jour(s) restants` : ''}{abonnement?.date_fin ? ` · renouvellement le ${abonnement.date_fin}` : ''}
               </Text>
+              {!!abonnement?.montant_mensuel && !!abonnement?.duree_mois && (
+                <Text style={styles.statutDetail}>
+                  {abonnement.montant_mensuel.toLocaleString('fr-FR')} FCFA/mois × {abonnement.duree_mois} mois = {(abonnement.montant_total ?? 0).toLocaleString('fr-FR')} FCFA
+                </Text>
+              )}
             </View>
           </View>
         )}
@@ -149,6 +158,7 @@ const styles = StyleSheet.create({
   statutCardExpire: { flexDirection: 'row', alignItems: 'flex-start', gap: 12, backgroundColor: '#FBEAEA', borderRadius: 12, padding: 16, marginBottom: 20 },
   statutTitreExpire: { fontSize: 14, fontWeight: '800', color: '#9B2C2C' },
   statutSousTitre: { fontSize: 12, color: '#555555', marginTop: 4, lineHeight: 16 },
+  statutDetail: { fontSize: 11, color: '#0F6E56', marginTop: 6, fontWeight: '600' },
   secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
   planCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1.5, borderColor: '#E2E8F0' },
   planCardActuel: { borderColor: '#E8A020' },
