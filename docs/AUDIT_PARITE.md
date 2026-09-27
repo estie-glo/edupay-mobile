@@ -1,8 +1,16 @@
 # Audit de parité web ↔ mobile
 
 Dernier audit complet : **27/09/2026**, contre le backend
-`stevetelecom/edupay-cameroun` (commit `e2a7552`, tous les commits
-"audit" D à U + les 2 commits i18n suivants vérifiés individuellement).
+`stevetelecom/edupay-cameroun` (commit `3b3321b`, tous les commits
+"audit" D à U + tous les commits suivants vérifiés individuellement).
+
+Derniers commits vérifiés sans impact mobile : double enregistrement
+d'abonnement à la création (intégrité serveur pure), i18n super admin +
+modales abonnements web (hors périmètre mobile), nettoyage de fichiers
+`.bak`, ancre de scroll sur la landing web. Le correctif sur les durées/
+montants d'abonnement, lui, ajoute des champs consommés côté mobile
+(`duree_mois`, `montant_mensuel`, `montant_total` sur `GET /etablissement/
+abonnement`) — affichés dans `EcoleAbonnementScreen`, vérifié en réel.
 
 ## À savoir pour le futur chantier de traduction FR/EN
 
