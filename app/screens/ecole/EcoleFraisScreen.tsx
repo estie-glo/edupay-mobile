@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, CheckSquare, Layers3, Pencil, Plus, Square, Trash2 } from 'lucide-react-native';
+import { ArrowLeft, CheckSquare, EyeOff, Layers3, Pencil, Plus, Square, Trash2 } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { affecterFraisClasse, ajouterEcheancier, creerFraisEcole, getFraisEcole, removeFraisEcole, supprimerEcheancier, updateEcheancier, updateFraisEcole } from '../../../services/api';
 
@@ -19,6 +19,7 @@ type Frais = {
   annee_scolaire?: string;
   fractionnable?: boolean;
   nb_tranches_max?: number;
+  actif?: boolean;
   echeanciers?: Echeancier[];
 };
 
@@ -47,6 +48,7 @@ export default function EcoleFraisScreen() {
   const [anneeScolaire, setAnneeScolaire] = useState(anneeScolaireActuelle());
   const [fractionnable, setFractionnable] = useState(false);
   const [nbTranchesMax, setNbTranchesMax] = useState('3');
+  const [actif, setActif] = useState(true);
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -78,6 +80,7 @@ export default function EcoleFraisScreen() {
     setAnneeScolaire(anneeScolaireActuelle());
     setFractionnable(false);
     setNbTranchesMax('3');
+    setActif(true);
   };
 
   const ouvrirEdition = (f: Frais) => {
@@ -88,6 +91,7 @@ export default function EcoleFraisScreen() {
     setAnneeScolaire(f.annee_scolaire || anneeScolaireActuelle());
     setFractionnable(!!f.fractionnable);
     setNbTranchesMax(String(f.nb_tranches_max || 3));
+    setActif(f.actif !== false);
     setFormOuvert(true);
   };
 
@@ -106,6 +110,7 @@ export default function EcoleFraisScreen() {
         description: description || undefined,
         fractionnable,
         nb_tranches_max: fractionnable ? Number(nbTranchesMax) || 2 : 1,
+        actif,
       };
       if (fraisEnEdition) {
         await updateFraisEcole(fraisEnEdition, donnees);
@@ -240,6 +245,10 @@ export default function EcoleFraisScreen() {
                 <TextInput style={styles.input} value={nbTranchesMax} onChangeText={setNbTranchesMax} keyboardType="number-pad" maxLength={1} />
               </>
             )}
+            <TouchableOpacity style={styles.checkRow} onPress={() => setActif(!actif)}>
+              {actif ? <CheckSquare size={18} color="#E8A020" /> : <Square size={18} color="#AAAAAA" />}
+              <Text style={styles.checkTxt}>Catégorie active (visible pour affecter des frais)</Text>
+            </TouchableOpacity>
             <View style={styles.formBtns}>
               <TouchableOpacity style={styles.btnAnnuler} onPress={resetFormulaire}>
                 <Text style={styles.btnAnnulerTxt}>Annuler</Text>
@@ -256,14 +265,23 @@ export default function EcoleFraisScreen() {
         ) : (
           frais.map((f) => {
             const estOuvert = ouvert === f.id;
+            const estInactif = f.actif === false;
             return (
-              <View key={f.id} style={styles.card}>
+              <View key={f.id} style={[styles.card, estInactif && styles.cardInactive]}>
                 <TouchableOpacity style={styles.cardTop} onPress={() => setOuvert(estOuvert ? null : f.id)}>
-                  <View style={styles.cardIco}>
-                    <Layers3 size={16} color="#E8A020" />
+                  <View style={[styles.cardIco, estInactif && styles.cardIcoInactif]}>
+                    <Layers3 size={16} color={estInactif ? '#AAAAAA' : '#E8A020'} />
                   </View>
                   <View style={{ flex: 1 }}>
-                    <Text style={styles.nom}>{f.nom}</Text>
+                    <View style={styles.nomRow}>
+                      <Text style={[styles.nom, estInactif && styles.nomInactif]}>{f.nom}</Text>
+                      {estInactif && (
+                        <View style={styles.badgeInactif}>
+                          <EyeOff size={10} color="#888888" />
+                          <Text style={styles.badgeInactifTxt}>Désactivée</Text>
+                        </View>
+                      )}
+                    </View>
                     <Text style={styles.sousTitre}>
                       {f.montant_total.toLocaleString('fr-FR')} FCFA{f.fractionnable ? ` · jusqu'à ${f.nb_tranches_max || 3} tranches` : ''}{f.annee_scolaire ? ` · ${f.annee_scolaire}` : ''}
                     </Text>
@@ -357,9 +375,15 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  cardInactive: { backgroundColor: '#F5F6F7', opacity: 0.75 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   cardIco: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FEF3DC', alignItems: 'center', justifyContent: 'center' },
+  cardIcoInactif: { backgroundColor: '#E2E8F0' },
+  nomRow: { flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' },
   nom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
+  nomInactif: { color: '#888888' },
+  badgeInactif: { flexDirection: 'row', alignItems: 'center', gap: 3, backgroundColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 7, paddingVertical: 2 },
+  badgeInactifTxt: { fontSize: 9, fontWeight: '700', color: '#888888' },
   sousTitre: { fontSize: 11, color: '#888888', marginTop: 2 },
   detailBox: { marginTop: 14, paddingTop: 14, borderTopWidth: 1, borderTopColor: '#F0F2F5' },
   detailLabel: { fontSize: 9, fontWeight: '800', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 8 },

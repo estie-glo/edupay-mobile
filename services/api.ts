@@ -415,11 +415,14 @@ export const creerFraisEcole = async (data: {
   fractionnable?: boolean;
   nb_tranches_max?: number;
   description?: string;
+  actif?: boolean;
 }) => {
   const response = await api.post('/etablissement/frais', data);
   return response.data;
 };
 
+// `actif` désormais modifiable côté API (FraisStoreRequest, vérifié le
+// 27/09/2026) : absent de la payload, la valeur actuelle est conservée.
 export const updateFraisEcole = async (id: number, data: {
   nom: string;
   montant_total: number;
@@ -427,6 +430,7 @@ export const updateFraisEcole = async (id: number, data: {
   fractionnable?: boolean;
   nb_tranches_max?: number;
   description?: string;
+  actif?: boolean;
 }) => {
   const response = await api.put(`/etablissement/frais/${id}`, data);
   return response.data;

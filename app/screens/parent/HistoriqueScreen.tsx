@@ -1,7 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, ArrowLeftRight, CreditCard, Download, Receipt, XCircle } from 'lucide-react-native';
+import { ArrowLeft, ArrowLeftRight, CreditCard, Download, FileDown, Receipt, XCircle } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { annulerPaiement, getHistorique } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
@@ -41,6 +41,7 @@ export default function HistoriqueScreen() {
   const [loading, setLoading] = useState(true);
   const [loadingPlus, setLoadingPlus] = useState(false);
   const [actionEnCoursId, setActionEnCoursId] = useState<number | null>(null);
+  const [exportEnCours, setExportEnCours] = useState(false);
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -75,6 +76,19 @@ export default function HistoriqueScreen() {
       Alert.alert('Erreur', error.response?.data?.message || 'Téléchargement du reçu impossible');
     } finally {
       setActionEnCoursId(null);
+    }
+  };
+
+  const handleExporter = async () => {
+    setExportEnCours(true);
+    try {
+      // GET /paiements/export (jeton payeur, filtres du/au optionnels — vérifié
+      // le 27/09/2026) : réutilise la vue PDF web, isolée aux paiements du payeur.
+      await telechargerEtPartager('/paiements/export', `historique-edupay-${Date.now()}.pdf`);
+    } catch (error: any) {
+      Alert.alert('Erreur', error.response?.data?.message || "Impossible d'exporter l'historique");
+    } finally {
+      setExportEnCours(false);
     }
   };
 
@@ -116,6 +130,11 @@ export default function HistoriqueScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
+        <TouchableOpacity style={styles.btnExporter} onPress={handleExporter} disabled={exportEnCours || paiements.length === 0}>
+          {exportEnCours ? <ActivityIndicator size="small" color="#0D9E75" /> : <FileDown size={14} color="#0D9E75" />}
+          <Text style={styles.btnExporterTxt}>{exportEnCours ? 'Export en cours...' : "Exporter l'historique en PDF"}</Text>
+        </TouchableOpacity>
+
         {paiements.length === 0 ? (
           <Text style={styles.vide}>Aucun paiement pour le moment.</Text>
         ) : (
@@ -183,6 +202,8 @@ const styles = StyleSheet.create({
   backBtn: { backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   titre: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   content: { flex: 1, padding: 16 },
+  btnExporter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#0D9E75', borderRadius: 10, paddingVertical: 12, marginBottom: 16 },
+  btnExporterTxt: { color: '#0D9E75', fontSize: 12, fontWeight: '700' },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
   card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 4, marginBottom: 16 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 10, borderBottomWidth: 1, borderBottomColor: '#F0F0F0', gap: 10 },
