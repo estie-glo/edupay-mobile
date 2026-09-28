@@ -1,4 +1,4 @@
-import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
+import { createContext, ReactNode, useContext, useEffect, useRef, useState } from 'react';
 import { AppState } from 'react-native';
 import { getMe, getToken, logout, removeToken, saveToken } from '../services/api';
 import { deleteItem, getItem, setItem } from '../services/storage';
@@ -28,6 +28,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // `refreshUser` est un seul closure enregistré une fois sur AppState (effet
+  // dépendant de [token] seulement) : sans ref, il fusionnerait toujours
+  // contre le `user` de ce rendu-là, écrasant périodiquement la persistance
+  // avec un état obsolète (audit "correctifs mineurs", 28/09/2026).
+  const userRef = useRef<AuthUser | null>(null);
+  useEffect(() => { userRef.current = user; }, [user]);
 
   useEffect(() => {
     (async () => {
@@ -69,8 +75,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const reponse = await getMe();
       const donnees = reponse.data ?? reponse;
-      setUser((precedent) => ({ ...precedent, ...donnees }));
-      await setItem('user', JSON.stringify({ ...user, ...donnees }));
+      const fusion = { ...userRef.current, ...donnees };
+      setUser(fusion);
+      userRef.current = fusion;
+      await setItem('user', JSON.stringify(fusion));
     } catch {
       // Rafraîchissement silencieux : une panne réseau ne doit pas déconnecter l'utilisateur
     }

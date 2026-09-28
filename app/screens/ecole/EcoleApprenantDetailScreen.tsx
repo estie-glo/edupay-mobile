@@ -5,7 +5,7 @@ import { ArrowLeft, Layers3, Phone, Save, Trash2, UserRound, Users } from 'lucid
 import { useAuth } from '../../../context/AuthContext';
 import { desaffecterFraisApprenant, getApprenantEcole, updateApprenantEcole } from '../../../services/api';
 
-type Echeancier = { id: number; libelle?: string; montant?: number; date_limite?: string };
+type Echeancier = { id: number; libelle?: string; montant?: number; date_echeance?: string };
 type Frais = {
   id: number;
   categorie?: { nom?: string };
@@ -184,7 +184,7 @@ export default function EcoleApprenantDetailScreen() {
               {!!f.echeanciers?.length && (
                 <View style={styles.echeanciersBox}>
                   {f.echeanciers.map((e) => (
-                    <Text key={e.id} style={styles.echeancierTxt}>• {e.libelle || 'Échéance'} — {(e.montant ?? 0).toLocaleString('fr-FR')} FCFA{e.date_limite ? ` avant le ${e.date_limite}` : ''}</Text>
+                    <Text key={e.id} style={styles.echeancierTxt}>• {e.libelle || 'Échéance'} — {(e.montant ?? 0).toLocaleString('fr-FR')} FCFA{e.date_echeance ? ` avant le ${e.date_echeance.slice(0, 10)}` : ''}</Text>
                   ))}
                 </View>
               )}

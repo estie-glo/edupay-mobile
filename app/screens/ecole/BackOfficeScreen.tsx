@@ -80,6 +80,12 @@ export default function BackOfficeScreen() {
     }
   };
 
+  // `force` outrepasse l'anti-spam SMS/email 24h — un caissier ne doit pas
+  // pouvoir inonder tous les parents de l'école. Restriction miroir de celle
+  // demandée côté backend (audit point 9, 28/09/2026) : ne pas exposer
+  // l'option "Forcer l'envoi" aux rôles comptable/caissier.
+  const estDirecteur = user?.role === 'directeur';
+
   const handleRelanceGroupee = (force = false) => {
     if (impayes.length === 0) return;
     Alert.alert(
@@ -95,11 +101,13 @@ export default function BackOfficeScreen() {
               await relancerImpayesGroupe({ force });
               Alert.alert('Envoyé', 'La relance groupée a été envoyée.');
             } catch (error: any) {
-              if (error.response?.status === 429) {
+              if (error.response?.status === 429 && estDirecteur) {
                 Alert.alert('Déjà relancé récemment', error.response?.data?.message || 'Une relance a déjà été envoyée dans les dernières 24h.', [
                   { text: 'Annuler', style: 'cancel' },
                   { text: 'Forcer l\'envoi', onPress: () => handleRelanceGroupee(true) },
                 ]);
+              } else if (error.response?.status === 429) {
+                Alert.alert('Déjà relancé récemment', 'Une relance a déjà été envoyée dans les dernières 24h. Seul le directeur peut forcer un nouvel envoi.');
               } else {
                 Alert.alert('Erreur', error.response?.data?.message || "Échec de l'envoi de la relance");
               }
@@ -119,11 +127,13 @@ export default function BackOfficeScreen() {
       await relancerImpayeApprenant(apprenantId, force);
       Alert.alert('Envoyé', 'Relance envoyée par email à la famille.');
     } catch (error: any) {
-      if (error.response?.status === 429) {
+      if (error.response?.status === 429 && estDirecteur) {
         Alert.alert('Déjà relancé récemment', error.response?.data?.message || 'Une relance a déjà été envoyée dans les dernières 24h.', [
           { text: 'Annuler', style: 'cancel' },
           { text: 'Forcer l\'envoi', onPress: () => handleRelanceApprenant(apprenantId, true) },
         ]);
+      } else if (error.response?.status === 429) {
+        Alert.alert('Déjà relancé récemment', 'Une relance a déjà été envoyée dans les dernières 24h. Seul le directeur peut forcer un nouvel envoi.');
       } else {
         Alert.alert('Erreur', error.response?.data?.message || "Échec de l'envoi de la relance");
       }

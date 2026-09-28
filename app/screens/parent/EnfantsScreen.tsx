@@ -224,7 +224,7 @@ export default function EnfantsScreen() {
   const handleTelechargerCertificat = async (apprenant: Apprenant) => {
     setCertificatEnCoursId(apprenant.id);
     try {
-      await telechargerEtPartager(`/apprenants/${apprenant.id}/certificat`, `certificat-${apprenant.prenom}-${apprenant.nom}.pdf`);
+      await telechargerEtPartager(`/apprenants/${apprenant.id}/certificat`, `certificat-edupay-${apprenant.id}.pdf`);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Téléchargement du certificat impossible');
     } finally {

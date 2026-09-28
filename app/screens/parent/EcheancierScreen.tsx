@@ -6,9 +6,12 @@ import { useAuth } from '../../../context/AuthContext';
 import { getFraisApprenant } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
 
-// Un seul enregistrement FraisApprenant par (apprenant, catégorie) — pas de
-// tranches pré-créées : le fractionnement est calculé côté serveur à partir
-// de nb_tranches_max / numero_tranche_suivante. Cf. payeur/frais_apprenant.blade.php sur main.
+// Champs exacts de FraisResource (vérifié le 28/09/2026) : PAS de
+// `fractionnable`, `nb_tranches_max` ni `prochaine_echeance` — ces champs
+// n'existent pas côté serveur. Le fractionnement se déduit de la présence
+// d'échéances dans `echeanciers`, et la prochaine échéance se recalcule
+// côté client à partir de `montant_paye` (même logique que PaiementScreen).
+type Echeancier = { id: number; numero_tranche?: number; montant: number; date_echeance?: string; libelle?: string };
 type FraisApprenant = {
   id: number;
   categorieFrais?: { nom?: string };
@@ -16,11 +19,18 @@ type FraisApprenant = {
   montant_paye: number;
   statut?: string;
   annee_scolaire?: string;
-  fractionnable?: boolean;
-  nb_tranches_max?: number;
-  numero_tranche_suivante?: number;
-  prochaine_echeance?: string;
+  echeanciers?: Echeancier[];
 };
+
+function prochaineEcheance(f: FraisApprenant): Echeancier | null {
+  const echeanciers = [...(f.echeanciers ?? [])].sort((a, b) => (a.numero_tranche ?? 0) - (b.numero_tranche ?? 0));
+  let dejaAffecte = f.montant_paye;
+  for (const e of echeanciers) {
+    if (dejaAffecte >= e.montant) dejaAffecte -= e.montant;
+    else return e;
+  }
+  return null;
+}
 
 const STATUT_STYLE: Record<string, { bg: string; fg: string; label: string }> = {
   a_jour: { bg: '#E0F5EE', fg: '#085041', label: 'À jour' },
@@ -62,14 +72,14 @@ export default function EcheancierScreen() {
     }
   };
 
+  // PaiementScreen recalcule lui-même le montant exact (intégral et tranche)
+  // depuis GET /frais-apprenants/{id} — on ne transmet ici que l'identifiant
+  // du dossier, jamais un montant deviné côté client (audit 28/09/2026).
   const payer = (f: FraisApprenant) => {
-    const reste = f.montant_total - f.montant_paye;
     router.push({
       pathname: '/screens/parent/PaiementScreen',
       params: {
         fraisApprenantId: String(f.id),
-        montant: String(reste),
-        montantTranche: f.fractionnable && f.nb_tranches_max ? String(Math.round(reste / f.nb_tranches_max)) : '',
         libelle: f.categorieFrais?.nom || 'Frais scolaires',
         apprenantNom: apprenantNom,
       },
@@ -119,10 +129,10 @@ export default function EcheancierScreen() {
                 </View>
                 {!estRegle && (
                   <>
-                    {!!f.prochaine_echeance && (
+                    {!!prochaineEcheance(f)?.date_echeance && (
                       <View style={styles.echeanceRow}>
                         <CalendarClock size={12} color="#8B5E10" />
-                        <Text style={styles.echeanceTxt}>Prochaine échéance : {f.prochaine_echeance.slice(0, 10)}</Text>
+                        <Text style={styles.echeanceTxt}>Prochaine échéance : {prochaineEcheance(f)!.date_echeance!.slice(0, 10)}</Text>
                       </View>
                     )}
                     <TouchableOpacity style={styles.btnPayer} onPress={() => payer(f)}>

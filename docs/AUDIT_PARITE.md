@@ -226,3 +226,96 @@ puis câblées côté mobile le même jour, testées en réel :
 
 `SimulateurScreen`, `FonctionnalitesScreen`, `CommentScreen` — aucun
 équivalent sur le site web, retirés du mobile le 26/09/2026.
+
+## Audit sécurité + parité mobile (28/09/2026)
+
+Audit reçu d'une collègue travaillant côté backend, sur le code mobile
+uniquement (aucune correction Laravel requise pour les points ci-dessous).
+Chaque point re-vérifié contre le code réel et/ou testé en réel avant
+correction — aucun changement appliqué à l'aveugle.
+
+- **Statut de paiement jamais présumé "validé" par défaut**
+  (`PaiementSuccessScreen.tsx`) : un `paiementId` absent ou une erreur
+  réseau dans `verifier()` affichaient le même écran vert "Paiement
+  validé !" qu'un vrai succès. Ajout d'un 4ᵉ état `inconnu` (écran neutre,
+  gris, "Statut à vérifier", bouton vers l'historique) — jamais dérivé
+  d'un statut falsy.
+- **Montant de tranche recalculé côté serveur, pas deviné côté client**
+  (`EcheancierScreen.tsx` + `PaiementScreen.tsx`) : l'ancien calcul
+  `reste / nb_tranches_max` divergeait du montant réellement débité par
+  `App\Support\MontantPaiement` (la prochaine échéance du calendrier,
+  plafonnée au reste). `PaiementScreen` reconstruit maintenant la
+  prochaine échéance à partir de `GET /frais-apprenants/{id}` (échéanciers
+  + montant déjà payé) et envoie `echeancier_id` à `/paiements/initier`.
+  **Testé en réel** (frais_apprenant_id=36, catégorie "Scolarité" 2×47500,
+  affectée à un apprenant de test) : montant affiché 47 500 F, montant
+  réellement débité par le serveur (`GET /paiements`) **47 500 F, tranche
+  n°1** — correspondance exacte confirmée.
+- **Option "Carte" masquée** : `InitierPaiementRequest` l'accepte en
+  validation mais `PaiementController::initier` n'a aucune branche de
+  traitement dédiée — l'option provoquait un 422 systématique (`telephone`
+  requis mais jamais envoyé pour ce mode). Retirée de l'UI et du type
+  `initierPaiement` jusqu'à implémentation serveur réelle.
+- **Garde d'authentification** ajouté à `PaiementScreen` et
+  `PaiementSuccessScreen` (les 2 seuls écrans sur 16 qui ne l'avaient pas) —
+  un lien `edupaymobile://` pouvait ouvrir un écran de paiement brandé sans
+  session active.
+- **401 non traité** (`services/api.ts`) : un token révoqué était réessayé
+  indéfiniment. Ajout d'un handler 401 (hors routes `/auth/*`, qui renvoient
+  légitimement 401 sur identifiants invalides) : purge du token +
+  redirection vers le login du bon rôle (payeur ou établissement, déduit de
+  l'utilisateur persisté).
+- **Historique anti-double-paiement** : un échec de
+  `GET /frais-apprenants/{id}` masquait silencieusement l'avertissement de
+  paiements précédents. `PaiementScreen` bloque maintenant le paiement avec
+  un message explicite ("Historique indisponible... ne réessayez pas sans
+  être sûr·e") plutôt que de continuer à l'aveugle, avec un bouton Réessayer.
+- **`.env` HTTP** : le fichier actuel est déjà propre (HTTPS, non commenté) —
+  la remontée était obsolète. Garde de démarrage ajouté quand même
+  (`services/api.ts`) : refuse une URL non HTTPS hors `__DEV__`.
+- **Reçus/certificats** : noms de fichiers passés de
+  `certificat-{prénom}-{nom}.pdf` à `certificat-edupay-{id}.pdf`
+  (`EnfantsScreen.tsx`, `RecusScreen.tsx`) ; `telechargerEtPartager`
+  supprime maintenant le fichier du cache après le partage
+  (`services/fichiers.ts`).
+- **`force` (relance anti-spam)** restreint côté mobile au rôle
+  `directeur` dans `BackOfficeScreen` (comptable/caissier ne voient plus
+  l'option "Forcer l'envoi") — restriction miroir de celle prévue côté
+  backend par la collègue.
+- **`expo-screen-capture`** ajouté sur `PaiementScreen` et
+  `PaiementSuccessScreen` (montant + MSISDN visibles à l'écran).
+- **Double-tap** sur "Confirmer et payer" : garde synchrone `useRef` ajoutée
+  en plus de `disabled={loading}`.
+- **Fermetures obsolètes** dans `AuthContext.tsx` (`refreshUser` fusionnait
+  contre le `user` du rendu où l'effet `AppState` avait été enregistré, pas
+  le `user` courant) — corrigé avec un `userRef`.
+- **`router.push` → `router.replace`** sur la redirection hors-ligne
+  (`services/api.ts`) : évite d'empiler un nouvel écran à chaque coupure
+  réseau.
+- **Parité API confirmée et corrigée** :
+  - `refuserRemboursement` envoyait `{motif}` — `RemboursementController::
+    refuser` exige `motif_refus` (ou l'alias `reponse_admin`), jamais
+    `motif` → 422 systématique. Corrigé (vérifié dans le code serveur, non
+    testable en réel : aucun paiement de test n'atteint jamais `valide`,
+    limitation déjà documentée).
+  - `getDetailReclamation()` (`GET /reclamations/{id}`) supprimé : route
+    inexistante côté serveur, fonction morte (jamais importée).
+  - `EcheancierScreen.tsx` lisait `fractionnable`/`nb_tranches_max`/
+    `prochaine_echeance` — absents de `FraisResource` (vérifié dans le code
+    serveur). Remplacé par un calcul dérivé des vraies `echeanciers`
+    (déjà présentes dans la même resource).
+  - `EcoleApprenantDetailScreen.tsx` lisait `date_limite` — le champ réel
+    est `date_echeance` (`EcheancierResource`, vérifié dans le code serveur).
+  - `nb_tranches_max` corrigé de optionnel à obligatoire dans les types
+    `creerFraisEcole`/`updateFraisEcole` (`FraisStoreRequest`:
+    `required|min:1|max:3`, même quand `fractionnable` est faux) — l'écran
+    l'envoyait déjà toujours, seul le typage était faux.
+  - `relancerImpayesGroupe` : `filtre`/`message` retirés du type — vérifié
+    dans le code serveur que `ImpayeController::relancerSms` (API) ne lit
+    que `force`, ces deux champs étaient envoyés pour rien.
+
+**Non retenu / évalué et laissé tel quel** : le token en `localStorage` sur
+la cible web (`services/storage.ts`) reste un risque XSS réel signalé par
+l'audit, mais une vraie correction demande un cookie `httpOnly` côté
+backend (le web n'est qu'une cible de dev ici, pas le produit principal) —
+pas une correction mobile-only, laissé en l'état.

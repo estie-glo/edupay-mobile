@@ -2,10 +2,30 @@ import axios from 'axios';
 import { router } from 'expo-router';
 import { deleteItem, getItem, setItem } from './storage';
 
+// Route de login selon le rôle du compte dont le token vient d'être révoqué
+// (401) : seuls les comptes établissement ont `role` (directeur/comptable/
+// caissier) dans l'utilisateur persisté par AuthContext, les comptes payeur
+// ont `profil` (parent/eleve/etudiant). Défaut payeur si rien n'est trouvé.
+async function loginPourRoleActuel(): Promise<'/screens/ecole/LoginEcoleScreen' | '/screens/parent/LoginParentScreen'> {
+  try {
+    const brut = await getItem('user');
+    const utilisateur = brut ? JSON.parse(brut) : null;
+    if (utilisateur?.role) return '/screens/ecole/LoginEcoleScreen';
+  } catch { /* utilisateur non lisible : on retombe sur le payeur */ }
+  return '/screens/parent/LoginParentScreen';
+}
+
 // Contrat confirmé par l'équipe backend (API REST v1, Laravel + Sanctum) le 30/08/2026.
 // Basculer via .env (EXPO_PUBLIC_API_URL) — prod par défaut, local ex. http://10.0.2.2:8000/api/v1
 const API_URL =
   process.env.EXPO_PUBLIC_API_URL ?? 'https://edupay.mekontso.gsi2026.com/api/v1';
+
+// EXPO_PUBLIC_* est inliné en clair dans le bundle au build : une URL HTTP
+// dans un build de production ferait transiter token, numéros et noms
+// d'élèves en clair. __DEV__ reste autorisé (émulateur/appareil de test local).
+if (!__DEV__ && !API_URL.startsWith('https://')) {
+  throw new Error(`Configuration invalide : EXPO_PUBLIC_API_URL doit être en HTTPS en production (reçu: ${API_URL})`);
+}
 
 const api = axios.create({
   baseURL: API_URL,
@@ -24,15 +44,29 @@ api.interceptors.request.use(async (config) => {
 });
 
 // Redirige vers l'écran hors-ligne uniquement quand la requête n'a reçu
-// aucune réponse (pas de réseau) — pas pour les erreurs 4xx/5xx classiques,
-// qui ont leur propre gestion dans chaque écran.
+// aucune réponse (pas de réseau, ou requête annulée) — pas pour les erreurs
+// 4xx/5xx classiques, qui ont leur propre gestion dans chaque écran.
+// `replace` (pas `push`) : sinon chaque coupure réseau empile un nouvel
+// écran hors-ligne sur la pile de navigation.
 let redirectionHorsLigneEnCours = false;
 api.interceptors.response.use(
   (response) => response,
-  (error) => {
+  async (error) => {
+    // Ne pas intercepter les 401 de /auth/* : ce sont des identifiants
+    // refusés (AuthController::login renvoie 401 sur mot de passe invalide,
+    // vérifié le 28/09/2026), pas un token révoqué — l'écran de connexion
+    // doit garder la main pour afficher son propre message d'erreur.
+    const estRouteAuth = String(error.config?.url ?? '').includes('/auth/');
+    if (error.response?.status === 401 && !estRouteAuth) {
+      const route = await loginPourRoleActuel();
+      await deleteItem('token');
+      await deleteItem('user');
+      router.replace(route);
+      return Promise.reject(error);
+    }
     if (!error.response && !redirectionHorsLigneEnCours) {
       redirectionHorsLigneEnCours = true;
-      router.push('/screens/commun/OfflineScreen');
+      router.replace('/screens/commun/OfflineScreen');
       setTimeout(() => { redirectionHorsLigneEnCours = false; }, 3000);
     }
     return Promise.reject(error);
@@ -230,13 +264,16 @@ export const getHistorique = async (page: number = 1) => {
 // purement informatif — le serveur recalcule toujours lui-même la somme
 // réellement débitée (App\Support\MontantPaiement) à partir de
 // frais_apprenant_id + type_paiement + echeancier_id, jamais depuis ce champ.
+// `carte` retiré du type : accepté en validation côté serveur mais sans
+// branche de traitement dans PaiementController::initier (vérifié le
+// 28/09/2026) — masqué côté mobile tant qu'il n'est pas réellement implémenté.
 export const initierPaiement = async (data: {
   frais_apprenant_id: number;
   montant?: number;
-  mode_paiement: 'mtn_momo' | 'orange_money' | 'carte';
+  mode_paiement: 'mtn_momo' | 'orange_money';
   type_paiement?: 'integral' | 'tranche';
   echeancier_id?: number;
-  telephone?: string;
+  telephone: string;
 }) => {
   const response = await api.post('/paiements/initier', data);
   return response.data;
@@ -267,11 +304,6 @@ export const creerReclamation = async (data: {
   paiement_id?: number;
 }) => {
   const response = await api.post('/reclamations', data);
-  return response.data;
-};
-
-export const getDetailReclamation = async (id: number) => {
-  const response = await api.get(`/reclamations/${id}`);
   return response.data;
 };
 
@@ -338,7 +370,9 @@ export const getImpayes = async () => {
 
 // `force` outrepasse le délai anti-spam de 24h entre deux relances au même
 // parent (audit U) — sans lui, une 2e tentative dans les 24h renvoie 429.
-export const relancerImpayesGroupe = async (data: { filtre?: any; message?: string; force?: boolean }) => {
+// Pas de `filtre` ni `message` : ImpayeController::relancerSms (API) ne lit
+// que `force`, ces deux champs étaient envoyés pour rien (vérifié 28/09/2026).
+export const relancerImpayesGroupe = async (data: { force?: boolean }) => {
   const response = await api.post('/etablissement/impayes/relancer', data);
   return response.data;
 };
@@ -427,12 +461,14 @@ export const getFraisEcole = async () => {
   return response.data;
 };
 
+// `nb_tranches_max` est `required|min:1|max:3` côté serveur (FraisStoreRequest,
+// vérifié le 28/09/2026) même quand `fractionnable` est faux — jamais optionnel.
 export const creerFraisEcole = async (data: {
   nom: string;
   montant_total: number;
   annee_scolaire: string;
   fractionnable?: boolean;
-  nb_tranches_max?: number;
+  nb_tranches_max: number;
   description?: string;
   actif?: boolean;
 }) => {
@@ -447,7 +483,7 @@ export const updateFraisEcole = async (id: number, data: {
   montant_total: number;
   annee_scolaire: string;
   fractionnable?: boolean;
-  nb_tranches_max?: number;
+  nb_tranches_max: number;
   description?: string;
   actif?: boolean;
 }) => {
@@ -544,8 +580,11 @@ export const approuverRemboursement = async (id: number) => {
   return response.data;
 };
 
-export const refuserRemboursement = async (id: number, motif?: string) => {
-  const response = await api.post(`/etablissement/remboursements/${id}/refuser`, { motif });
+// `motif_refus` (pas `motif`) : RemboursementController::refuser exige
+// motif_refus OU reponse_admin, jamais `motif` — sans ce nom exact le refus
+// renvoyait 422 systématiquement (vérifié le 28/09/2026).
+export const refuserRemboursement = async (id: number, motif_refus?: string) => {
+  const response = await api.post(`/etablissement/remboursements/${id}/refuser`, { motif_refus });
   return response.data;
 };
 

@@ -76,7 +76,7 @@ export default function RecusScreen() {
   const handleTelechargerCertificat = async (a: Apprenant) => {
     setTelechargementEnCoursId(`cert-${a.id}`);
     try {
-      await telechargerEtPartager(`/apprenants/${a.id}/certificat`, `certificat-${a.prenom}-${a.nom}.pdf`);
+      await telechargerEtPartager(`/apprenants/${a.id}/certificat`, `certificat-edupay-${a.id}.pdf`);
     } catch (error: any) {
       Alert.alert('Erreur', error.response?.data?.message || 'Téléchargement du certificat impossible');
     } finally {

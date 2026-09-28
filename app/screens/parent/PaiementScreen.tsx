@@ -1,19 +1,26 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, CreditCard, History, ShieldCheck, Smartphone } from 'lucide-react-native';
+import { usePreventScreenCapture } from 'expo-screen-capture';
+import { ArrowLeft, History, ShieldCheck, Smartphone } from 'lucide-react-native';
+import { useAuth } from '../../../context/AuthContext';
 import { getFraisApprenantDetail, initierPaiement } from '../../../services/api';
 
-type ModePaiement = 'mtn_momo' | 'orange_money' | 'carte';
+type ModePaiement = 'mtn_momo' | 'orange_money';
 
 type PaiementPrecedent = { id: number; reference?: string; montant: number; statut?: string; mode_paiement?: string; date_paiement?: string };
+type Echeancier = { id: number; numero_tranche?: number; montant: number; date_echeance?: string; libelle?: string };
+type FraisDetail = { montant_total: number; montant_paye: number; reste: number; echeanciers?: Echeancier[]; paiements?: PaiementPrecedent[] };
 
 export default function PaiementScreen() {
+  usePreventScreenCapture(); // montant et MSISDN visibles à l'écran (audit point 10, 28/09/2026)
   const router = useRouter();
+  const { token, isLoading: authLoading } = useAuth();
+  // Le seul paramètre financier fiable est fraisApprenantId — tout le reste
+  // (montant, tranche) est recalculé depuis GET /frais-apprenants/{id}, jamais
+  // fait confiance à une valeur passée par deep link (audit 27/09/2026).
   const params = useLocalSearchParams<{
     fraisApprenantId?: string;
-    montant?: string;
-    montantTranche?: string;
     libelle?: string;
     apprenantNom?: string;
   }>();
@@ -22,48 +29,99 @@ export default function PaiementScreen() {
   const [typePaiement, setTypePaiement] = useState<'integral' | 'tranche'>('integral');
   const [telephone, setTelephone] = useState('');
   const [loading, setLoading] = useState(false);
-  const [paiementsPrecedents, setPaiementsPrecedents] = useState<PaiementPrecedent[]>([]);
+  const [chargementDetail, setChargementDetail] = useState(true);
+  const [detail, setDetail] = useState<FraisDetail | null>(null);
+  // Distingue "jamais chargé faute de paramètre" d'un vrai échec réseau : dans
+  // ce dernier cas on ne doit ni deviner un montant, ni masquer silencieusement
+  // l'historique anti-double-paiement (audit point 6, 28/09/2026) — on bloque
+  // le paiement et on propose de réessayer plutôt que de continuer à l'aveugle.
+  const [erreurChargement, setErreurChargement] = useState(false);
+  const enVolDePaiement = useRef(false);
+
+  useEffect(() => {
+    if (!token && !authLoading) {
+      router.replace('/screens/parent/LoginParentScreen');
+    }
+  }, [token, authLoading]);
 
   // Équivalent web /paiement/{fraisApprenant} (Api\FraisController::show) :
-  // montre les paiements déjà tentés sur ce dossier, pour éviter un double
-  // paiement par erreur — best-effort, n'empêche jamais de payer si ça échoue.
-  useEffect(() => {
-    if (!params.fraisApprenantId) return;
+  // seule source de vérité pour le montant, le reste dû, les échéances et
+  // les paiements déjà tentés sur ce dossier. Sans ce chargement, impossible
+  // d'afficher un montant de tranche fiable ni l'historique anti-doublon.
+  const chargerDetail = () => {
+    if (!params.fraisApprenantId) {
+      setChargementDetail(false);
+      return;
+    }
+    setChargementDetail(true);
+    setErreurChargement(false);
     getFraisApprenantDetail(Number(params.fraisApprenantId))
-      .then((r) => setPaiementsPrecedents((r.data ?? r)?.paiements ?? []))
-      .catch(() => setPaiementsPrecedents([]));
-  }, [params.fraisApprenantId]);
+      .then((r) => setDetail(r.data ?? r))
+      .catch(() => { setDetail(null); setErreurChargement(true); })
+      .finally(() => setChargementDetail(false));
+  };
 
-  const montantIntegral = Number(params.montant || 0);
-  const montantTranche = params.montantTranche ? Number(params.montantTranche) : null;
-  const montant = typePaiement === 'tranche' && montantTranche ? montantTranche : montantIntegral;
-  const donneesIncompletes = !params.fraisApprenantId || !montantIntegral;
+  useEffect(chargerDetail, [params.fraisApprenantId]);
+
+  if (!token || authLoading || chargementDetail) {
+    return <ActivityIndicator size="large" color="#0D9E75" style={{ flex: 1 }} />;
+  }
+
+  const donneesIncompletes = !params.fraisApprenantId || !detail;
 
   if (donneesIncompletes) {
     return (
       <View style={styles.videContainer}>
-        <Text style={styles.videTitre}>Choisissez d'abord une échéance</Text>
-        <Text style={styles.videDesc}>Sélectionnez un enfant puis le frais à payer depuis son échéancier.</Text>
-        <TouchableOpacity style={styles.btnPayer} onPress={() => router.push('/screens/parent/EnfantsScreen')}>
-          <Text style={styles.btnPayerTxt}>Voir mes enfants →</Text>
+        <Text style={styles.videTitre}>{erreurChargement ? 'Historique indisponible' : "Choisissez d'abord une échéance"}</Text>
+        <Text style={styles.videDesc}>
+          {erreurChargement
+            ? "Impossible de vérifier le montant exact et les paiements déjà effectués sur ce dossier. Vérifiez votre connexion avant de payer — ne réessayez pas sans être sûr·e de ne pas payer deux fois."
+            : 'Sélectionnez un enfant puis le frais à payer depuis son échéancier.'}
+        </Text>
+        <TouchableOpacity style={styles.btnPayer} onPress={() => (erreurChargement ? chargerDetail() : router.push('/screens/parent/EnfantsScreen'))}>
+          <Text style={styles.btnPayerTxt}>{erreurChargement ? 'Réessayer' : 'Voir mes enfants →'}</Text>
         </TouchableOpacity>
       </View>
     );
   }
 
+  const montantIntegral = detail.reste;
+  const paiementsPrecedents = detail.paiements ?? [];
+
+  // Reconstruit la même règle que App\Support\MontantPaiement côté serveur :
+  // la prochaine échéance non couverte par le montant déjà payé, plafonnée au
+  // reste dû. Approximation à partir de l'agrégat montant_paye (l'API ne
+  // détaille pas le paiement par tranche individuelle côté payeur) — correcte
+  // dès que les tranches sont réglées dans l'ordre, ce qui est le cas normal.
+  const echeanciers = [...(detail.echeanciers ?? [])].sort((a, b) => (a.numero_tranche ?? 0) - (b.numero_tranche ?? 0));
+  let montantDejaAffecte = detail.montant_paye;
+  let prochaineEcheance: Echeancier | null = null;
+  for (const e of echeanciers) {
+    if (montantDejaAffecte >= e.montant) {
+      montantDejaAffecte -= e.montant;
+    } else {
+      prochaineEcheance = e;
+      break;
+    }
+  }
+  const montantTranche = prochaineEcheance ? Math.min(prochaineEcheance.montant, detail.reste) : null;
+  const montant = typePaiement === 'tranche' && montantTranche ? montantTranche : montantIntegral;
+
   const handlePayer = async () => {
-    if (modePaiement !== 'carte' && !telephone) {
+    if (enVolDePaiement.current) return; // garde synchrone anti-double-tap, avant même le re-render de `loading`
+    if (!telephone) {
       Alert.alert('Erreur', 'Veuillez saisir votre numéro Mobile Money');
       return;
     }
+    enVolDePaiement.current = true;
     setLoading(true);
     try {
       const response = await initierPaiement({
         frais_apprenant_id: Number(params.fraisApprenantId),
         mode_paiement: modePaiement,
         type_paiement: typePaiement,
-        montant,
-        telephone: modePaiement === 'carte' ? undefined : telephone,
+        echeancier_id: typePaiement === 'tranche' ? prochaineEcheance?.id : undefined,
+        telephone,
       });
       router.push({
         pathname: '/screens/parent/PaiementSuccessScreen',
@@ -73,6 +131,7 @@ export default function PaiementScreen() {
       Alert.alert('Erreur de paiement', error.response?.data?.message || "Le paiement n'a pas pu être initié");
     } finally {
       setLoading(false);
+      enVolDePaiement.current = false;
     }
   };
 
@@ -154,30 +213,22 @@ export default function PaiementScreen() {
             <Text style={[styles.paiementNom, { color: '#FF6600' }]}>Orange</Text>
             <Text style={styles.paiementSub}>Money</Text>
           </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.paiementCard, modePaiement === 'carte' && styles.paiementCardActive]}
-            onPress={() => setModePaiement('carte')}
-          >
-            <CreditCard size={20} color="#185FA5" />
-            <Text style={[styles.paiementNom, { color: '#185FA5' }]}>Carte</Text>
-            <Text style={styles.paiementSub}>Visa/MC</Text>
-          </TouchableOpacity>
         </View>
+        {/* Carte bancaire retirée : InitierPaiementRequest n'accepte que
+            mtn_momo/orange_money côté serveur (vérifié le 27/09/2026), toute
+            tentative "carte" échoue en 422. À réintroduire quand le backend
+            l'implémentera. */}
 
-        {modePaiement !== 'carte' && (
-          <>
-            <Text style={styles.sec}>Numéro {modePaiement === 'mtn_momo' ? 'MTN MoMo' : 'Orange Money'}</Text>
-            <TextInput
-              style={styles.input}
-              placeholder={modePaiement === 'mtn_momo' ? '6XX XXX XXX (MTN)' : '6XX XXX XXX (Orange)'}
-              placeholderTextColor="#AAAAAA"
-              value={telephone}
-              onChangeText={(t) => setTelephone(t.replace(/\D/g, '').slice(0, 9))}
-              keyboardType="number-pad"
-              maxLength={9}
-            />
-          </>
-        )}
+        <Text style={styles.sec}>Numéro {modePaiement === 'mtn_momo' ? 'MTN MoMo' : 'Orange Money'}</Text>
+        <TextInput
+          style={styles.input}
+          placeholder={modePaiement === 'mtn_momo' ? '6XX XXX XXX (MTN)' : '6XX XXX XXX (Orange)'}
+          placeholderTextColor="#AAAAAA"
+          value={telephone}
+          onChangeText={(t) => setTelephone(t.replace(/\D/g, '').slice(0, 9))}
+          keyboardType="number-pad"
+          maxLength={9}
+        />
 
         <View style={styles.warnBox}>
           <Text style={styles.warnTxt}>
