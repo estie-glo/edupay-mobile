@@ -8,11 +8,6 @@ import { verifierPaiement } from '../../../services/api';
 
 type Statut = {
   reference?: string;
-  apprenant?: { prenom?: string; nom?: string };
-  montant?: number;
-  mode?: string;
-  date?: string;
-  created_at?: string;
   statut?: string;
 };
 
@@ -26,7 +21,23 @@ export default function PaiementSuccessScreen() {
   usePreventScreenCapture(); // montant et MSISDN visibles à l'écran (audit point 10, 28/09/2026)
   const router = useRouter();
   const { token, isLoading: authLoading } = useAuth();
-  const { paiementId } = useLocalSearchParams<{ paiementId?: string }>();
+  // Instantané transmis par PaiementScreen juste après /paiements/initier :
+  // le polling ci-dessous (verifierPaiement) ne renvoie jamais ces champs,
+  // seulement {statut} — cf. Api\PaiementController::verifier (vérifié le
+  // 29/09/2026). `montantTotalPaye`/`fraisService` : seule façon actuelle de
+  // montrer au payeur ce qui a réellement été débité (frais de service inclus,
+  // absents de l'écran de paiement lui-même en attendant une route de
+  // simulation côté backend — audit 29/09/2026).
+  const { paiementId, reference, apprenantNom, montant, fraisService, montantTotalPaye, modePaiement, datePaiement } = useLocalSearchParams<{
+    paiementId?: string;
+    reference?: string;
+    apprenantNom?: string;
+    montant?: string;
+    fraisService?: string;
+    montantTotalPaye?: string;
+    modePaiement?: string;
+    datePaiement?: string;
+  }>();
   const [statut, setStatut] = useState<Statut | null>(null);
   const [loading, setLoading] = useState(true);
   const [timeout_, setTimeoutAtteint] = useState(false);
@@ -103,7 +114,7 @@ export default function PaiementSuccessScreen() {
         <Text style={styles.titre}>
           {echoue ? 'Paiement échoué' : enAttente ? 'En attente de confirmation' : inconnu ? 'Statut à vérifier' : 'Paiement validé !'}
         </Text>
-        {!!statut?.reference && <Text style={styles.ref}>Réf. {statut.reference}</Text>}
+        {!!reference && <Text style={styles.ref}>Réf. {reference}</Text>}
         <Text style={styles.desc}>
           {echoue
             ? "Le paiement n'a pas abouti. Vous pouvez réessayer depuis l'échéancier."
@@ -116,23 +127,31 @@ export default function PaiementSuccessScreen() {
         <View style={styles.detailBox}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLbl}>Apprenant</Text>
-            <Text style={styles.detailVal}>
-              {statut?.apprenant ? `${statut.apprenant.prenom} ${statut.apprenant.nom}` : '—'}
-            </Text>
+            <Text style={styles.detailVal}>{apprenantNom || '—'}</Text>
           </View>
           <View style={styles.detailRow}>
-            <Text style={styles.detailLbl}>Montant</Text>
+            <Text style={styles.detailLbl}>Frais scolaires</Text>
+            <Text style={styles.detailVal}>{montant ? `${Number(montant).toLocaleString('fr-FR')} FCFA` : '—'}</Text>
+          </View>
+          {!!fraisService && (
+            <View style={styles.detailRow}>
+              <Text style={styles.detailLbl}>Frais de service</Text>
+              <Text style={styles.detailVal}>{Number(fraisService).toLocaleString('fr-FR')} FCFA</Text>
+            </View>
+          )}
+          <View style={styles.detailRow}>
+            <Text style={[styles.detailLbl, { fontWeight: '700' }]}>Total débité</Text>
             <Text style={[styles.detailVal, { color: '#0D9E75' }]}>
-              {statut?.montant != null ? `${statut.montant.toLocaleString('fr-FR')} FCFA` : '—'}
+              {montantTotalPaye ? `${Number(montantTotalPaye).toLocaleString('fr-FR')} FCFA` : montant ? `${Number(montant).toLocaleString('fr-FR')} FCFA` : '—'}
             </Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLbl}>Mode</Text>
-            <Text style={styles.detailVal}>{statut?.mode || '—'}</Text>
+            <Text style={styles.detailVal}>{modePaiement || '—'}</Text>
           </View>
           <View style={styles.detailRow}>
             <Text style={styles.detailLbl}>Date</Text>
-            <Text style={styles.detailVal}>{(statut?.date || statut?.created_at || '').slice(0, 10) || '—'}</Text>
+            <Text style={styles.detailVal}>{datePaiement ? datePaiement.slice(0, 10) : '—'}</Text>
           </View>
         </View>
         {valide && (

@@ -64,6 +64,14 @@ api.interceptors.response.use(
       router.replace(route);
       return Promise.reject(error);
     }
+    // 402 abonnement_requis (CheckAbonnement, appliqué à /api/v1/etablissement/*
+    // depuis le 28/09/2026) : l'établissement reste connecté, seul son
+    // abonnement a expiré — rediriger vers l'écran d'abonnement plutôt que
+    // laisser chaque écran afficher une alerte générique.
+    if (error.response?.status === 402 && error.response?.data?.code === 'abonnement_requis') {
+      router.replace('/screens/ecole/EcoleAbonnementScreen');
+      return Promise.reject(error);
+    }
     if (!error.response && !redirectionHorsLigneEnCours) {
       redirectionHorsLigneEnCours = true;
       router.replace('/screens/commun/OfflineScreen');

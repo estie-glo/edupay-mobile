@@ -123,9 +123,24 @@ export default function PaiementScreen() {
         echeancier_id: typePaiement === 'tranche' ? prochaineEcheance?.id : undefined,
         telephone,
       });
+      // POST /paiements/{id}/verifier (le polling de PaiementSuccessScreen) ne
+      // renvoie jamais apprenant/montant/mode/date/frais_service — seulement
+      // {statut}. Le web s'en sort car sa page "en attente" les a déjà rendus
+      // côté serveur au chargement ; le mobile n'a pas cet équivalent, donc on
+      // transmet ici l'instantané renvoyé par /paiements/initier (audit 29/09/2026).
+      const paiementInitial = response.paiement ?? response.data?.paiement;
       router.push({
         pathname: '/screens/parent/PaiementSuccessScreen',
-        params: { paiementId: String(response.paiement_id ?? response.data?.paiement_id ?? '') },
+        params: {
+          paiementId: String(response.paiement_id ?? response.data?.paiement_id ?? ''),
+          reference: paiementInitial?.reference,
+          apprenantNom: paiementInitial?.apprenant ? `${paiementInitial.apprenant.prenom} ${paiementInitial.apprenant.nom}` : params.apprenantNom,
+          montant: paiementInitial?.montant != null ? String(paiementInitial.montant) : undefined,
+          fraisService: paiementInitial?.frais_service != null ? String(paiementInitial.frais_service) : undefined,
+          montantTotalPaye: paiementInitial?.montant_total_paye != null ? String(paiementInitial.montant_total_paye) : undefined,
+          modePaiement: paiementInitial?.mode_paiement,
+          datePaiement: paiementInitial?.date_paiement,
+        },
       });
     } catch (error: any) {
       Alert.alert('Erreur de paiement', error.response?.data?.message || "Le paiement n'a pas pu être initié");
@@ -232,13 +247,15 @@ export default function PaiementScreen() {
 
         <View style={styles.warnBox}>
           <Text style={styles.warnTxt}>
-            Vous recevrez une notification USSD sur votre téléphone pour confirmer.
+            Vous recevrez une notification USSD sur votre téléphone pour confirmer. Des frais
+            de service seront ajoutés à ce montant : vérifiez le total exact affiché dans la
+            notification avant de confirmer.
           </Text>
         </View>
 
         <View style={styles.totalBox}>
           <View style={[styles.totalRow, { borderTopWidth: 0, paddingTop: 0 }]}>
-            <Text style={[styles.totalLbl, { fontWeight: '700', fontSize: 15 }]}>Total à payer</Text>
+            <Text style={[styles.totalLbl, { fontWeight: '700', fontSize: 15 }]}>Frais scolaires (hors frais de service)</Text>
             <Text style={[styles.totalVal, { color: '#0D9E75', fontSize: 20, fontWeight: '800' }]}>{montant.toLocaleString('fr-FR')} FCFA</Text>
           </View>
         </View>

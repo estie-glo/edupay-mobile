@@ -319,3 +319,57 @@ la cible web (`services/storage.ts`) reste un risque XSS réel signalé par
 l'audit, mais une vraie correction demande un cookie `httpOnly` côté
 backend (le web n'est qu'une cible de dev ici, pas le produit principal) —
 pas une correction mobile-only, laissé en l'état.
+
+## Audit systémique mobile ↔ web (29/09/2026)
+
+Backend re-tiré à jour (commit `cb12f90`, ce matin) — 9 commits en plus
+depuis le dernier audit (`3b3321b`). Deux changements backend affectent
+directement le mobile :
+
+- **Frais de service (2,3 %) — CRITIQUE, non corrigé, bloqué côté backend**
+  (commit `273274a`) : le payeur règle désormais « frais de scolarité +
+  frais de service » (coût AangaraaPay 2,2 % + marge EduPay 0,1 %), calculé
+  par `AangaraaPayService::calculerFrais()`. Le web l'affiche avant paiement
+  (page `payeur/paiement.blade.php`, calculée côté serveur au chargement).
+  **L'API n'a aucune route de simulation équivalente** — le calcul n'est
+  exposé qu'*après* `/paiements/initier`, qui a déjà déclenché le prompt
+  USSD. Confirmé en réel involontairement dès la veille : un test à 47 500 F
+  affichés a débité `montant_total_paye: 48593` côté serveur, écart passé
+  inaperçu. Mitigation appliquée en attendant une route côté backend :
+  - `PaiementScreen` : libellé changé en "Frais scolaires (hors frais de
+    service)" + avertissement explicite de vérifier le total dans la
+    notification USSD avant de confirmer (aucun taux codé en dur côté
+    mobile : il est paramétrable en Super Admin, le deviner reproduirait le
+    bug qu'on vient de corriger).
+  - `PaiementSuccessScreen` : affiche maintenant "Frais de service" et
+    "Total débité" (`frais_service`/`montant_total_paye` de
+    `PaiementResource`, transmis par `PaiementScreen` juste après
+    `/paiements/initier` puisque le polling `verifier()` ne renvoie jamais
+    ces champs) — visibilité après coup, pas avant.
+  - **Reste à faire côté backend** : une route de simulation
+    (`POST /paiements/simuler` ou équivalent) qui renvoie `calculerFrais()`
+    pour un `frais_apprenant_id`/`type_paiement`/`echeancier_id` donné,
+    sans créer de `Paiement` ni déclencher l'USSD — seul moyen d'afficher
+    le vrai total avant confirmation, comme le web.
+- **Abonnement établissement expiré → 402 sur l'API mobile** (commit
+  `89a115c`, ce matin) : `CheckAbonnement` s'appliquait avant seulement au
+  web, il couvre maintenant `/api/v1/etablissement/*`. Corrigé : intercepteur
+  `services/api.ts` reconnaît `{code: "abonnement_requis"}` en 402 et
+  redirige vers `EcoleAbonnementScreen` (au lieu d'une alerte générique par
+  écran).
+- **`PaiementSuccessScreen` affichait "—" pour Apprenant/Montant/Mode/Date**
+  depuis toujours (bug préexistant, pas lié aux commits du jour) :
+  `POST /paiements/{id}/verifier` ne renvoie que `{statut, message}` —
+  jamais ces champs (contrairement au web, dont la page "en attente" les a
+  déjà rendus côté serveur au premier chargement). Corrigé en transmettant
+  l'instantané de `/paiements/initier` (qui contient déjà tout via
+  `PaiementResource`) depuis `PaiementScreen` vers `PaiementSuccessScreen`.
+- **`GET /apprenants/search`** (recherche live nom/matricule, utilisée par
+  l'onboarding web) jamais câblée côté mobile — pas un manque fonctionnel
+  (le rattachement mode "recherche" fonctionne déjà en un seul appel), juste
+  l'absence de suggestions au fil de la frappe. Non retenu, priorité basse.
+- Reste de l'audit sécurité web du jour (comptes admin désactivés, cloison
+  des rôles Super Admin, garde-fous remboursement web, XSS stocké dans les
+  templates Blade, throttles) : correctifs backend/web uniquement, sans
+  équivalent mobile (React Native ne rend pas de templates Blade) — rien à
+  faire côté mobile.
