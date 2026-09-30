@@ -19,6 +19,8 @@ import {
 import { LinearGradient } from 'expo-linear-gradient';
 import { ETABLISSEMENTS, TYPES_ETABLISSEMENT } from '../../../data/etablissements';
 import { getStatsPubliques } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 const COULEURS_AVATAR = ['#0B2545', '#0D9E75', '#1a472a', '#E8A020'];
 
@@ -153,12 +155,10 @@ export default function AccueilInviteScreen() {
               EduPay Cameroun connecte les établissements scolaires aux familles via MTN MoMo, Orange Money et carte bancaire. Zéro file d'attente. Reçu PDF immédiat.
             </Text>
             <View style={styles.heroBtns}>
-              <TouchableOpacity
-                style={styles.heroBtnPrimary}
+              <PrimaryButton
+                title="Créer mon compte payeur"
                 onPress={() => router.push('/screens/parent/RegisterParentScreen')}
-              >
-                <Text style={styles.heroBtnPrimaryTxt}>Créer mon compte payeur</Text>
-              </TouchableOpacity>
+              />
               <TouchableOpacity
                 style={styles.heroBtnSecondary}
                 onPress={() => router.push('/screens/ecole/RegisterEcoleScreen')}
@@ -195,13 +195,13 @@ export default function AccueilInviteScreen() {
           <Text style={styles.secLabel}>CONÇU POUR TOUT LE SYSTÈME ÉDUCATIF</Text>
           <View style={styles.niveauxGrid}>
             {NIVEAUX.map(({ titre, desc, Icone, couleur }) => (
-              <View key={titre} style={[styles.niveauCard, { borderTopColor: couleur }]}>
+              <Card key={titre} style={styles.niveauCard} accent={couleur}>
                 <View style={[styles.niveauIco, { backgroundColor: `${couleur}1A` }]}>
                   <Icone size={18} color={couleur} />
                 </View>
                 <Text style={styles.niveauTitre}>{titre}</Text>
                 <Text style={styles.niveauDesc}>{desc}</Text>
-              </View>
+              </Card>
             ))}
           </View>
         </View>
@@ -241,7 +241,7 @@ export default function AccueilInviteScreen() {
           ) : (
             <View style={styles.ecolesGrid}>
               {ecoles.map((ecole, i) => (
-                <TouchableOpacity key={ecole.nom} style={styles.ecoleCard}>
+                <Card key={ecole.nom} style={styles.ecoleCard}>
                   <View style={[styles.ecoleAvatar, { backgroundColor: COULEURS_AVATAR[i % COULEURS_AVATAR.length] }]}>
                     <Text style={styles.ecoleAvatarTxt}>{ecole.nom.charAt(0)}</Text>
                   </View>
@@ -253,7 +253,7 @@ export default function AccueilInviteScreen() {
                   <View style={styles.ecolePill}>
                     <Text style={styles.ecolePillTxt}>{ecole.type}</Text>
                   </View>
-                </TouchableOpacity>
+                </Card>
               ))}
             </View>
           )}
@@ -268,13 +268,13 @@ export default function AccueilInviteScreen() {
           <Text style={styles.secLabel}>POURQUOI CHOISIR EDUPAY ?</Text>
           <View style={styles.featuresGrid}>
             {FONCTIONNALITES.map(({ titre, desc, Icone }) => (
-              <View key={titre} style={styles.featureCard}>
+              <Card key={titre} style={styles.featureCard}>
                 <View style={styles.featureIco}>
                   <Icone size={18} color="#0D9E75" />
                 </View>
                 <Text style={styles.featureTitre}>{titre}</Text>
                 <Text style={styles.featureDesc}>{desc}</Text>
-              </View>
+              </Card>
             ))}
           </View>
         </View>
@@ -284,12 +284,11 @@ export default function AccueilInviteScreen() {
           <GraduationCap size={28} color="#FFFFFF" />
           <Text style={styles.ctaTitre}>Votre établissement n'est pas encore partenaire ?</Text>
           <Text style={styles.ctaDesc}>Inscription gratuite · Onboarding en 24h · Support dédié · Aucun engagement</Text>
-          <TouchableOpacity
-            style={styles.ctaBtn}
+          <PrimaryButton
+            title="Inscrire mon établissement →"
             onPress={() => router.push('/screens/ecole/RegisterEcoleScreen')}
-          >
-            <Text style={styles.ctaBtnTxt}>Inscrire mon établissement →</Text>
-          </TouchableOpacity>
+            style={{ paddingHorizontal: 24, alignSelf: 'stretch' }}
+          />
         </View>
 
         {/* FOOTER */}
@@ -371,8 +370,6 @@ const styles = StyleSheet.create({
   heroAccent: { color: '#0D9E75' },
   heroDesc: { fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 18, marginBottom: 24 },
   heroBtns: { gap: 10 },
-  heroBtnPrimary: { backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 10, alignItems: 'center' },
-  heroBtnPrimaryTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   heroBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 14, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   heroBtnSecondaryTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
 
@@ -383,7 +380,7 @@ const styles = StyleSheet.create({
 
   // NIVEAUX
   niveauxGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  niveauCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', borderTopWidth: 3 },
+  niveauCard: { width: '47%', padding: 14 },
   niveauIco: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   niveauTitre: { fontSize: 12, fontWeight: '700', color: '#1A1A2E', marginBottom: 4 },
   niveauDesc: { fontSize: 10, color: '#888888', lineHeight: 14 },
@@ -406,7 +403,7 @@ const styles = StyleSheet.create({
   ecolesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
   voirToutBtn: { marginTop: 14, alignItems: 'center' },
   voirToutTxt: { fontSize: 12, fontWeight: '700', color: '#0D9E75' },
-  ecoleCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0', alignItems: 'center' },
+  ecoleCard: { width: '47%', padding: 14, alignItems: 'center' },
   ecoleAvatar: { width: 48, height: 48, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 8 },
   ecoleAvatarTxt: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
   ecoleNom: { fontSize: 11, fontWeight: '700', color: '#1A1A2E', textAlign: 'center', marginBottom: 4 },
@@ -417,7 +414,7 @@ const styles = StyleSheet.create({
 
   // FONCTIONNALITÉS
   featuresGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
-  featureCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' },
+  featureCard: { width: '47%', padding: 14 },
   featureIco: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#E0F5EE', alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   featureTitre: { fontSize: 12, fontWeight: '700', color: '#1A1A2E', marginBottom: 4 },
   featureDesc: { fontSize: 10, color: '#888888', lineHeight: 14 },
@@ -426,8 +423,6 @@ const styles = StyleSheet.create({
   ctaBox: { margin: 20, backgroundColor: '#0B2545', borderRadius: 16, padding: 24, alignItems: 'center' },
   ctaTitre: { fontSize: 15, fontWeight: '800', color: '#FFFFFF', textAlign: 'center', marginTop: 10, marginBottom: 4 },
   ctaDesc: { fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginBottom: 16 },
-  ctaBtn: { backgroundColor: '#0D9E75', paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 },
-  ctaBtnTxt: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 
   // FOOTER
   footer: { backgroundColor: '#0B2545', padding: 24, alignItems: 'center' },

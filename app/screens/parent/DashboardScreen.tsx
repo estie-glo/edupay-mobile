@@ -1,10 +1,13 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { LinearGradient } from 'expo-linear-gradient';
 import { Bell, CreditCard, TriangleAlert } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getDashboard } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Forme exacte de GET /dashboard (DashboardController::index, vérifiée le 26/09/2026).
 type Apprenant = {
@@ -92,7 +95,7 @@ export default function DashboardScreen() {
     <View style={styles.container}>
 
       {/* Header */}
-      <View style={styles.header}>
+      <LinearGradient colors={['#0B2545', '#123A66']} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={styles.header}>
         <View style={styles.headerTop}>
           <Text style={styles.logo}>Edu<Text style={styles.logoAccent}>Pay</Text></Text>
           <View style={styles.headerRight}>
@@ -111,21 +114,21 @@ export default function DashboardScreen() {
             ? `${dashboard.pourcentage_global ?? 0}% de vos frais sont réglés`
             : dashboard.nb_enfants_dus > 0 ? `${dashboard.nb_enfants_dus} enfant${dashboard.nb_enfants_dus > 1 ? 's' : ''} avec un solde dû` : 'Tout est à jour'}
         </Text>
-      </View>
+      </LinearGradient>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
         {/* KPIs */}
         <View style={styles.kpiRow}>
-          <View style={styles.kpiCard}>
+          <Card style={styles.kpiCard}>
             <Text style={[styles.kpiVal, { color: '#D94040' }]}>{dashboard.total_du.toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA dus</Text>
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{dashboard.total_paye.toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA payés</Text>
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             {estSolo ? (
               <>
                 <Text style={styles.kpiVal}>{dashboard.pourcentage_global ?? 0}%</Text>
@@ -137,32 +140,34 @@ export default function DashboardScreen() {
                 <Text style={styles.kpiLbl}>Enfants suivis</Text>
               </>
             )}
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{dashboard.nb_recus}</Text>
             <Text style={styles.kpiLbl}>Reçus PDF</Text>
-          </View>
+          </Card>
         </View>
 
         {/* Bouton payer */}
-        <TouchableOpacity style={styles.payBtn} onPress={() => router.push('/screens/parent/EnfantsScreen')}>
-          <CreditCard size={16} color="#FFFFFF" />
-          <Text style={styles.payBtnTxt}>Effectuer un paiement →</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          title="Effectuer un paiement →"
+          onPress={() => router.push('/screens/parent/EnfantsScreen')}
+          icon={<CreditCard size={16} color="#FFFFFF" />}
+          style={{ marginBottom: 20 }}
+        />
 
         {/* Mon dossier (solo) / Mes enfants (famille) */}
         <Text style={styles.sec}>{estSolo ? 'Mon dossier' : 'Mes enfants'}</Text>
         {dashboard.apprenants.length === 0 ? (
-          <TouchableOpacity style={styles.videCard} onPress={() => router.push('/screens/parent/EnfantsScreen')}>
+          <Card style={styles.videCard} onPress={() => router.push('/screens/parent/EnfantsScreen')}>
             <Text style={styles.videTxt}>{estSolo ? 'Rattacher mon dossier →' : 'Rattacher un enfant →'}</Text>
-          </TouchableOpacity>
+          </Card>
         ) : (
           (estSolo ? dashboard.apprenants.slice(0, 1) : dashboard.apprenants).map((a) => {
             const s = styleStatut(a.statut_paiement);
             const total = a.total_du + a.total_paye;
             const pourcentPaye = total > 0 ? Math.round((a.total_paye / total) * 100) : 0;
             return (
-              <View key={a.id} style={[styles.enfantCard, { borderLeftColor: s.fg }]}>
+              <Card key={a.id} style={[styles.enfantCard, { borderLeftColor: s.fg }]}>
                 <View style={styles.enfantTop}>
                   <View>
                     <Text style={styles.enfantNom}>{a.prenom} {a.nom}</Text>
@@ -193,7 +198,7 @@ export default function DashboardScreen() {
                     </TouchableOpacity>
                   </>
                 )}
-              </View>
+              </Card>
             );
           })
         )}
@@ -208,7 +213,7 @@ export default function DashboardScreen() {
         {dashboard.derniers_paiements.length === 0 ? (
           <Text style={styles.videTxt}>Aucun paiement récent.</Text>
         ) : (
-          <View style={styles.card}>
+          <Card style={styles.card}>
             {dashboard.derniers_paiements.map((p) => (
               <View key={p.id} style={styles.row}>
                 <View>
@@ -223,7 +228,7 @@ export default function DashboardScreen() {
                 </View>
               </View>
             ))}
-          </View>
+          </Card>
         )}
 
       </ScrollView>
@@ -235,7 +240,7 @@ export default function DashboardScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F6F7' },
-  header: { backgroundColor: '#0B2545', paddingTop: 48, paddingBottom: 20, paddingHorizontal: 20 },
+  header: { paddingTop: 48, paddingBottom: 20, paddingHorizontal: 20 },
   headerTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 },
   logo: { fontSize: 20, fontWeight: '800', color: '#FFFFFF' },
   logoAccent: { color: '#5DCAA5' },
@@ -248,17 +253,15 @@ const styles = StyleSheet.create({
   sousTitre: { fontSize: 12, color: 'rgba(255,255,255,0.6)' },
   content: { flex: 1, padding: 16 },
   kpiRow: { flexDirection: 'row', gap: 8, marginBottom: 14, marginTop: 4 },
-  kpiCard: { flex: 1, backgroundColor: '#FFFFFF', borderRadius: 10, padding: 10, alignItems: 'center' },
+  kpiCard: { flex: 1, padding: 10, alignItems: 'center' },
   kpiVal: { fontSize: 14, fontWeight: '800', color: '#1A1A2E' },
   kpiLbl: { fontSize: 9, color: '#888888', marginTop: 2 },
-  payBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#0D9E75', borderRadius: 12, padding: 14, marginBottom: 20 },
-  payBtnTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   sec: { fontSize: 10, fontWeight: '700', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: 0.8, marginBottom: 10 },
   secHeaderRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   voirTout: { fontSize: 11, fontWeight: '700', color: '#0D9E75', marginBottom: 10 },
-  videCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, alignItems: 'center' },
+  videCard: { padding: 16, marginBottom: 16, alignItems: 'center' },
   videTxt: { fontSize: 12, color: '#0D9E75', fontWeight: '600' },
-  enfantCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 3 },
+  enfantCard: { padding: 14, marginBottom: 10, borderLeftWidth: 3 },
   enfantTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   enfantNom: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
   enfantEcole: { fontSize: 11, color: '#888888', marginTop: 2 },
@@ -271,7 +274,7 @@ const styles = StyleSheet.create({
   payEnfantBtnTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   pill: { borderRadius: 12, paddingHorizontal: 8, paddingVertical: 3 },
   pillTxt: { fontSize: 10, fontWeight: '700' },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14 },
+  card: { padding: 14 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   rowTitre: { fontSize: 12, fontWeight: '600', color: '#1A1A2E' },
   rowSub: { fontSize: 10, color: '#888888', marginTop: 2 },

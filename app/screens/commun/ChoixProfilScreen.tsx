@@ -37,7 +37,7 @@ export default function ChoixProfilScreen() {
         {/* Parent */}
         <TouchableOpacity
           style={styles.card}
-          onPress={() => router.push('/screens/parent/LoginParentScreen')}
+          onPress={() => router.push('/screens/parent/RegisterParentScreen')}
         >
           <View style={[styles.ico, { backgroundColor: '#E0F5EE' }]}>
             <Users size={22} color="#0D9E75" />
@@ -54,7 +54,7 @@ export default function ChoixProfilScreen() {
         {/* Établissement */}
         <TouchableOpacity
           style={styles.card}
-          onPress={() => router.push('/screens/ecole/LoginEcoleScreen')}
+          onPress={() => router.push('/screens/ecole/RegisterEcoleScreen')}
         >
           <View style={[styles.ico, { backgroundColor: '#FEF3DC' }]}>
             <School size={22} color="#E8A020" />
