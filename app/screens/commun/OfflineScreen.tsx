@@ -1,7 +1,8 @@
 import { useRouter } from 'expo-router';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { RefreshCw, WifiOff } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 export default function OfflineScreen() {
   const router = useRouter();
@@ -33,10 +34,7 @@ export default function OfflineScreen() {
       <Text style={styles.desc}>
         Impossible de joindre EduPay. Vérifiez votre connexion Internet ou vos données mobiles, puis réessayez.
       </Text>
-      <TouchableOpacity style={styles.btnReessayer} onPress={reessayer}>
-        <RefreshCw size={16} color="#FFFFFF" />
-        <Text style={styles.btnReessayerTxt}>Réessayer</Text>
-      </TouchableOpacity>
+      <PrimaryButton title="Réessayer" onPress={reessayer} icon={<RefreshCw size={16} color="#FFFFFF" />} style={styles.btnReessayer} />
     </View>
   );
 }
@@ -46,6 +44,5 @@ const styles = StyleSheet.create({
   iconeBox: { width: 80, height: 80, borderRadius: 40, backgroundColor: '#FBEAEA', alignItems: 'center', justifyContent: 'center', marginBottom: 20 },
   titre: { fontSize: 20, fontWeight: '800', color: '#1A1A2E', marginBottom: 10 },
   desc: { fontSize: 13, color: '#666666', textAlign: 'center', lineHeight: 19, marginBottom: 28 },
-  btnReessayer: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#0D9E75', paddingVertical: 14, paddingHorizontal: 28, borderRadius: 12 },
-  btnReessayerTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
+  btnReessayer: { paddingHorizontal: 28 },
 });

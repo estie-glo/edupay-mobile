@@ -1,10 +1,12 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
 import { usePreventScreenCapture } from 'expo-screen-capture';
 import { CircleCheck, Clock, XCircle } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { verifierPaiement } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 type Statut = {
   reference?: string;
@@ -124,7 +126,7 @@ export default function PaiementSuccessScreen() {
                 ? "Nous n'avons pas pu confirmer ce paiement pour le moment. Vérifiez son statut dans votre historique avant de réessayer — ne payez pas une seconde fois sans vérifier."
                 : 'Reçu PDF envoyé par SMS et email'}
         </Text>
-        <View style={styles.detailBox}>
+        <Card style={styles.detailBox}>
           <View style={styles.detailRow}>
             <Text style={styles.detailLbl}>Apprenant</Text>
             <Text style={styles.detailVal}>{apprenantNom || '—'}</Text>
@@ -153,20 +155,28 @@ export default function PaiementSuccessScreen() {
             <Text style={styles.detailLbl}>Date</Text>
             <Text style={styles.detailVal}>{datePaiement ? datePaiement.slice(0, 10) : '—'}</Text>
           </View>
-        </View>
+        </Card>
         {valide && (
-          <TouchableOpacity style={styles.btnRecu} onPress={() => router.push('/screens/parent/HistoriqueScreen')}>
-            <Text style={styles.btnRecuTxt}>Voir le reçu PDF</Text>
-          </TouchableOpacity>
+          <PrimaryButton
+            variant="outline"
+            title="Voir le reçu PDF"
+            onPress={() => router.push('/screens/parent/HistoriqueScreen')}
+            style={{ width: '100%', marginBottom: 10 }}
+          />
         )}
         {inconnu && (
-          <TouchableOpacity style={styles.btnRecu} onPress={() => router.push('/screens/parent/HistoriqueScreen')}>
-            <Text style={styles.btnRecuTxt}>Vérifier dans l'historique</Text>
-          </TouchableOpacity>
+          <PrimaryButton
+            variant="outline"
+            title="Vérifier dans l'historique"
+            onPress={() => router.push('/screens/parent/HistoriqueScreen')}
+            style={{ width: '100%', marginBottom: 10 }}
+          />
         )}
-        <TouchableOpacity style={styles.btnDashboard} onPress={() => router.push('/screens/parent/DashboardScreen')}>
-          <Text style={styles.btnDashboardTxt}>Retour au tableau de bord</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          title="Retour au tableau de bord"
+          onPress={() => router.push('/screens/parent/DashboardScreen')}
+          style={{ width: '100%' }}
+        />
       </View>
     </View>
   );
@@ -179,12 +189,8 @@ const styles = StyleSheet.create({
   titre: { fontSize: 22, fontWeight: '800', color: '#085041', marginBottom: 6, textAlign: 'center' },
   ref: { fontSize: 13, color: '#0D9E75', marginBottom: 6 },
   desc: { fontSize: 12, color: '#888888', marginBottom: 24, textAlign: 'center' },
-  detailBox: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, width: '100%', marginBottom: 24 },
+  detailBox: { padding: 16, width: '100%', marginBottom: 24 },
   detailRow: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 8, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   detailLbl: { fontSize: 12, color: '#888888' },
   detailVal: { fontSize: 12, fontWeight: '700', color: '#1A1A2E' },
-  btnDashboard: { backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 12, alignItems: 'center', width: '100%', marginBottom: 10 },
-  btnDashboardTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  btnRecu: { backgroundColor: '#FFFFFF', paddingVertical: 14, borderRadius: 12, alignItems: 'center', width: '100%', borderWidth: 2, borderColor: '#0D9E75', marginBottom: 10 },
-  btnRecuTxt: { color: '#0D9E75', fontSize: 14, fontWeight: '700' },
 });

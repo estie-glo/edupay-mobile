@@ -7,6 +7,7 @@ import {
   View
 } from 'react-native';
 import { ArrowLeft, ArrowRight, Compass, School, Users } from 'lucide-react-native';
+import Card from '../../../components/ui/Card';
 
 export default function ChoixProfilScreen() {
   const router = useRouter();
@@ -35,7 +36,7 @@ export default function ChoixProfilScreen() {
       >
 
         {/* Parent */}
-        <TouchableOpacity
+        <Card
           style={styles.card}
           onPress={() => router.push('/screens/parent/RegisterParentScreen')}
         >
@@ -49,10 +50,10 @@ export default function ChoixProfilScreen() {
             </Text>
           </View>
           <ArrowRight size={18} color="#AAAAAA" />
-        </TouchableOpacity>
+        </Card>
 
         {/* Établissement */}
-        <TouchableOpacity
+        <Card
           style={styles.card}
           onPress={() => router.push('/screens/ecole/RegisterEcoleScreen')}
         >
@@ -66,11 +67,11 @@ export default function ChoixProfilScreen() {
             </Text>
           </View>
           <ArrowRight size={18} color="#AAAAAA" />
-        </TouchableOpacity>
+        </Card>
 
         {/* Invité */}
-        <TouchableOpacity
-          style={[styles.card, { borderColor: '#E6F0FB' }]}
+        <Card
+          style={styles.card}
           onPress={() => router.back()}
         >
           <View style={[styles.ico, { backgroundColor: '#E6F0FB' }]}>
@@ -83,7 +84,7 @@ export default function ChoixProfilScreen() {
             </Text>
           </View>
           <ArrowRight size={18} color="#AAAAAA" />
-        </TouchableOpacity>
+        </Card>
 
         <Text style={styles.note}>
           Vous pourrez créer un compte ou vous connecter à tout moment.
@@ -132,18 +133,9 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1.5,
-    borderColor: '#E2E8F0',
-    borderRadius: 16,
     padding: 16,
     marginBottom: 12,
     gap: 14,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 4,
-    elevation: 1,
   },
   ico: {
     width: 48,

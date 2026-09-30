@@ -5,6 +5,8 @@ import { usePreventScreenCapture } from 'expo-screen-capture';
 import { ArrowLeft, History, ShieldCheck, Smartphone } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getFraisApprenantDetail, initierPaiement } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 type ModePaiement = 'mtn_momo' | 'orange_money';
 
@@ -78,9 +80,10 @@ export default function PaiementScreen() {
             ? "Impossible de vérifier le montant exact et les paiements déjà effectués sur ce dossier. Vérifiez votre connexion avant de payer — ne réessayez pas sans être sûr·e de ne pas payer deux fois."
             : 'Sélectionnez un enfant puis le frais à payer depuis son échéancier.'}
         </Text>
-        <TouchableOpacity style={styles.btnPayer} onPress={() => (erreurChargement ? chargerDetail() : router.push('/screens/parent/EnfantsScreen'))}>
-          <Text style={styles.btnPayerTxt}>{erreurChargement ? 'Réessayer' : 'Voir mes enfants →'}</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          title={erreurChargement ? 'Réessayer' : 'Voir mes enfants →'}
+          onPress={() => (erreurChargement ? chargerDetail() : router.push('/screens/parent/EnfantsScreen'))}
+        />
       </View>
     );
   }
@@ -163,7 +166,7 @@ export default function PaiementScreen() {
         </View>
       </View>
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-        <View style={styles.resumeCard}>
+        <Card style={styles.resumeCard}>
           <View style={{ flex: 1 }}>
             <Text style={styles.resumeLabel}>Paiement pour</Text>
             <Text style={styles.resumeNom}>{params.apprenantNom || 'Apprenant'}</Text>
@@ -173,7 +176,7 @@ export default function PaiementScreen() {
             <Text style={styles.resumeMontant}>{montant.toLocaleString('fr-FR')}</Text>
             <Text style={styles.resumeDevise}>FCFA</Text>
           </View>
-        </View>
+        </Card>
 
         {paiementsPrecedents.length > 0 && (
           <View style={styles.precedentsBox}>
@@ -253,16 +256,14 @@ export default function PaiementScreen() {
           </Text>
         </View>
 
-        <View style={styles.totalBox}>
+        <Card style={styles.totalBox}>
           <View style={[styles.totalRow, { borderTopWidth: 0, paddingTop: 0 }]}>
             <Text style={[styles.totalLbl, { fontWeight: '700', fontSize: 15 }]}>Frais scolaires (hors frais de service)</Text>
             <Text style={[styles.totalVal, { color: '#0D9E75', fontSize: 20, fontWeight: '800' }]}>{montant.toLocaleString('fr-FR')} FCFA</Text>
           </View>
-        </View>
+        </Card>
 
-        <TouchableOpacity style={[styles.btnPayer, loading && { opacity: 0.7 }]} onPress={handlePayer} disabled={loading}>
-          {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnPayerTxt}>Confirmer et payer →</Text>}
-        </TouchableOpacity>
+        <PrimaryButton title="Confirmer et payer →" onPress={handlePayer} loading={loading} />
       </ScrollView>
     </View>
   );
@@ -279,7 +280,7 @@ const styles = StyleSheet.create({
   tlsRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   tls: { fontSize: 11, color: 'rgba(255,255,255,0.6)' },
   content: { flex: 1, padding: 16 },
-  resumeCard: { backgroundColor: '#E0F5EE', borderRadius: 12, padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, borderWidth: 1, borderColor: 'rgba(13,158,117,0.2)' },
+  resumeCard: { backgroundColor: '#E0F5EE', padding: 16, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
   resumeLabel: { fontSize: 10, color: '#0F6E56', marginBottom: 4 },
   resumeNom: { fontSize: 16, fontWeight: '700', color: '#085041' },
   resumeEcole: { fontSize: 11, color: '#1B9E75', marginTop: 2 },
@@ -303,10 +304,8 @@ const styles = StyleSheet.create({
   input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 15, color: '#1A1A2E', marginBottom: 12 },
   warnBox: { backgroundColor: '#FEF3DC', borderRadius: 10, padding: 12, marginBottom: 16 },
   warnTxt: { fontSize: 11, color: '#8B5E10', textAlign: 'center' },
-  totalBox: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 20 },
+  totalBox: { padding: 14, marginBottom: 20 },
   totalRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 6 },
   totalLbl: { fontSize: 13, color: '#888888' },
   totalVal: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
-  btnPayer: { backgroundColor: '#0D9E75', paddingVertical: 16, borderRadius: 12, alignItems: 'center' },
-  btnPayerTxt: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
 });

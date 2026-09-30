@@ -6,6 +6,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { getApprenants, getEtablissementsPourRattachement, rattacherApprenant, removeApprenant, updateApprenant } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 import BottomNavParent from '../../../components/BottomNavParent';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 type EtablissementAnnuaire = { id: number; nom: string; ville?: string; type?: string; code_etablissement: string };
 
@@ -251,7 +253,7 @@ export default function EnfantsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
         {formOuvert && (
-          <View style={styles.formCard}>
+          <Card style={styles.formCard}>
             <Text style={styles.formTitre}>Rattacher un enfant</Text>
             <Text style={styles.formSousTitre}>Recherchez l'établissement de l'enfant, puis renseignez son matricule.</Text>
 
@@ -329,17 +331,15 @@ export default function EnfantsScreen() {
                   <TouchableOpacity style={styles.btnAnnuler} onPress={resetFormulaire}>
                     <Text style={styles.btnAnnulerTxt}>Annuler</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleAjouter} disabled={envoi}>
-                    {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Rattacher</Text>}
-                  </TouchableOpacity>
+                  <PrimaryButton title="Rattacher" onPress={handleAjouter} loading={envoi} style={{ flex: 1 }} />
                 </View>
               </>
             )}
-          </View>
+          </Card>
         )}
 
         {!!apprenantEnEdition && (
-          <View style={styles.formCard}>
+          <Card style={styles.formCard}>
             <Text style={styles.formTitre}>Modifier {apprenantEnEdition.prenom}</Text>
             <Text style={styles.lbl}>Prénom *</Text>
             <TextInput style={styles.input} value={editPrenom} onChangeText={setEditPrenom} placeholderTextColor="#AAAAAA" />
@@ -353,11 +353,9 @@ export default function EnfantsScreen() {
               <TouchableOpacity style={styles.btnAnnuler} onPress={() => setApprenantEnEdition(null)}>
                 <Text style={styles.btnAnnulerTxt}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnEnvoyer, envoiEdition && { opacity: 0.7 }]} onPress={handleModifier} disabled={envoiEdition}>
-                {envoiEdition ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Enregistrer</Text>}
-              </TouchableOpacity>
+              <PrimaryButton title="Enregistrer" onPress={handleModifier} loading={envoiEdition} style={{ flex: 1 }} />
             </View>
-          </View>
+          </Card>
         )}
 
         {apprenants.length === 0 ? (
@@ -366,7 +364,7 @@ export default function EnfantsScreen() {
           apprenants.map((a) => {
             const s = styleStatut(a.statut);
             return (
-              <TouchableOpacity
+              <Card
                 key={a.id}
                 style={styles.card}
                 onPress={() => router.push({ pathname: '/screens/parent/EcheancierScreen', params: { apprenantId: String(a.id), apprenantNom: `${a.prenom} ${a.nom}` } })}
@@ -401,7 +399,7 @@ export default function EnfantsScreen() {
                     <ChevronRight size={18} color="#AAAAAA" />
                   </View>
                 </View>
-              </TouchableOpacity>
+              </Card>
             );
           })
         )}
@@ -420,7 +418,7 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: '#0D9E75', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { padding: 14, marginBottom: 10 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
   nom: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
   ecole: { fontSize: 11, color: '#888888', marginTop: 2 },
@@ -431,7 +429,7 @@ const styles = StyleSheet.create({
   solde: { fontSize: 12, color: '#555555' },
   cardActions: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   trashBtn: { padding: 4 },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  formCard: { padding: 16, marginBottom: 16 },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 4 },
   formSousTitre: { fontSize: 11, color: '#888888', marginBottom: 4, lineHeight: 15 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
@@ -450,6 +448,4 @@ const styles = StyleSheet.create({
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },
-  btnEnvoyer: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#0D9E75' },
-  btnEnvoyerTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 });

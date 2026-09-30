@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, BookOpen, CheckCircle2, CheckSquare, GraduationCap, Square, User } from 'lucide-react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ArrowLeft, BookOpen, CheckCircle2, CheckSquare, Eye, EyeOff, GraduationCap, Square, User } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { rattacherApprenant, register } from '../../../services/api';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 type Profil = 'parent' | 'eleve' | 'etudiant';
 
@@ -37,6 +38,8 @@ export default function RegisterParentScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [passwordVisible, setPasswordVisible] = useState(false);
+  const [confirmPasswordVisible, setConfirmPasswordVisible] = useState(false);
   const [cguAccepted, setCguAccepted] = useState(false);
 
   const [matricule, setMatricule] = useState('');
@@ -133,26 +136,40 @@ export default function RegisterParentScreen() {
       <Text style={styles.lbl}>Email (optionnel)</Text>
       <TextInput style={styles.input} placeholder="email@exemple.cm" placeholderTextColor="#AAAAAA" value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
       <Text style={styles.lbl}>Mot de passe *</Text>
-      <TextInput style={styles.input} placeholder="Min. 8 car., 1 majuscule, 1 chiffre, 1 spécial" placeholderTextColor="#AAAAAA" value={password} onChangeText={setPassword} secureTextEntry={true} />
+      <View style={styles.passwordRow}>
+        <TextInput
+          style={[styles.input, styles.passwordInput]}
+          placeholder="Min. 8 car., 1 majuscule, 1 chiffre, 1 spécial"
+          placeholderTextColor="#AAAAAA"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry={!passwordVisible}
+        />
+        <TouchableOpacity style={styles.eyeBtn} onPress={() => setPasswordVisible((v) => !v)}>
+          {passwordVisible ? <EyeOff size={18} color="#888888" /> : <Eye size={18} color="#888888" />}
+        </TouchableOpacity>
+      </View>
       <Text style={styles.lbl}>Confirmer mot de passe *</Text>
-      <TextInput style={styles.input} placeholder="Répétez" placeholderTextColor="#AAAAAA" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={true} />
+      <View style={styles.passwordRow}>
+        <TextInput
+          style={[styles.input, styles.passwordInput]}
+          placeholder="Répétez"
+          placeholderTextColor="#AAAAAA"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry={!confirmPasswordVisible}
+        />
+        <TouchableOpacity style={styles.eyeBtn} onPress={() => setConfirmPasswordVisible((v) => !v)}>
+          {confirmPasswordVisible ? <EyeOff size={18} color="#888888" /> : <Eye size={18} color="#888888" />}
+        </TouchableOpacity>
+      </View>
 
       <TouchableOpacity style={styles.cguRow} onPress={() => setCguAccepted(!cguAccepted)}>
         {cguAccepted ? <CheckSquare size={18} color="#0D9E75" /> : <Square size={18} color="#AAAAAA" />}
         <Text style={styles.cguTxt}>J'accepte les conditions d'utilisation d'EduPay *</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity
-        style={[styles.btnSuivant, loading && { opacity: 0.7 }]}
-        onPress={handleRegister}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#FFFFFF" />
-        ) : (
-          <Text style={styles.btnSuivantTxt}>Créer mon compte →</Text>
-        )}
-      </TouchableOpacity>
+      <PrimaryButton title="Créer mon compte →" onPress={handleRegister} loading={loading} style={{ marginTop: 24 }} />
       <TouchableOpacity style={{ marginTop: 16 }} onPress={() => router.push('/screens/parent/LoginParentScreen')}>
         <Text style={styles.deja}>Déjà un compte ? <Text style={styles.dejaLnk}>Se connecter</Text></Text>
       </TouchableOpacity>
@@ -168,13 +185,7 @@ export default function RegisterParentScreen() {
       <TextInput style={styles.input} placeholder="Fourni par l'école" placeholderTextColor="#AAAAAA" value={codeEtablissement} onChangeText={setCodeEtablissement} autoCapitalize="characters" />
       <Text style={styles.lbl}>Matricule de l'enfant *</Text>
       <TextInput style={styles.input} placeholder="ex : 2026-0451" placeholderTextColor="#AAAAAA" value={matricule} onChangeText={setMatricule} />
-      <TouchableOpacity
-        style={[styles.btnSuivant, loading && { opacity: 0.7 }]}
-        onPress={handleAjouterApprenant}
-        disabled={loading}
-      >
-        {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnSuivantTxt}>Continuer →</Text>}
-      </TouchableOpacity>
+      <PrimaryButton title="Continuer →" onPress={handleAjouterApprenant} loading={loading} style={{ marginTop: 24 }} />
     </View>
   );
 
@@ -187,12 +198,11 @@ export default function RegisterParentScreen() {
       <Text style={styles.confirmDesc}>
         Bienvenue sur EduPay, {prenom}.
       </Text>
-      <TouchableOpacity
-        style={styles.btnSuivant}
+      <PrimaryButton
+        title="Aller à mon tableau de bord →"
         onPress={() => router.replace('/screens/parent/DashboardScreen')}
-      >
-        <Text style={styles.btnSuivantTxt}>Aller à mon tableau de bord →</Text>
-      </TouchableOpacity>
+        style={{ width: '100%' }}
+      />
     </View>
   );
 
@@ -235,8 +245,9 @@ const styles = StyleSheet.create({
   etapeTitre: { fontSize: 18, fontWeight: '800', color: '#1A1A2E', marginBottom: 20 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 12 },
   input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
-  btnSuivant: { backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 24, width: '100%' },
-  btnSuivantTxt: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  passwordRow: { position: 'relative', justifyContent: 'center' },
+  passwordInput: { paddingRight: 44 },
+  eyeBtn: { position: 'absolute', right: 14, padding: 4 },
   infoBox: { backgroundColor: '#E0F5EE', borderRadius: 10, padding: 12, marginBottom: 8 },
   infoTxt: { fontSize: 12, color: '#085041', lineHeight: 17 },
   checkCircle: { width: 70, height: 70, borderRadius: 35, backgroundColor: '#0D9E75', alignItems: 'center', justifyContent: 'center', marginBottom: 16, marginTop: 20 },

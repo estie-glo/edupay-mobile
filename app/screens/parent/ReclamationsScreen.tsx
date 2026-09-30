@@ -5,6 +5,8 @@ import { ArrowLeft, Plus } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { creerReclamation, getHistorique, getReclamations } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Enum réel (migration create_reclamations_table, vérifié le 27/09/2026) :
 // ouvert/en_cours/resolu/rejete (pas de "e" final — la clé "rejetee" ne
@@ -115,7 +117,7 @@ export default function ReclamationsScreen() {
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
         {formOuvert && (
-          <View style={styles.formCard}>
+          <Card style={styles.formCard}>
             <Text style={styles.formTitre}>Nouvelle réclamation</Text>
 
             <Text style={styles.lbl}>Sujet *</Text>
@@ -161,11 +163,9 @@ export default function ReclamationsScreen() {
               <TouchableOpacity style={styles.btnAnnuler} onPress={() => setFormOuvert(false)}>
                 <Text style={styles.btnAnnulerTxt}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={soumettre} disabled={envoi}>
-                {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Envoyer</Text>}
-              </TouchableOpacity>
+              <PrimaryButton title="Envoyer" onPress={soumettre} loading={envoi} style={{ flex: 1 }} />
             </View>
-          </View>
+          </Card>
         )}
 
         {reclamations.length === 0 ? (
@@ -174,7 +174,7 @@ export default function ReclamationsScreen() {
           reclamations.map((r) => {
             const s = styleStatut(r.statut);
             return (
-              <View key={r.id} style={styles.card}>
+              <Card key={r.id} style={styles.card}>
                 <View style={styles.cardTop}>
                   <Text style={styles.cardTitre}>{r.sujet || 'Réclamation'}</Text>
                   <View style={[styles.pill, { backgroundColor: s.bg }]}>
@@ -192,7 +192,7 @@ export default function ReclamationsScreen() {
                     </Text>
                   </View>
                 )}
-              </View>
+              </Card>
             );
           })
         )}
@@ -213,7 +213,7 @@ const styles = StyleSheet.create({
   newBtnTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 12, color: '#888888', textAlign: 'center', marginVertical: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: '#E2E8F0' },
+  card: { padding: 14, marginBottom: 10, borderLeftWidth: 3, borderLeftColor: '#E2E8F0' },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
   cardTitre: { fontSize: 13, fontWeight: '700', color: '#1A1A2E', flex: 1, marginRight: 8 },
   cardDesc: { fontSize: 11, color: '#555555', marginBottom: 6, lineHeight: 16 },
@@ -224,7 +224,7 @@ const styles = StyleSheet.create({
   reponseTxt: { fontSize: 11, color: '#085041' },
   rejetBox: { backgroundColor: '#FBEAEA', borderRadius: 8, padding: 8 },
   rejetTxt: { fontSize: 11, color: '#9B2C2C' },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  formCard: { padding: 16, marginBottom: 16 },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 12 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
   input: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
@@ -237,6 +237,4 @@ const styles = StyleSheet.create({
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },
-  btnEnvoyer: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#0D9E75' },
-  btnEnvoyerTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 });

@@ -6,6 +6,7 @@ import { useAuth } from '../../../context/AuthContext';
 import { getApprenants, getHistorique } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 import BottomNavParent from '../../../components/BottomNavParent';
+import Card from '../../../components/ui/Card';
 
 // Écran dédié équivalent à /espace/recus côté web (Payeur/RecuController::index) :
 // mêmes paiements validés que l'historique, filtrés côté client car GET /paiements
@@ -105,12 +106,12 @@ export default function RecusScreen() {
           <>
             <Text style={styles.secLabel}>CERTIFICATS DE SCOLARITÉ</Text>
             {apprenants.map((a) => (
-              <View key={a.id} style={styles.card}>
+              <Card key={a.id} style={styles.card}>
                 <Text style={styles.cardNom}>{a.prenom} {a.nom}</Text>
                 <TouchableOpacity onPress={() => handleTelechargerCertificat(a)} disabled={telechargementEnCoursId === `cert-${a.id}`}>
                   {telechargementEnCoursId === `cert-${a.id}` ? <ActivityIndicator size="small" color="#0D9E75" /> : <Award size={18} color="#0D9E75" />}
                 </TouchableOpacity>
-              </View>
+              </Card>
             ))}
           </>
         )}
@@ -120,7 +121,7 @@ export default function RecusScreen() {
           <Text style={styles.vide}>Aucun reçu disponible pour le moment.</Text>
         ) : (
           recus.map((r) => (
-            <View key={r.id} style={styles.card}>
+            <Card key={r.id} style={styles.card}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.cardNom}>{r.apprenant?.prenom} {r.apprenant?.nom}</Text>
                 <Text style={styles.cardSousTitre}>{r.frais?.nom || '—'} · {(r.montant ?? 0).toLocaleString('fr-FR')} FCFA</Text>
@@ -128,7 +129,7 @@ export default function RecusScreen() {
               <TouchableOpacity onPress={() => handleTelechargerRecu(r)} disabled={telechargementEnCoursId === `recu-${r.id}`}>
                 {telechargementEnCoursId === `recu-${r.id}` ? <ActivityIndicator size="small" color="#0D9E75" /> : <Download size={18} color="#0D9E75" />}
               </TouchableOpacity>
-            </View>
+            </Card>
           ))
         )}
 
@@ -153,7 +154,7 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: 16 },
   secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
   vide: { fontSize: 13, color: '#888888' },
-  card: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, padding: 14, marginBottom: 8 },
   cardNom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   cardSousTitre: { fontSize: 11, color: '#888888', marginTop: 2 },
   btnPlus: { alignItems: 'center', paddingVertical: 14, marginTop: 4 },

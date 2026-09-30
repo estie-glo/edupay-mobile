@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacit
 import { ArrowLeft, Bell, BellRing, CheckCheck } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getNotifications, marquerNotificationLue, marquerNotificationsLues } from '../../../services/api';
+import Card from '../../../components/ui/Card';
 
 // Forme exacte de NotificationResource (vérifiée le 26/09/2026) :
 // {id, titre, message, type, lu, lu_at, created_at}.
@@ -95,7 +96,7 @@ export default function NotificationsScreen() {
           </View>
         ) : (
           notifs.map((n) => (
-            <TouchableOpacity
+            <Card
               key={n.id}
               style={[styles.card, !n.lu && styles.cardNonLue]}
               onPress={() => handleMarquerUne(n)}
@@ -109,7 +110,7 @@ export default function NotificationsScreen() {
                 {!!n.created_at && <Text style={styles.cardDate}>{new Date(n.created_at).toLocaleDateString('fr-FR')}</Text>}
               </View>
               {!n.lu && <View style={styles.pointNonLu} />}
-            </TouchableOpacity>
+            </Card>
           ))
         )}
       </ScrollView>
@@ -126,8 +127,8 @@ const styles = StyleSheet.create({
   content: { flex: 1, padding: 16 },
   videBox: { alignItems: 'center', marginTop: 60, gap: 10 },
   vide: { fontSize: 13, color: '#888888' },
-  card: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' },
-  cardNonLue: { borderColor: '#0D9E75', backgroundColor: '#F3FBF8' },
+  card: { flexDirection: 'row', alignItems: 'flex-start', gap: 10, padding: 14, marginBottom: 8 },
+  cardNonLue: { borderWidth: 1.5, borderColor: '#0D9E75', backgroundColor: '#F3FBF8' },
   cardIco: { width: 30, height: 30, borderRadius: 15, backgroundColor: '#F0F2F5', alignItems: 'center', justifyContent: 'center' },
   cardTitre: { fontSize: 13, fontWeight: '600', color: '#555555' },
   cardTitreNonLue: { fontWeight: '800', color: '#1A1A2E' },

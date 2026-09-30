@@ -5,6 +5,7 @@ import { ArrowLeft, CalendarClock } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getFraisApprenant } from '../../../services/api';
 import BottomNavParent from '../../../components/BottomNavParent';
+import Card from '../../../components/ui/Card';
 
 // Champs exacts de FraisResource (vérifié le 28/09/2026) : PAS de
 // `fractionnable`, `nb_tranches_max` ni `prochaine_echeance` — ces champs
@@ -111,7 +112,7 @@ export default function EcheancierScreen() {
             const pourcent = f.montant_total > 0 ? Math.round((f.montant_paye / f.montant_total) * 100) : 0;
             const estRegle = reste <= 0;
             return (
-              <View key={f.id} style={styles.catCard}>
+              <Card key={f.id} style={styles.catCard}>
                 <View style={styles.catHeader}>
                   <View style={{ flex: 1 }}>
                     <Text style={styles.catNom}>{f.categorieFrais?.nom || 'Frais scolaires'}</Text>
@@ -140,7 +141,7 @@ export default function EcheancierScreen() {
                     </TouchableOpacity>
                   </>
                 )}
-              </View>
+              </Card>
             );
           })
         )}
@@ -159,7 +160,7 @@ const styles = StyleSheet.create({
   sousTitre: { backgroundColor: '#0B2545', color: 'rgba(255,255,255,0.6)', fontSize: 12, textAlign: 'center', paddingBottom: 16 },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  catCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  catCard: { padding: 14, marginBottom: 12 },
   catHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 8 },
   catNom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   catAnnee: { fontSize: 10, color: '#888888', marginTop: 2 },

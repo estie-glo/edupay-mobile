@@ -6,6 +6,8 @@ import { useAuth } from '../../../context/AuthContext';
 import { annulerPaiement, getHistorique } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
 import BottomNavParent from '../../../components/BottomNavParent';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Forme exacte de PaiementResource (vérifiée le 26/09/2026).
 type Paiement = {
@@ -130,15 +132,20 @@ export default function HistoriqueScreen() {
       </View>
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
-        <TouchableOpacity style={styles.btnExporter} onPress={handleExporter} disabled={exportEnCours || paiements.length === 0}>
-          {exportEnCours ? <ActivityIndicator size="small" color="#0D9E75" /> : <FileDown size={14} color="#0D9E75" />}
-          <Text style={styles.btnExporterTxt}>{exportEnCours ? 'Export en cours...' : "Exporter l'historique en PDF"}</Text>
-        </TouchableOpacity>
+        <PrimaryButton
+          variant="outline"
+          title={exportEnCours ? 'Export en cours...' : "Exporter l'historique en PDF"}
+          onPress={handleExporter}
+          loading={exportEnCours}
+          disabled={paiements.length === 0}
+          icon={<FileDown size={14} color="#0D9E75" />}
+          style={{ marginBottom: 16 }}
+        />
 
         {paiements.length === 0 ? (
           <Text style={styles.vide}>Aucun paiement pour le moment.</Text>
         ) : (
-          <View style={styles.card}>
+          <Card style={styles.card}>
             {paiements.map((p) => {
               const s = styleStatut(p.statut);
               const negatif = (p.montant ?? 0) < 0;
@@ -181,7 +188,7 @@ export default function HistoriqueScreen() {
                 </View>
               );
             })}
-          </View>
+          </Card>
         )}
 
         {page < dernierePage && (
@@ -202,10 +209,8 @@ const styles = StyleSheet.create({
   backBtn: { backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   titre: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   content: { flex: 1, padding: 16 },
-  btnExporter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#0D9E75', borderRadius: 10, paddingVertical: 12, marginBottom: 16 },
-  btnExporterTxt: { color: '#0D9E75', fontSize: 12, fontWeight: '700' },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 4, marginBottom: 16 },
+  card: { padding: 4, marginBottom: 16 },
   row: { flexDirection: 'row', alignItems: 'center', padding: 10, borderBottomWidth: 1, borderBottomColor: '#F0F0F0', gap: 10 },
   ico: { width: 38, height: 38, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   rowTexts: { flex: 1 },
