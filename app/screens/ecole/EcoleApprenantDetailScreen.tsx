@@ -4,6 +4,8 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, Touc
 import { ArrowLeft, Layers3, Phone, Save, Trash2, UserRound, Users } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { desaffecterFraisApprenant, getApprenantEcole, updateApprenantEcole } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 type Echeancier = { id: number; libelle?: string; montant?: number; date_echeance?: string };
 type Frais = {
@@ -137,9 +139,7 @@ export default function EcoleApprenantDetailScreen() {
         <Text style={styles.lbl}>Classe *</Text>
         <TextInput style={styles.input} value={classe} onChangeText={setClasse} placeholderTextColor="#AAAAAA" />
 
-        <TouchableOpacity style={[styles.btnEnregistrer, enregistrement && { opacity: 0.7 }]} onPress={handleEnregistrer} disabled={enregistrement}>
-          {enregistrement ? <ActivityIndicator color="#FFFFFF" /> : <><Save size={16} color="#FFFFFF" /><Text style={styles.btnEnregistrerTxt}>Enregistrer</Text></>}
-        </TouchableOpacity>
+        <PrimaryButton title="Enregistrer" onPress={handleEnregistrer} loading={enregistrement} icon={<Save size={16} color="#FFFFFF" />} style={{ marginTop: 8 }} />
 
         <View style={styles.secHeader}>
           <Users size={14} color="#888888" />
@@ -149,7 +149,7 @@ export default function EcoleApprenantDetailScreen() {
           <Text style={styles.vide}>Aucun parent rattaché.</Text>
         ) : (
           parents.map((p) => (
-            <View key={p.id} style={styles.parentCard}>
+            <Card key={p.id} style={styles.parentCard}>
               <Text style={styles.parentNom}>{p.nom_complet} {p.lien ? `(${p.lien})` : ''}</Text>
               {!!p.telephone && (
                 <View style={styles.parentLigne}>
@@ -158,7 +158,7 @@ export default function EcoleApprenantDetailScreen() {
                 </View>
               )}
               {!!p.email && <Text style={styles.parentTxt}>{p.email}</Text>}
-            </View>
+            </Card>
           ))
         )}
 
@@ -170,7 +170,7 @@ export default function EcoleApprenantDetailScreen() {
           <Text style={styles.vide}>Aucun frais affecté.</Text>
         ) : (
           frais.map((f) => (
-            <View key={f.id} style={styles.fraisCard}>
+            <Card key={f.id} style={styles.fraisCard}>
               <View style={styles.fraisTop}>
                 <Text style={styles.fraisNom}>{f.categorie?.nom || '—'}</Text>
                 <TouchableOpacity onPress={() => handleDesaffecter(f)} disabled={desaffectationEnCoursId === f.id}>
@@ -188,7 +188,7 @@ export default function EcoleApprenantDetailScreen() {
                   ))}
                 </View>
               )}
-            </View>
+            </Card>
           ))
         )}
       </ScrollView>
@@ -207,14 +207,12 @@ const styles = StyleSheet.create({
   secHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 24, marginBottom: 8 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 12 },
   input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
-  btnEnregistrer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#E8A020', paddingVertical: 14, borderRadius: 12, marginTop: 20 },
-  btnEnregistrerTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   vide: { fontSize: 12, color: '#AAAAAA' },
-  parentCard: { backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  parentCard: { padding: 12, marginBottom: 8 },
   parentNom: { fontSize: 12, fontWeight: '700', color: '#1A1A2E', marginBottom: 4, textTransform: 'capitalize' },
   parentLigne: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
   parentTxt: { fontSize: 11, color: '#666666' },
-  fraisCard: { backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  fraisCard: { padding: 12, marginBottom: 8 },
   fraisTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   fraisNom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   fraisMontant: { fontSize: 12, color: '#1A1A2E', fontWeight: '600' },

@@ -5,6 +5,7 @@ import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TextInpu
 import { ArrowLeft, FileCheck2, Save, Settings, Upload } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getParametresEcole, updateParametresEcole } from '../../../services/api';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Champs et règles identiques à ParametreController::update (vérifiés le 26/09/2026).
 const TYPES = [
@@ -240,9 +241,7 @@ export default function EcoleParametresScreen() {
           </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.btnEnregistrer, enregistrement && { opacity: 0.7 }]} onPress={handleEnregistrer} disabled={enregistrement}>
-          {enregistrement ? <ActivityIndicator color="#FFFFFF" /> : <><Save size={16} color="#FFFFFF" /><Text style={styles.btnEnregistrerTxt}>Enregistrer</Text></>}
-        </TouchableOpacity>
+        <PrimaryButton title="Enregistrer" onPress={handleEnregistrer} loading={enregistrement} icon={<Save size={16} color="#FFFFFF" />} style={{ marginTop: 24 }} />
       </ScrollView>
     </View>
   );
@@ -267,6 +266,4 @@ const styles = StyleSheet.create({
   logoPreview: { width: 56, height: 56, borderRadius: 10, marginBottom: 8, backgroundColor: '#FFFFFF', borderWidth: 1, borderColor: '#E2E8F0' },
   uploadBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FEF3DC', borderWidth: 1.5, borderColor: '#E8A020', borderStyle: 'dashed', borderRadius: 10, padding: 14, marginBottom: 4 },
   uploadTxt: { flex: 1, fontSize: 11, color: '#8B5E10', fontWeight: '600' },
-  btnEnregistrer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#E8A020', paddingVertical: 14, borderRadius: 12, marginTop: 24 },
-  btnEnregistrerTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
 });

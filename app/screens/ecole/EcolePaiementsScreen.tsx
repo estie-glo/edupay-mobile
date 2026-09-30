@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, Touc
 import { ArrowLeft, CreditCard, Search } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getPaiementsEcole } from '../../../services/api';
+import Card from '../../../components/ui/Card';
 
 // Filtres alignés sur Api/Etablissement/PaiementController::index (q, statut) —
 // vérifiés le 26/09/2026. Pas de filtre mode_paiement ni de totaux côté API :
@@ -124,7 +125,7 @@ export default function EcolePaiementsScreen() {
             paiements.map((p) => {
               const s = styleStatut(p.statut);
               return (
-                <View key={p.id} style={styles.card}>
+                <Card key={p.id} style={styles.card}>
                   <View style={styles.cardTop}>
                     <View style={{ flex: 1 }}>
                       <Text style={styles.nom}>{p.apprenant?.prenom} {p.apprenant?.nom}</Text>
@@ -138,7 +139,7 @@ export default function EcolePaiementsScreen() {
                     <Text style={styles.montant}>{(p.montant ?? 0).toLocaleString('fr-FR')} FCFA</Text>
                     <Text style={styles.mode}>{p.mode_paiement || '—'} · {p.reference || '—'}</Text>
                   </View>
-                </View>
+                </Card>
               );
             })
           )}
@@ -170,7 +171,7 @@ const styles = StyleSheet.create({
   chipTxtActive: { color: '#FFFFFF' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { padding: 14, marginBottom: 10 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10 },
   nom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   sousTitre: { fontSize: 11, color: '#888888', marginTop: 2 },

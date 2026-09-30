@@ -4,6 +4,8 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, Touc
 import { ArrowLeft, Plus, Shield, Trash2, UserCog } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { changerRoleUtilisateur, getUtilisateursEcole, inviterUtilisateurEcole, supprimerUtilisateurEcole } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 type Utilisateur = {
   id: number;
@@ -149,7 +151,7 @@ export default function EcoleUtilisateursScreen() {
         )}
 
         {formOuvert && (
-          <View style={styles.formCard}>
+          <Card style={styles.formCard}>
             <Text style={styles.formTitre}>Inviter un utilisateur</Text>
             <Text style={styles.lbl}>Prénom *</Text>
             <TextInput style={styles.input} placeholder="ex : Marc" placeholderTextColor="#AAAAAA" value={prenom} onChangeText={setPrenom} />
@@ -170,11 +172,9 @@ export default function EcoleUtilisateursScreen() {
               <TouchableOpacity style={styles.btnAnnuler} onPress={resetFormulaire}>
                 <Text style={styles.btnAnnulerTxt}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleInviter} disabled={envoi}>
-                {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Inviter</Text>}
-              </TouchableOpacity>
+              <PrimaryButton title="Inviter" onPress={handleInviter} loading={envoi} style={{ flex: 1 }} />
             </View>
-          </View>
+          </Card>
         )}
 
         {utilisateurs.length === 0 ? (
@@ -183,7 +183,7 @@ export default function EcoleUtilisateursScreen() {
           utilisateurs.map((u) => {
             const r = ROLE_STYLE[(u.role || 'caissier').toLowerCase()] || ROLE_STYLE.caissier;
             return (
-              <View key={u.id} style={styles.card}>
+              <Card key={u.id} style={styles.card}>
                 <View style={{ flex: 1 }}>
                   <Text style={styles.nom}>{u.prenom} {u.nom}</Text>
                   <Text style={styles.email}>{u.email}</Text>
@@ -201,7 +201,7 @@ export default function EcoleUtilisateursScreen() {
                     </TouchableOpacity>
                   </View>
                 )}
-              </View>
+              </Card>
             );
           })
         )}
@@ -220,13 +220,13 @@ const styles = StyleSheet.create({
   infoBox: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FEF3DC', borderRadius: 10, padding: 12, marginBottom: 16 },
   infoTxt: { flex: 1, fontSize: 11, color: '#8B5E10' },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 14, marginBottom: 10 },
   nom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   email: { fontSize: 11, color: '#888888', marginTop: 2 },
   pill: { borderRadius: 10, paddingHorizontal: 8, paddingVertical: 4, flexShrink: 0 },
   pillTxt: { fontSize: 10, fontWeight: '700' },
   cardActions: { flexDirection: 'row', gap: 12, marginLeft: 4 },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  formCard: { padding: 16, marginBottom: 16 },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 4 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
   input: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
@@ -239,6 +239,4 @@ const styles = StyleSheet.create({
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },
-  btnEnvoyer: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#E8A020' },
-  btnEnvoyerTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 });

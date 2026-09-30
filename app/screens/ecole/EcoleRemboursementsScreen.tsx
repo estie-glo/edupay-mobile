@@ -4,6 +4,8 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, Touc
 import { ArrowLeft, CircleCheck, CircleX, Plus, RotateCcw } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { approuverRemboursement, demanderRemboursement, getPaiementsEcole, getRemboursements, refuserRemboursement } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 type Remboursement = {
   id: number;
@@ -150,7 +152,7 @@ export default function EcoleRemboursementsScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {formOuvert && (
-          <View style={styles.formCard}>
+          <Card style={styles.formCard}>
             <Text style={styles.formTitre}>Nouvelle demande</Text>
             <Text style={styles.lbl}>Paiement concerné *</Text>
             {paiements.length === 0 ? (
@@ -180,11 +182,9 @@ export default function EcoleRemboursementsScreen() {
               <TouchableOpacity style={styles.btnAnnuler} onPress={() => setFormOuvert(false)}>
                 <Text style={styles.btnAnnulerTxt}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleDemander} disabled={envoi}>
-                {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Envoyer</Text>}
-              </TouchableOpacity>
+              <PrimaryButton title="Envoyer" onPress={handleDemander} loading={envoi} style={{ flex: 1 }} />
             </View>
-          </View>
+          </Card>
         )}
 
         {remboursements.length === 0 ? (
@@ -194,7 +194,7 @@ export default function EcoleRemboursementsScreen() {
             const s = styleStatut(r.statut);
             const enAttente = (r.statut || '').toLowerCase() === 'en_attente';
             return (
-              <View key={r.id} style={styles.card}>
+              <Card key={r.id} style={styles.card}>
                 <View style={styles.cardTop}>
                   <Text style={styles.cardTitre}>
                     {r.paiement?.apprenant ? `${r.paiement.apprenant.prenom} ${r.paiement.apprenant.nom}` : `Paiement #${r.paiement?.id ?? ''}`}
@@ -242,7 +242,7 @@ export default function EcoleRemboursementsScreen() {
                     <Text style={styles.refusTxt}>{r.motif_refus}</Text>
                   </View>
                 )}
-              </View>
+              </Card>
             );
           })
         )}
@@ -259,7 +259,7 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: '#E8A020', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 12, color: '#888888', textAlign: 'center', marginVertical: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { padding: 14, marginBottom: 10 },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 6 },
   cardTitre: { fontSize: 13, fontWeight: '700', color: '#1A1A2E', flex: 1, marginRight: 8 },
   cardMotif: { fontSize: 11, color: '#555555', marginBottom: 6, lineHeight: 16 },
@@ -277,7 +277,7 @@ const styles = StyleSheet.create({
   btnAnnulerRefusTxt: { color: '#666666', fontSize: 11, fontWeight: '700' },
   refusBox: { flexDirection: 'row', alignItems: 'center', gap: 6, backgroundColor: '#FBEAEA', borderRadius: 8, padding: 8, marginTop: 4 },
   refusTxt: { fontSize: 11, color: '#9B2C2C', flex: 1 },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  formCard: { padding: 16, marginBottom: 16 },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 12 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
   chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
@@ -289,6 +289,4 @@ const styles = StyleSheet.create({
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },
-  btnEnvoyer: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#E8A020' },
-  btnEnvoyerTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 });

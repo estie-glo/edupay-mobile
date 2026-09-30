@@ -1,9 +1,10 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, KeyRound, School, Users } from 'lucide-react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ArrowLeft, Eye, EyeOff, KeyRound, School, Users } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { envoyerOtp, login, verifierOtp } from '../../../services/api';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 const ROLES = ['Directeur', 'Comptable', 'Caissier'];
 
@@ -13,6 +14,7 @@ export default function LoginEcoleScreen() {
   const [role, setRole] = useState(ROLES[0]);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [motDePasseVisible, setMotDePasseVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [modeOtp, setModeOtp] = useState(false);
@@ -116,22 +118,25 @@ export default function LoginEcoleScreen() {
             />
 
             <Text style={styles.lbl}>Mot de passe</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Votre mot de passe"
-              placeholderTextColor="#AAAAAA"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={true}
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                placeholder="Votre mot de passe"
+                placeholderTextColor="#AAAAAA"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!motDePasseVisible}
+              />
+              <TouchableOpacity style={styles.eyeBtn} onPress={() => setMotDePasseVisible((v) => !v)}>
+                {motDePasseVisible ? <EyeOff size={18} color="#888888" /> : <Eye size={18} color="#888888" />}
+              </TouchableOpacity>
+            </View>
 
             <TouchableOpacity style={styles.oublie} onPress={() => router.push('/screens/commun/MotDePasseOublieScreen')}>
               <Text style={styles.oublieTxt}>Mot de passe oublié ?</Text>
             </TouchableOpacity>
 
-            <TouchableOpacity style={[styles.btnConnexion, loading && { opacity: 0.7 }]} onPress={handleLogin} disabled={loading}>
-              {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Se connecter</Text>}
-            </TouchableOpacity>
+            <PrimaryButton title="Se connecter" onPress={handleLogin} loading={loading} style={{ marginTop: 20 }} />
           </>
         ) : (
           <>
@@ -147,9 +152,7 @@ export default function LoginEcoleScreen() {
               editable={!codeEnvoye}
             />
             {!codeEnvoye ? (
-              <TouchableOpacity style={[styles.btnConnexion, otpLoading && { opacity: 0.7 }]} onPress={handleEnvoyerOtp} disabled={otpLoading}>
-                {otpLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Recevoir un code par email</Text>}
-              </TouchableOpacity>
+              <PrimaryButton title="Recevoir un code par email" onPress={handleEnvoyerOtp} loading={otpLoading} style={{ marginTop: 20 }} />
             ) : (
               <>
                 <Text style={styles.lbl}>Code reçu par email</Text>
@@ -161,9 +164,7 @@ export default function LoginEcoleScreen() {
                   onChangeText={setOtpCode}
                   keyboardType="number-pad"
                 />
-                <TouchableOpacity style={[styles.btnConnexion, otpLoading && { opacity: 0.7 }]} onPress={handleVerifierOtp} disabled={otpLoading}>
-                  {otpLoading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Valider le code</Text>}
-                </TouchableOpacity>
+                <PrimaryButton title="Valider le code" onPress={handleVerifierOtp} loading={otpLoading} style={{ marginTop: 20 }} />
                 <TouchableOpacity style={styles.oublie} onPress={handleEnvoyerOtp} disabled={otpLoading}>
                   <Text style={styles.oublieTxt}>Renvoyer le code</Text>
                 </TouchableOpacity>
@@ -224,14 +225,15 @@ const styles = StyleSheet.create({
   roleBtnTxt: { fontSize: 11, fontWeight: '700', color: '#8B5E10' },
   roleBtnTxtInactive: { fontSize: 11, fontWeight: '600', color: '#888888' },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 14 },
-  input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
+  input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
   inputDisabled: { backgroundColor: '#F0F2F5', color: '#888888' },
+  passwordRow: { position: 'relative', justifyContent: 'center' },
+  passwordInput: { paddingRight: 44 },
+  eyeBtn: { position: 'absolute', right: 14, padding: 4 },
   otpToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 },
   otpToggleTxt: { color: '#E8A020', fontSize: 12, fontWeight: '700' },
   oublie: { alignSelf: 'flex-end', marginTop: 8, marginBottom: 4 },
   oublieTxt: { color: '#0D9E75', fontSize: 12, fontWeight: '600' },
-  btnConnexion: { backgroundColor: '#E8A020', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 20 },
-  btnTxt: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
   sep: { flexDirection: 'row', alignItems: 'center', gap: 10, marginVertical: 16 },
   ligne: { flex: 1, height: 1, backgroundColor: '#E2E8F0' },
   ou: { color: '#AAAAAA', fontSize: 12 },

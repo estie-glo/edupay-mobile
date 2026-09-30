@@ -4,6 +4,8 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, Touc
 import { ArrowLeft, CheckSquare, Copy, EyeOff, Layers3, Pencil, Plus, Square, Trash2, Trash } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { affecterFraisClasse, ajouterEcheancier, creerFraisEcole, dupliquerFraisEcole, getFraisEcole, purgerFraisAnneesPassees, removeFraisEcole, supprimerEcheancier, updateEcheancier, updateFraisEcole } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Champs et règles alignés sur FraisStoreRequest / Etablissement/FraisController
 // (vérifiés le 26/09/2026) : annee_scolaire et nb_tranches_max sont TOUJOURS
@@ -290,7 +292,7 @@ export default function EcoleFraisScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {formOuvert && (
-          <View style={styles.formCard}>
+          <Card style={styles.formCard}>
             <Text style={styles.formTitre}>{fraisEnEdition ? 'Modifier la catégorie de frais' : 'Nouvelle catégorie de frais'}</Text>
             <Text style={styles.lbl}>Nom *</Text>
             <TextInput style={styles.input} placeholder="ex : Scolarité annuelle" placeholderTextColor="#AAAAAA" value={nom} onChangeText={setNom} />
@@ -318,11 +320,9 @@ export default function EcoleFraisScreen() {
               <TouchableOpacity style={styles.btnAnnuler} onPress={resetFormulaire}>
                 <Text style={styles.btnAnnulerTxt}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleCreer} disabled={envoi}>
-                {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>{fraisEnEdition ? 'Enregistrer' : 'Créer'}</Text>}
-              </TouchableOpacity>
+              <PrimaryButton title={fraisEnEdition ? 'Enregistrer' : 'Créer'} onPress={handleCreer} loading={envoi} style={{ flex: 1 }} />
             </View>
-          </View>
+          </Card>
         )}
 
         {frais.length === 0 ? (
@@ -332,7 +332,7 @@ export default function EcoleFraisScreen() {
             const estOuvert = ouvert === f.id;
             const estInactif = f.actif === false;
             return (
-              <View key={f.id} style={[styles.card, estInactif && styles.cardInactive]}>
+              <Card key={f.id} style={[styles.card, estInactif && styles.cardInactive]}>
                 <TouchableOpacity style={styles.cardTop} onPress={() => setOuvert(estOuvert ? null : f.id)}>
                   <View style={[styles.cardIco, estInactif && styles.cardIcoInactif]}>
                     <Layers3 size={16} color={estInactif ? '#AAAAAA' : '#E8A020'} />
@@ -426,7 +426,7 @@ export default function EcoleFraisScreen() {
                     </View>
                   </View>
                 )}
-              </View>
+              </Card>
             );
           })
         )}
@@ -446,7 +446,7 @@ const styles = StyleSheet.create({
   btnDupliquerTxt: { color: '#0B2545', fontSize: 11, fontWeight: '700' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { padding: 14, marginBottom: 10 },
   cardInactive: { backgroundColor: '#F5F6F7', opacity: 0.75 },
   cardTop: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   cardIco: { width: 34, height: 34, borderRadius: 10, backgroundColor: '#FEF3DC', alignItems: 'center', justifyContent: 'center' },
@@ -466,7 +466,7 @@ const styles = StyleSheet.create({
   affecterInput: { flex: 1, backgroundColor: '#F5F6F7', borderWidth: 1, borderColor: '#E2E8F0', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 8, fontSize: 12, color: '#1A1A2E' },
   affecterBtn: { backgroundColor: '#E8A020', borderRadius: 8, paddingHorizontal: 14, justifyContent: 'center' },
   affecterBtnTxt: { color: '#FFFFFF', fontSize: 11, fontWeight: '700' },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  formCard: { padding: 16, marginBottom: 16 },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 4 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
   input: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
@@ -475,6 +475,4 @@ const styles = StyleSheet.create({
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },
-  btnEnvoyer: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#E8A020' },
-  btnEnvoyerTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 });

@@ -4,6 +4,8 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, Touc
 import { ArrowLeft, Building2, Lock, MapPinned, Pencil, Plus, Trash2 } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { creerSite, getSites, supprimerSite, updateSite } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Champs alignés sur SiteController::formaterSite (vérifiés le 27/09/2026).
 type Site = { id: number; nom: string; ville: string; quartier?: string; telephone?: string; email?: string };
@@ -141,20 +143,18 @@ export default function EcoleSitesScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {nonEligible ? (
-          <View style={styles.upsellCard}>
+          <Card style={styles.upsellCard}>
             <View style={styles.upsellIco}>
               <Lock size={22} color="#E8A020" />
             </View>
             <Text style={styles.upsellTitre}>Fonctionnalité Standard / Premium</Text>
             <Text style={styles.upsellDesc}>La gestion multi-sites permet de piloter plusieurs campus depuis un seul compte. Passez à la formule Standard ou Premium pour l'activer.</Text>
-            <TouchableOpacity style={styles.upsellBtn} onPress={() => router.push('/screens/ecole/EcoleAbonnementScreen')}>
-              <Text style={styles.upsellBtnTxt}>Voir les formules →</Text>
-            </TouchableOpacity>
-          </View>
+            <PrimaryButton title="Voir les formules →" onPress={() => router.push('/screens/ecole/EcoleAbonnementScreen')} style={{ marginTop: 8, alignSelf: 'stretch' }} />
+          </Card>
         ) : (
           <>
             {formOuvert && (
-              <View style={styles.formCard}>
+              <Card style={styles.formCard}>
                 <Text style={styles.formTitre}>{siteEnEdition ? 'Modifier le site' : 'Nouveau site'}</Text>
                 <Text style={styles.lbl}>Nom du site *</Text>
                 <TextInput style={styles.input} placeholder="ex : Campus Bastos" placeholderTextColor="#AAAAAA" value={nom} onChangeText={setNom} />
@@ -183,18 +183,16 @@ export default function EcoleSitesScreen() {
                   <TouchableOpacity style={styles.btnAnnuler} onPress={resetFormulaire}>
                     <Text style={styles.btnAnnulerTxt}>Annuler</Text>
                   </TouchableOpacity>
-                  <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleCreer} disabled={envoi}>
-                    {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>{siteEnEdition ? 'Enregistrer' : 'Créer'}</Text>}
-                  </TouchableOpacity>
+                  <PrimaryButton title={siteEnEdition ? 'Enregistrer' : 'Créer'} onPress={handleCreer} loading={envoi} style={{ flex: 1 }} />
                 </View>
-              </View>
+              </Card>
             )}
 
             {sites.length === 0 ? (
               <Text style={styles.vide}>Aucun site secondaire pour le moment.</Text>
             ) : (
               sites.map((s) => (
-                <View key={s.id} style={styles.card}>
+                <Card key={s.id} style={styles.card}>
                   <View style={styles.cardIco}>
                     <Building2 size={18} color="#E8A020" />
                   </View>
@@ -211,7 +209,7 @@ export default function EcoleSitesScreen() {
                   <TouchableOpacity onPress={() => handleSupprimer(s)}>
                     <Trash2 size={16} color="#D94040" />
                   </TouchableOpacity>
-                </View>
+                </Card>
               ))
             )}
           </>
@@ -229,24 +227,20 @@ const styles = StyleSheet.create({
   addBtn: { backgroundColor: '#E8A020', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, marginBottom: 10 },
   cardIco: { width: 36, height: 36, borderRadius: 10, backgroundColor: '#FEF3DC', alignItems: 'center', justifyContent: 'center' },
   nom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   villeRow: { flexDirection: 'row', alignItems: 'center', gap: 4, marginTop: 3 },
   ville: { fontSize: 11, color: '#888888' },
-  upsellCard: { backgroundColor: '#FFFFFF', borderRadius: 16, padding: 24, alignItems: 'center', marginTop: 20, borderWidth: 1, borderColor: '#E2E8F0' },
+  upsellCard: { padding: 24, alignItems: 'center', marginTop: 20 },
   upsellIco: { width: 52, height: 52, borderRadius: 26, backgroundColor: '#FEF3DC', alignItems: 'center', justifyContent: 'center', marginBottom: 14 },
   upsellTitre: { fontSize: 15, fontWeight: '800', color: '#1A1A2E', marginBottom: 8, textAlign: 'center' },
   upsellDesc: { fontSize: 12, color: '#666666', textAlign: 'center', lineHeight: 18, marginBottom: 18 },
-  upsellBtn: { backgroundColor: '#E8A020', paddingVertical: 12, paddingHorizontal: 20, borderRadius: 10 },
-  upsellBtnTxt: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  formCard: { padding: 16, marginBottom: 16 },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 4 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
   input: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },
-  btnEnvoyer: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#E8A020' },
-  btnEnvoyerTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 });

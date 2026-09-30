@@ -1,9 +1,11 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, Building2, Calendar, KeyRound, LogOut, Save, UserRound } from 'lucide-react-native';
+import { ArrowLeft, Building2, Calendar, Eye, EyeOff, KeyRound, LogOut, Save, UserRound } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getAbonnement, getProfilEcole, updateProfilEcole, updateProfilPasswordEcole } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Regex alignée sur Api/Etablissement/ProfilController::updatePassword (vérifié
 // le 27/09/2026) : exige aussi une minuscule, contrairement au payeur.
@@ -30,6 +32,7 @@ export default function EcoleProfilScreen() {
   const [mdpActuel, setMdpActuel] = useState('');
   const [mdpNouveau, setMdpNouveau] = useState('');
   const [mdpConfirmation, setMdpConfirmation] = useState('');
+  const [motDePasseVisible, setMotDePasseVisible] = useState(false);
 
   useEffect(() => {
     if (!token && !authLoading) {
@@ -129,7 +132,7 @@ export default function EcoleProfilScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {!!etablissement && (
-          <View style={styles.etabCard}>
+          <Card style={styles.etabCard}>
             <View style={styles.etabIco}>
               <Building2 size={18} color="#E8A020" />
             </View>
@@ -137,16 +140,16 @@ export default function EcoleProfilScreen() {
               <Text style={styles.etabNom}>{etablissement.nom}</Text>
               <Text style={styles.etabSousTitre}>{etablissement.ville} · {role}</Text>
             </View>
-          </View>
+          </Card>
         )}
 
         {!!abonnement && (
-          <TouchableOpacity style={styles.aboCard} onPress={() => router.push('/screens/ecole/EcoleAbonnementScreen')}>
+          <Card style={styles.aboCard} onPress={() => router.push('/screens/ecole/EcoleAbonnementScreen')}>
             <Calendar size={14} color="#888888" />
             <Text style={styles.aboTxt}>
               Formule {abonnement.plan_nom || '—'}{abonnement.jours_restants != null ? ` · ${abonnement.jours_restants} j. restants` : ''}
             </Text>
-          </TouchableOpacity>
+          </Card>
         )}
 
         <Text style={styles.secLabel}>INFORMATIONS DU COMPTE</Text>
@@ -161,21 +164,22 @@ export default function EcoleProfilScreen() {
         <Text style={styles.lbl}>Ville</Text>
         <TextInput style={styles.input} value={ville} onChangeText={setVille} placeholderTextColor="#AAAAAA" />
 
-        <TouchableOpacity style={[styles.btnEnregistrer, enregistrement && { opacity: 0.7 }]} onPress={handleEnregistrer} disabled={enregistrement}>
-          {enregistrement ? <ActivityIndicator color="#FFFFFF" /> : <><Save size={16} color="#FFFFFF" /><Text style={styles.btnEnregistrerTxt}>Enregistrer</Text></>}
-        </TouchableOpacity>
+        <PrimaryButton title="Enregistrer" onPress={handleEnregistrer} loading={enregistrement} icon={<Save size={16} color="#FFFFFF" />} style={{ marginTop: 20 }} />
 
         <Text style={[styles.secLabel, { marginTop: 28 }]}>MOT DE PASSE</Text>
         <Text style={styles.lbl}>Mot de passe actuel *</Text>
-        <TextInput style={styles.input} value={mdpActuel} onChangeText={setMdpActuel} secureTextEntry placeholderTextColor="#AAAAAA" />
+        <View style={styles.passwordRow}>
+          <TextInput style={[styles.input, styles.passwordInput]} value={mdpActuel} onChangeText={setMdpActuel} secureTextEntry={!motDePasseVisible} placeholderTextColor="#AAAAAA" />
+          <TouchableOpacity style={styles.eyeBtn} onPress={() => setMotDePasseVisible((v) => !v)}>
+            {motDePasseVisible ? <EyeOff size={18} color="#888888" /> : <Eye size={18} color="#888888" />}
+          </TouchableOpacity>
+        </View>
         <Text style={styles.lbl}>Nouveau mot de passe *</Text>
-        <TextInput style={styles.input} value={mdpNouveau} onChangeText={setMdpNouveau} secureTextEntry placeholder="Min. 8 car., 1 majuscule, 1 minuscule, 1 chiffre, 1 spécial" placeholderTextColor="#AAAAAA" />
+        <TextInput style={styles.input} value={mdpNouveau} onChangeText={setMdpNouveau} secureTextEntry={!motDePasseVisible} placeholder="Min. 8 car., 1 majuscule, 1 minuscule, 1 chiffre, 1 spécial" placeholderTextColor="#AAAAAA" />
         <Text style={styles.lbl}>Confirmer *</Text>
-        <TextInput style={styles.input} value={mdpConfirmation} onChangeText={setMdpConfirmation} secureTextEntry placeholderTextColor="#AAAAAA" />
+        <TextInput style={styles.input} value={mdpConfirmation} onChangeText={setMdpConfirmation} secureTextEntry={!motDePasseVisible} placeholderTextColor="#AAAAAA" />
 
-        <TouchableOpacity style={[styles.btnMdp, changementMdp && { opacity: 0.7 }]} onPress={handleChangerMdp} disabled={changementMdp}>
-          {changementMdp ? <ActivityIndicator color="#E8A020" /> : <><KeyRound size={16} color="#E8A020" /><Text style={styles.btnMdpTxt}>Changer le mot de passe</Text></>}
-        </TouchableOpacity>
+        <PrimaryButton title="Changer le mot de passe" onPress={handleChangerMdp} loading={changementMdp} variant="outline" icon={<KeyRound size={16} color="#0D9E75" />} style={{ marginTop: 20 }} />
 
         <TouchableOpacity style={styles.btnDeconnexion} onPress={handleDeconnexion}>
           <LogOut size={16} color="#D94040" />
@@ -193,19 +197,18 @@ const styles = StyleSheet.create({
   titreRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   titre: { fontSize: 18, fontWeight: '700', color: '#FFFFFF' },
   content: { flex: 1, padding: 16 },
-  etabCard: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  etabCard: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, marginBottom: 10 },
   etabIco: { width: 38, height: 38, borderRadius: 10, backgroundColor: '#FEF3DC', alignItems: 'center', justifyContent: 'center' },
   etabNom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },
   etabSousTitre: { fontSize: 11, color: '#888888', marginTop: 2, textTransform: 'capitalize' },
-  aboCard: { flexDirection: 'row', alignItems: 'center', gap: 8, backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, marginBottom: 20, borderWidth: 1, borderColor: '#E2E8F0' },
+  aboCard: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, marginBottom: 20 },
   aboTxt: { fontSize: 11, color: '#666666', fontWeight: '600' },
   secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 12 },
   input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
-  btnEnregistrer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#E8A020', paddingVertical: 14, borderRadius: 12, marginTop: 20 },
-  btnEnregistrerTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
-  btnMdp: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', paddingVertical: 14, borderRadius: 12, marginTop: 20, borderWidth: 1.5, borderColor: '#E8A020' },
-  btnMdpTxt: { color: '#E8A020', fontSize: 14, fontWeight: '700' },
+  passwordRow: { position: 'relative', justifyContent: 'center' },
+  passwordInput: { paddingRight: 44 },
+  eyeBtn: { position: 'absolute', right: 14, padding: 4 },
   btnDeconnexion: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14, marginTop: 24 },
   btnDeconnexionTxt: { color: '#D94040', fontSize: 13, fontWeight: '700' },
 });

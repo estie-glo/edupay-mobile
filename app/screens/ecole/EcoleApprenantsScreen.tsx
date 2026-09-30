@@ -6,6 +6,8 @@ import { ArrowLeft, CheckSquare, FileSpreadsheet, Plus, Search, Square, Trash2, 
 import { useAuth } from '../../../context/AuthContext';
 import { bulkDestroyApprenantsEcole, creerApprenantEcole, getApprenantsEcole, getUrlModeleImportCsv, importerApprenantsCsv, rejeterApprenant, removeApprenantEcole, validerApprenant } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Champs alignés sur ApprenantResource / Etablissement/ApprenantController::index
 // (vérifiés le 27/09/2026, après le correctif backend "audit E-F") : `statut`
@@ -312,7 +314,7 @@ export default function EcoleApprenantsScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {formOuvert && (
-          <View style={styles.formCard}>
+          <Card style={styles.formCard}>
             <Text style={styles.formTitre}>Ajouter un apprenant</Text>
             <Text style={styles.lbl}>Prénom *</Text>
             <TextInput style={styles.input} placeholder="ex : Brice" placeholderTextColor="#AAAAAA" value={prenom} onChangeText={setPrenom} />
@@ -326,11 +328,9 @@ export default function EcoleApprenantsScreen() {
               <TouchableOpacity style={styles.btnAnnuler} onPress={resetFormulaire}>
                 <Text style={styles.btnAnnulerTxt}>Annuler</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleAjouter} disabled={envoi}>
-                {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnEnvoyerTxt}>Ajouter</Text>}
-              </TouchableOpacity>
+              <PrimaryButton title="Ajouter" onPress={handleAjouter} loading={envoi} style={{ flex: 1 }} />
             </View>
-          </View>
+          </Card>
         )}
 
         {apprenants.length === 0 ? (
@@ -421,7 +421,10 @@ const styles = StyleSheet.create({
   modeleLien: { fontSize: 11, fontWeight: '600', color: 'rgba(255,255,255,0.7)', textDecorationLine: 'underline' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: {
+    backgroundColor: '#FFFFFF', borderRadius: 16, padding: 14, marginBottom: 10,
+    shadowColor: '#0B2545', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.08, shadowRadius: 12, elevation: 3,
+  },
   cardTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 10 },
   selectBtn: { backgroundColor: 'rgba(255,255,255,0.15)', width: 32, height: 32, borderRadius: 16, alignItems: 'center', justifyContent: 'center' },
   nom: { fontSize: 14, fontWeight: '700', color: '#1A1A2E' },
@@ -435,13 +438,11 @@ const styles = StyleSheet.create({
   actionBtnRejeter: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: '#FBEAEA', borderRadius: 8, paddingVertical: 9, flex: 1 },
   actionBtnRejeterTxt: { color: '#D94040', fontSize: 11, fontWeight: '700' },
   supprimerBtn: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, borderWidth: 1.5, borderColor: '#FBEAEA', borderRadius: 8, paddingVertical: 9, flex: 1 },
-  formCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 16, borderWidth: 1, borderColor: '#E2E8F0' },
+  formCard: { padding: 16, marginBottom: 16 },
   formTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 4 },
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 10 },
   input: { backgroundColor: '#F5F6F7', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
   formBtns: { flexDirection: 'row', gap: 10, marginTop: 16 },
   btnAnnuler: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', borderWidth: 1.5, borderColor: '#E2E8F0' },
   btnAnnulerTxt: { color: '#666666', fontSize: 12, fontWeight: '700' },
-  btnEnvoyer: { flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#E8A020' },
-  btnEnvoyerTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 });

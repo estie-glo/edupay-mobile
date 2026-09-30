@@ -1,9 +1,11 @@
 import * as DocumentPicker from 'expo-document-picker';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, CheckSquare, FileCheck2, School, Square, Upload } from 'lucide-react-native';
+import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ArrowLeft, CheckSquare, Eye, EyeOff, FileCheck2, School, Square, Upload } from 'lucide-react-native';
 import { inscrireEtablissement } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 // Wizard identique au flux réel du site (RegisterEcolController sur main),
 // mais soumis en un seul appel à POST /auth/inscription-etablissement
@@ -95,6 +97,7 @@ export default function RegisterEcoleScreen() {
   const [respEmail, setRespEmail] = useState('');
   const [respPassword, setRespPassword] = useState('');
   const [respPasswordConfirmation, setRespPasswordConfirmation] = useState('');
+  const [motDePasseVisible, setMotDePasseVisible] = useState(false);
 
   // Étape 3 — Documents
   const [documentAgrement, setDocumentAgrement] = useState<Fichier>(null);
@@ -237,9 +240,14 @@ export default function RegisterEcoleScreen() {
       <Text style={styles.lbl}>Email *</Text>
       <TextInput style={styles.input} placeholder="directeur@ecole.cm" placeholderTextColor="#AAAAAA" value={respEmail} onChangeText={setRespEmail} keyboardType="email-address" autoCapitalize="none" />
       <Text style={styles.lbl}>Mot de passe *</Text>
-      <TextInput style={styles.input} placeholder="Min. 8 caractères" placeholderTextColor="#AAAAAA" value={respPassword} onChangeText={setRespPassword} secureTextEntry />
+      <View style={styles.passwordRow}>
+        <TextInput style={[styles.input, styles.passwordInput]} placeholder="Min. 8 caractères" placeholderTextColor="#AAAAAA" value={respPassword} onChangeText={setRespPassword} secureTextEntry={!motDePasseVisible} />
+        <TouchableOpacity style={styles.eyeBtn} onPress={() => setMotDePasseVisible((v) => !v)}>
+          {motDePasseVisible ? <EyeOff size={18} color="#888888" /> : <Eye size={18} color="#888888" />}
+        </TouchableOpacity>
+      </View>
       <Text style={styles.lbl}>Confirmer mot de passe *</Text>
-      <TextInput style={styles.input} placeholder="Répétez" placeholderTextColor="#AAAAAA" value={respPasswordConfirmation} onChangeText={setRespPasswordConfirmation} secureTextEntry />
+      <TextInput style={styles.input} placeholder="Répétez" placeholderTextColor="#AAAAAA" value={respPasswordConfirmation} onChangeText={setRespPasswordConfirmation} secureTextEntry={!motDePasseVisible} />
     </View>
   );
 
@@ -273,13 +281,13 @@ export default function RegisterEcoleScreen() {
 
   const renderEtape4 = () => (
     <View>
-      <View style={styles.recapCard}>
+      <Card style={styles.recapCard}>
         <Text style={styles.recapTitre}>{nom}</Text>
         <Text style={styles.recapLigne}>{TYPES.find((t) => t.valeur === type)?.label} · {ville}</Text>
         <Text style={styles.recapLigne}>{email} · {telephone}</Text>
         <Text style={styles.recapLigne}>Responsable : {respPrenom} {respNom} ({respEmail})</Text>
         <Text style={styles.recapLigne}>Document d'agrément : {documentAgrement?.name || '—'}</Text>
-      </View>
+      </Card>
 
       <TouchableOpacity style={styles.cguRow} onPress={() => setCguAccepted(!cguAccepted)}>
         {cguAccepted ? <CheckSquare size={18} color="#E8A020" /> : <Square size={18} color="#AAAAAA" />}
@@ -290,9 +298,7 @@ export default function RegisterEcoleScreen() {
         <Text style={styles.cguTxt}>Je certifie l'exactitude des informations fournies</Text>
       </TouchableOpacity>
 
-      <TouchableOpacity style={[styles.btnSuivant, envoi && { opacity: 0.7 }]} onPress={soumettre} disabled={envoi}>
-        {envoi ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnSuivantTxt}>Envoyer le dossier →</Text>}
-      </TouchableOpacity>
+      <PrimaryButton title="Envoyer le dossier →" onPress={soumettre} loading={envoi} style={{ marginTop: 24 }} />
     </View>
   );
 
@@ -324,9 +330,7 @@ export default function RegisterEcoleScreen() {
         {etapeIndex === 3 && renderEtape4()}
 
         {etapeIndex < 3 && (
-          <TouchableOpacity style={styles.btnSuivant} onPress={suivant}>
-            <Text style={styles.btnSuivantTxt}>Continuer →</Text>
-          </TouchableOpacity>
+          <PrimaryButton title="Continuer →" onPress={suivant} style={{ marginTop: 24 }} />
         )}
         {etapeIndex === 0 && (
           <TouchableOpacity style={{ marginTop: 16 }} onPress={() => router.push('/screens/ecole/LoginEcoleScreen')}>
@@ -360,13 +364,14 @@ const styles = StyleSheet.create({
   chipTxtActive: { color: '#FFFFFF' },
   uploadBox: { flexDirection: 'row', alignItems: 'center', gap: 10, backgroundColor: '#FEF3DC', borderWidth: 1.5, borderColor: '#E8A020', borderStyle: 'dashed', borderRadius: 10, padding: 14, marginBottom: 4 },
   uploadTxt: { flex: 1, fontSize: 11, color: '#8B5E10', fontWeight: '600' },
-  recapCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 20 },
+  recapCard: { padding: 16, marginBottom: 20 },
   recapTitre: { fontSize: 15, fontWeight: '800', color: '#1A1A2E', marginBottom: 8 },
   recapLigne: { fontSize: 12, color: '#666666', marginBottom: 4 },
   cguRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 12 },
   cguTxt: { flex: 1, fontSize: 12, color: '#555555', lineHeight: 16 },
-  btnSuivant: { backgroundColor: '#E8A020', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 24, width: '100%' },
-  btnSuivantTxt: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  passwordRow: { position: 'relative', justifyContent: 'center' },
+  passwordInput: { paddingRight: 44 },
+  eyeBtn: { position: 'absolute', right: 14, padding: 4 },
   deja: { textAlign: 'center', fontSize: 13, color: '#888888' },
   dejaLnk: { color: '#E8A020', fontWeight: '700' },
 });

@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacit
 import { AlertTriangle, CheckCircle2, Crown, MessageCircle } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getAbonnement } from '../../../services/api';
+import Card from '../../../components/ui/Card';
 
 // Forme exacte de DashboardController::abonnement (vérifiée le 27/09/2026,
 // après le correctif backend sur les durées/montants d'abonnement).
@@ -118,7 +119,7 @@ export default function EcoleAbonnementScreen() {
 
         <Text style={styles.secLabel}>FORMULES DISPONIBLES</Text>
         {plans.map((p) => (
-          <View key={p.slug} style={[styles.planCard, p.actuel && styles.planCardActuel]}>
+          <Card key={p.slug} style={[styles.planCard, p.actuel && styles.planCardActuel]}>
             <View style={styles.planTop}>
               <Text style={styles.planNom}>{p.nom}</Text>
               {p.actuel && (
@@ -134,7 +135,7 @@ export default function EcoleAbonnementScreen() {
               <Text style={styles.planFeature}>• Multi-sites {p.multi_sites ? 'inclus' : 'non inclus'}</Text>
               <Text style={styles.planFeature}>• Exports COBAC {p.exports_cobac ? 'inclus' : 'non inclus'}</Text>
             </View>
-          </View>
+          </Card>
         ))}
 
         <TouchableOpacity style={styles.btnContact} onPress={() => router.push('/screens/commun/ContactScreen')}>
@@ -160,8 +161,8 @@ const styles = StyleSheet.create({
   statutSousTitre: { fontSize: 12, color: '#555555', marginTop: 4, lineHeight: 16 },
   statutDetail: { fontSize: 11, color: '#0F6E56', marginTop: 6, fontWeight: '600' },
   secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 10 },
-  planCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1.5, borderColor: '#E2E8F0' },
-  planCardActuel: { borderColor: '#E8A020' },
+  planCard: { padding: 16, marginBottom: 12 },
+  planCardActuel: { borderWidth: 1.5, borderColor: '#E8A020' },
   planTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 },
   planNom: { fontSize: 15, fontWeight: '800', color: '#1A1A2E' },
   planBadge: { backgroundColor: '#FEF3DC', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 3 },
@@ -170,6 +171,6 @@ const styles = StyleSheet.create({
   planPeriode: { fontSize: 12, fontWeight: '600', color: '#AAAAAA' },
   planFeatures: { gap: 4 },
   planFeature: { fontSize: 12, color: '#555555' },
-  btnContact: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#0B2545', paddingVertical: 14, borderRadius: 12, marginTop: 12 },
+  btnContact: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#0B2545', paddingVertical: 14, borderRadius: 999, marginTop: 12 },
   btnContactTxt: { color: '#FFFFFF', fontSize: 13, fontWeight: '700' },
 });

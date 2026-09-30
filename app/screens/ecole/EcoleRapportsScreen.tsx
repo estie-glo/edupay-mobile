@@ -5,6 +5,7 @@ import { ArrowLeft, ChartPie, FileDown, FileSpreadsheet } from 'lucide-react-nat
 import { useAuth } from '../../../context/AuthContext';
 import { getRapports, getUrlExportRapportExcel, getUrlExportRapportPdf } from '../../../services/api';
 import { telechargerEtPartager } from '../../../services/fichiers';
+import Card from '../../../components/ui/Card';
 
 type RepartitionMoyen = { mode: string; pourcentage: number };
 type RepartitionClasse = { nom: string; nb_apprenants: number; taux: number };
@@ -79,34 +80,34 @@ export default function EcoleRapportsScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         <View style={styles.kpiRow}>
-          <View style={styles.kpiCard}>
+          <Card style={styles.kpiCard}>
             <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{(rapport.total_encaisse_annee ?? 0).toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA encaissés</Text>
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             <Text style={[styles.kpiVal, { color: '#D94040' }]}>{(rapport.total_impaye_annee ?? 0).toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA impayés</Text>
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{(rapport.total_attendu ?? 0).toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA attendus</Text>
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{rapport.taux_recouvrement != null ? `${rapport.taux_recouvrement}%` : '—'}</Text>
             <Text style={styles.kpiLbl}>Recouvrement</Text>
-          </View>
+          </Card>
         </View>
         <Text style={styles.apprenantsTxt}>{rapport.nb_apprenants ?? 0} apprenant(s) suivi(s)</Text>
 
         <View style={styles.exportRow}>
-          <TouchableOpacity style={styles.exportBtn} onPress={() => handleExporter('pdf')} disabled={exportEnCours !== null}>
+          <Card style={styles.exportBtn} onPress={() => exportEnCours === null && handleExporter('pdf')}>
             {exportEnCours === 'pdf' ? <ActivityIndicator size="small" color="#0B2545" /> : <FileDown size={16} color="#0B2545" />}
             <Text style={styles.exportBtnTxt}>Export PDF</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.exportBtn} onPress={() => handleExporter('excel')} disabled={exportEnCours !== null}>
+          </Card>
+          <Card style={styles.exportBtn} onPress={() => exportEnCours === null && handleExporter('excel')}>
             {exportEnCours === 'excel' ? <ActivityIndicator size="small" color="#0B2545" /> : <FileSpreadsheet size={16} color="#0B2545" />}
             <Text style={styles.exportBtnTxt}>Export Excel</Text>
-          </TouchableOpacity>
+          </Card>
         </View>
 
         {!!rapport.repartition_moyens?.length && (
@@ -115,14 +116,14 @@ export default function EcoleRapportsScreen() {
               <ChartPie size={14} color="#888888" />
               <Text style={styles.sec}>Par moyen de paiement</Text>
             </View>
-            <View style={styles.card}>
+            <Card style={styles.card}>
               {rapport.repartition_moyens.map((r) => (
                 <View key={r.mode} style={styles.row}>
                   <Text style={styles.rowTxt}>{r.mode}</Text>
                   <Text style={styles.rowMontant}>{r.pourcentage}%</Text>
                 </View>
               ))}
-            </View>
+            </Card>
           </>
         )}
 
@@ -132,14 +133,14 @@ export default function EcoleRapportsScreen() {
               <ChartPie size={14} color="#888888" />
               <Text style={styles.sec}>Recouvrement par classe</Text>
             </View>
-            <View style={styles.card}>
+            <Card style={styles.card}>
               {rapport.repartition_classes.map((c) => (
                 <View key={c.nom} style={styles.row}>
                   <Text style={styles.rowTxt}>{c.nom} · {c.nb_apprenants} apprenant(s)</Text>
                   <Text style={styles.rowMontant}>{c.taux}%</Text>
                 </View>
               ))}
-            </View>
+            </Card>
           </>
         )}
       </ScrollView>
@@ -155,16 +156,16 @@ const styles = StyleSheet.create({
   sousTitre: { backgroundColor: '#0B2545', color: 'rgba(255,255,255,0.6)', fontSize: 12, textAlign: 'center', paddingBottom: 16 },
   content: { flex: 1, padding: 16 },
   kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 8 },
-  kpiCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, alignItems: 'center' },
+  kpiCard: { width: '47%', padding: 12, alignItems: 'center' },
   kpiVal: { fontSize: 15, fontWeight: '800', color: '#1A1A2E' },
   kpiLbl: { fontSize: 9, color: '#888888', marginTop: 2, textAlign: 'center' },
   apprenantsTxt: { fontSize: 11, color: '#888888', textAlign: 'center', marginBottom: 16 },
   exportRow: { flexDirection: 'row', gap: 10, marginBottom: 24 },
-  exportBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', borderRadius: 10, paddingVertical: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  exportBtn: { flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 12 },
   exportBtnTxt: { fontSize: 12, fontWeight: '700', color: '#0B2545' },
   secHeader: { flexDirection: 'row', alignItems: 'center', gap: 6, marginBottom: 10, marginTop: 6 },
   sec: { fontSize: 10, fontWeight: '700', color: '#AAAAAA', textTransform: 'uppercase', letterSpacing: 0.8 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 4, marginBottom: 16 },
+  card: { padding: 4, marginBottom: 16 },
   row: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: 12, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   rowTxt: { fontSize: 12, color: '#333333', flex: 1 },
   rowMontant: { fontSize: 12, fontWeight: '700', color: '#1A1A2E' },

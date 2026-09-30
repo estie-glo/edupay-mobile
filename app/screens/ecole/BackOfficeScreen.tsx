@@ -4,6 +4,7 @@ import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacit
 import { AlertCircle, Building2, Calendar, CreditCard, FileBarChart2, HelpCircle, Layers3, LogOut, MapPinned, Megaphone, RotateCcw, Settings, UserCog, UserRound, Users } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { getDashboardEcole, getImpayes, relancerImpayeApprenant, relancerImpayesGroupe } from '../../../services/api';
+import Card from '../../../components/ui/Card';
 
 // Forme exacte de Api/Etablissement/DashboardController::index et ImpayeController::
 // index (vérifiée le 27/09/2026, après les correctifs "audit G-H" du backend qui ont
@@ -192,61 +193,61 @@ export default function BackOfficeScreen() {
         )}
 
         <View style={styles.kpiRow}>
-          <View style={styles.kpiCard}>
+          <Card style={styles.kpiCard}>
             <Text style={[styles.kpiVal, { color: '#0D9E75' }]}>{(dashboard.kpis?.total_encaisse_mois ?? 0).toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA encaissés (mois)</Text>
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             <Text style={[styles.kpiVal, { color: '#D94040' }]}>{(dashboard.kpis?.total_impaye ?? 0).toLocaleString('fr-FR')}</Text>
             <Text style={styles.kpiLbl}>FCFA impayés</Text>
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{dashboard.kpis?.nb_apprenants ?? 0}</Text>
             <Text style={styles.kpiLbl}>Apprenants</Text>
-          </View>
-          <View style={styles.kpiCard}>
+          </Card>
+          <Card style={styles.kpiCard}>
             <Text style={styles.kpiVal}>{dashboard.kpis?.nb_dossiers_impayes ?? 0}</Text>
             <Text style={styles.kpiLbl}>Dossiers impayés</Text>
-          </View>
+          </Card>
         </View>
 
         <View style={styles.quickActionsRow}>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleApprenantsScreen')}>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleApprenantsScreen')}>
             <Users size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Apprenants</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleFraisScreen')}>
+          </Card>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleFraisScreen')}>
             <Layers3 size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Frais & échéanciers</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcolePaiementsScreen')}>
+          </Card>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcolePaiementsScreen')}>
             <CreditCard size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Paiements</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleRemboursementsScreen')}>
+          </Card>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleRemboursementsScreen')}>
             <RotateCcw size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Remboursements</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleUtilisateursScreen')}>
+          </Card>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleUtilisateursScreen')}>
             <UserCog size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Utilisateurs</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleRapportsScreen')}>
+          </Card>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleRapportsScreen')}>
             <FileBarChart2 size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Rapports</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleSitesScreen')}>
+          </Card>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleSitesScreen')}>
             <MapPinned size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Sites</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleParametresScreen')}>
+          </Card>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleParametresScreen')}>
             <Settings size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Paramètres</Text>
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleAideScreen')}>
+          </Card>
+          <Card style={styles.quickAction} onPress={() => router.push('/screens/ecole/EcoleAideScreen')}>
             <HelpCircle size={18} color="#0B2545" />
             <Text style={styles.quickActionTxt}>Aide</Text>
-          </TouchableOpacity>
+          </Card>
         </View>
 
         <View style={styles.secHeader}>
@@ -262,7 +263,7 @@ export default function BackOfficeScreen() {
         {impayes.length === 0 ? (
           <Text style={styles.vide}>Aucun impayé pour le moment.</Text>
         ) : (
-          <View style={styles.card}>
+          <Card style={styles.card}>
             {impayes.map((imp) => (
               <View key={imp.apprenant_id} style={styles.row}>
                 <View style={styles.rowIco}>
@@ -287,13 +288,13 @@ export default function BackOfficeScreen() {
                 </View>
               </View>
             ))}
-          </View>
+          </Card>
         )}
 
         {!!dashboard.derniers_paiements?.length && (
           <>
             <Text style={[styles.sec, { marginTop: 20 }]}>Derniers paiements</Text>
-            <View style={styles.card}>
+            <Card style={styles.card}>
               {dashboard.derniers_paiements.map((p) => (
                 <View key={p.id} style={styles.row}>
                   <View style={{ flex: 1 }}>
@@ -303,7 +304,7 @@ export default function BackOfficeScreen() {
                   <Text style={[styles.rowMontant, { color: '#0D9E75' }]}>{p.montant.toLocaleString('fr-FR')} F</Text>
                 </View>
               ))}
-            </View>
+            </Card>
           </>
         )}
       </ScrollView>
@@ -328,9 +329,9 @@ const styles = StyleSheet.create({
   pillTxt: { fontSize: 10, fontWeight: '700' },
   kpiRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 20 },
   quickActionsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  quickAction: { width: '47%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#FFFFFF', borderRadius: 12, paddingVertical: 14, borderWidth: 1, borderColor: '#E2E8F0' },
+  quickAction: { width: '47%', flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, paddingVertical: 14 },
   quickActionTxt: { fontSize: 12, fontWeight: '700', color: '#0B2545' },
-  kpiCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 10, padding: 12, alignItems: 'center' },
+  kpiCard: { width: '47%', padding: 12, alignItems: 'center' },
   kpiVal: { fontSize: 15, fontWeight: '800', color: '#1A1A2E' },
   kpiLbl: { fontSize: 9, color: '#888888', marginTop: 2, textAlign: 'center' },
   secHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 },
@@ -338,7 +339,7 @@ const styles = StyleSheet.create({
   relanceBtn: { flexDirection: 'row', alignItems: 'center', gap: 5, backgroundColor: '#FEF3DC', borderRadius: 20, paddingHorizontal: 10, paddingVertical: 5 },
   relanceTxt: { fontSize: 10, fontWeight: '700', color: '#8B5E10' },
   vide: { fontSize: 12, color: '#888888', textAlign: 'center', marginTop: 12 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 4 },
+  card: { padding: 4 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 10, borderBottomWidth: 1, borderBottomColor: '#F0F0F0' },
   rowIco: { width: 32, height: 32, borderRadius: 8, backgroundColor: '#FBEAEA', alignItems: 'center', justifyContent: 'center' },
   rowTitre: { fontSize: 12, fontWeight: '600', color: '#1A1A2E' },
