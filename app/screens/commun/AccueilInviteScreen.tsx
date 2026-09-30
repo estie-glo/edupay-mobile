@@ -1,6 +1,6 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
-import { Alert, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Image, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import {
   BarChart3,
   Building2,
@@ -123,8 +123,9 @@ export default function AccueilInviteScreen() {
         >
           {/* Navbar */}
           <View style={styles.navbar}>
-            <View style={styles.logoBox}>
-              <Text style={styles.logoTxt}>EP</Text>
+            <View style={styles.logoRow}>
+              <Image source={require('../../../assets/images/logo-white.png')} style={styles.logoImg} resizeMode="contain" />
+              <Text style={styles.logoWordmark}>EduPay</Text>
             </View>
             <View style={styles.navBtns}>
               <TouchableOpacity
@@ -354,8 +355,9 @@ const styles = StyleSheet.create({
   // HERO
   hero: { backgroundColor: '#0B2545', paddingBottom: 0 },
   navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16 },
-  logoBox: { width: 36, height: 36, borderRadius: 8, backgroundColor: '#0D9E75', alignItems: 'center', justifyContent: 'center' },
-  logoTxt: { color: '#FFFFFF', fontWeight: '800', fontSize: 14 },
+  logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  logoImg: { width: 30, height: 35 },
+  logoWordmark: { color: '#FFFFFF', fontWeight: '800', fontSize: 16 },
   navBtns: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   btnConnexion: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   btnConnexionTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
