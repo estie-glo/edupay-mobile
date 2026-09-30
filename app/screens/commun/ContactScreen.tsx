@@ -1,8 +1,10 @@
 import { useState } from 'react';
-import { ActivityIndicator, Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Alert, Linking, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { Mail, MapPin, Phone, Send } from 'lucide-react-native';
 import PageHeader from '../../../components/PageHeader';
 import { envoyerContact } from '../../../services/api';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 const SUJETS = ['Problème de paiement', 'Intégration technique', 'Partenariat', 'Autre demande'];
 
@@ -53,7 +55,7 @@ export default function ContactScreen() {
       />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
-        <View style={styles.infoCard}>
+        <Card style={styles.infoCard}>
           <View style={styles.infoRow}>
             <MapPin size={16} color="#0D9E75" />
             <Text style={styles.infoTxt}>Yaoundé, Cameroun</Text>
@@ -66,7 +68,7 @@ export default function ContactScreen() {
             <Mail size={16} color="#0D9E75" />
             <Text style={styles.infoTxt}>contact@edupay.cm</Text>
           </View>
-        </View>
+        </Card>
 
         <Text style={styles.secLabel}>ENVOYEZ-NOUS UN MESSAGE</Text>
 
@@ -97,9 +99,13 @@ export default function ContactScreen() {
           numberOfLines={5}
         />
 
-        <TouchableOpacity style={[styles.btnEnvoyer, envoi && { opacity: 0.7 }]} onPress={handleEnvoyer} disabled={envoi}>
-          {envoi ? <ActivityIndicator color="#FFFFFF" /> : <><Send size={16} color="#FFFFFF" /><Text style={styles.btnEnvoyerTxt}>Envoyer le message</Text></>}
-        </TouchableOpacity>
+        <PrimaryButton
+          title="Envoyer le message"
+          onPress={handleEnvoyer}
+          loading={envoi}
+          icon={<Send size={16} color="#FFFFFF" />}
+          style={{ marginTop: 20 }}
+        />
         <Text style={styles.note}>Nous répondons dans les 24h ouvrables.</Text>
       </ScrollView>
     </View>
@@ -109,7 +115,7 @@ export default function ContactScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F6F7' },
   content: { flex: 1, padding: 16 },
-  infoCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 24, gap: 12 },
+  infoCard: { padding: 16, marginBottom: 24, gap: 12 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   infoTxt: { fontSize: 12, color: '#333333', fontWeight: '600' },
   secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 6 },
@@ -121,7 +127,5 @@ const styles = StyleSheet.create({
   chipTxt: { fontSize: 11, fontWeight: '600', color: '#1A1A2E' },
   chipTxtActive: { color: '#FFFFFF' },
   textarea: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, padding: 12, fontSize: 13, color: '#1A1A2E', textAlignVertical: 'top', minHeight: 100 },
-  btnEnvoyer: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 8, backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 12, marginTop: 20 },
-  btnEnvoyerTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '700' },
   note: { fontSize: 11, color: '#AAAAAA', textAlign: 'center', marginTop: 10 },
 });

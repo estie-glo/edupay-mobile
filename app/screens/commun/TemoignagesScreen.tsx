@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Quote } from 'lucide-react-native';
 import PageHeader from '../../../components/PageHeader';
+import Card from '../../../components/ui/Card';
 
 const TEMOIGNAGES = [
   { citation: "Depuis EduPay, nous avons réduit les détournements de 90% et notre taux de recouvrement est passé à 94%. Les parents adorent recevoir leur reçu PDF immédiatement.", auteur: 'M. MVONDO Jean-Pierre', role: 'Directeur', etablissement: 'Lycée Bilingue de Melen' },
@@ -21,7 +22,7 @@ export default function TemoignagesScreen() {
       />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {TEMOIGNAGES.map((t) => (
-          <View key={t.auteur} style={styles.card}>
+          <Card key={t.auteur} style={styles.card}>
             <Quote size={18} color="#0D9E75" />
             <Text style={styles.citation}>{t.citation}</Text>
             <View style={styles.auteurRow}>
@@ -33,7 +34,7 @@ export default function TemoignagesScreen() {
                 <Text style={styles.auteurRole}>{t.role} · {t.etablissement}</Text>
               </View>
             </View>
-          </View>
+          </Card>
         ))}
       </ScrollView>
     </View>
@@ -43,7 +44,7 @@ export default function TemoignagesScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F6F7' },
   content: { flex: 1, padding: 16 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, marginBottom: 12, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { padding: 16, marginBottom: 12 },
   citation: { fontSize: 12, color: '#333333', lineHeight: 18, marginTop: 10, marginBottom: 14, fontStyle: 'italic' },
   auteurRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   avatar: { width: 34, height: 34, borderRadius: 17, backgroundColor: '#0D9E75', alignItems: 'center', justifyContent: 'center' },

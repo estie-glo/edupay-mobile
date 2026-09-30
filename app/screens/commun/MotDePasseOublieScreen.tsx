@@ -1,8 +1,9 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
-import { ArrowLeft, KeyRound } from 'lucide-react-native';
+import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ArrowLeft, Eye, EyeOff, KeyRound } from 'lucide-react-native';
 import { forgotPassword, resetPassword } from '../../../services/api';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 const PASSWORD_REGEX = /^(?=.*[A-Z])(?=.*[0-9])(?=.*[^A-Za-z0-9]).+$/;
 
@@ -13,6 +14,7 @@ export default function MotDePasseOublieScreen() {
   const [code, setCode] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirmation, setPasswordConfirmation] = useState('');
+  const [motDePasseVisible, setMotDePasseVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const handleEnvoyerCode = async () => {
@@ -86,9 +88,7 @@ export default function MotDePasseOublieScreen() {
         />
 
         {!codeEnvoye ? (
-          <TouchableOpacity style={[styles.btn, loading && { opacity: 0.7 }]} onPress={handleEnvoyerCode} disabled={loading}>
-            {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Recevoir le code</Text>}
-          </TouchableOpacity>
+          <PrimaryButton title="Recevoir le code" onPress={handleEnvoyerCode} loading={loading} style={{ marginTop: 20 }} />
         ) : (
           <>
             <Text style={styles.lbl}>Code reçu par email</Text>
@@ -101,14 +101,19 @@ export default function MotDePasseOublieScreen() {
               keyboardType="number-pad"
             />
             <Text style={styles.lbl}>Nouveau mot de passe</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Min. 8 car., 1 majuscule, 1 chiffre, 1 spécial"
-              placeholderTextColor="#AAAAAA"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                placeholder="Min. 8 car., 1 majuscule, 1 chiffre, 1 spécial"
+                placeholderTextColor="#AAAAAA"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!motDePasseVisible}
+              />
+              <TouchableOpacity style={styles.eyeBtn} onPress={() => setMotDePasseVisible((v) => !v)}>
+                {motDePasseVisible ? <EyeOff size={18} color="#888888" /> : <Eye size={18} color="#888888" />}
+              </TouchableOpacity>
+            </View>
             <Text style={styles.lbl}>Confirmer le mot de passe</Text>
             <TextInput
               style={styles.input}
@@ -116,11 +121,9 @@ export default function MotDePasseOublieScreen() {
               placeholderTextColor="#AAAAAA"
               value={passwordConfirmation}
               onChangeText={setPasswordConfirmation}
-              secureTextEntry
+              secureTextEntry={!motDePasseVisible}
             />
-            <TouchableOpacity style={[styles.btn, loading && { opacity: 0.7 }]} onPress={handleReinitialiser} disabled={loading}>
-              {loading ? <ActivityIndicator color="#FFFFFF" /> : <Text style={styles.btnTxt}>Réinitialiser le mot de passe</Text>}
-            </TouchableOpacity>
+            <PrimaryButton title="Réinitialiser le mot de passe" onPress={handleReinitialiser} loading={loading} style={{ marginTop: 20 }} />
             <TouchableOpacity style={styles.renvoi} onPress={handleEnvoyerCode} disabled={loading}>
               <Text style={styles.renvoiTxt}>Renvoyer le code</Text>
             </TouchableOpacity>
@@ -142,8 +145,9 @@ const styles = StyleSheet.create({
   lbl: { fontSize: 11, fontWeight: '700', color: '#666666', marginBottom: 6, marginTop: 14 },
   input: { backgroundColor: '#FFFFFF', borderWidth: 1.5, borderColor: '#E2E8F0', borderRadius: 10, paddingHorizontal: 14, paddingVertical: 12, fontSize: 13, color: '#1A1A2E' },
   inputDisabled: { backgroundColor: '#F0F2F5', color: '#888888' },
-  btn: { backgroundColor: '#0D9E75', paddingVertical: 14, borderRadius: 12, alignItems: 'center', marginTop: 20 },
-  btnTxt: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  passwordRow: { position: 'relative', justifyContent: 'center' },
+  passwordInput: { paddingRight: 44 },
+  eyeBtn: { position: 'absolute', right: 14, padding: 4 },
   renvoi: { alignSelf: 'center', marginTop: 16 },
   renvoiTxt: { color: '#0D9E75', fontSize: 12, fontWeight: '600' },
 });

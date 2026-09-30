@@ -3,6 +3,7 @@ import { useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ChevronDown, ChevronUp, Mail, MapPin, Phone } from 'lucide-react-native';
 import PageHeader from '../../../components/PageHeader';
+import Card from '../../../components/ui/Card';
 
 const FAQ = [
   { q: "L'inscription est-elle payante ?", r: "Non, l'inscription est totalement gratuite pour les établissements. EduPay perçoit une commission de 0,5% sur chaque transaction réussie." },
@@ -26,7 +27,7 @@ export default function AideScreen() {
       />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
 
-        <View style={styles.infoCard}>
+        <Card style={styles.infoCard}>
           <Text style={styles.infoTitre}>Pourquoi nous contacter ?</Text>
           <Text style={styles.infoDesc}>Pour toute question technique, partenariat, ou demande de support. Nous répondons à toutes vos questions dans les 24h ouvrables.</Text>
           <View style={styles.infoRow}>
@@ -44,19 +45,19 @@ export default function AideScreen() {
           <TouchableOpacity style={styles.btnContact} onPress={() => router.push('/screens/commun/ContactScreen')}>
             <Text style={styles.btnContactTxt}>Nous écrire →</Text>
           </TouchableOpacity>
-        </View>
+        </Card>
 
         <Text style={styles.secLabel}>QUESTIONS FRÉQUENTES</Text>
         {FAQ.map((item, i) => {
           const estOuvert = ouvert === i;
           return (
-            <TouchableOpacity key={item.q} style={styles.faqCard} onPress={() => setOuvert(estOuvert ? null : i)}>
+            <Card key={item.q} style={styles.faqCard} onPress={() => setOuvert(estOuvert ? null : i)}>
               <View style={styles.faqQRow}>
                 <Text style={styles.faqQ}>{item.q}</Text>
                 {estOuvert ? <ChevronUp size={16} color="#0D9E75" /> : <ChevronDown size={16} color="#888888" />}
               </View>
               {estOuvert && <Text style={styles.faqR}>{item.r}</Text>}
-            </TouchableOpacity>
+            </Card>
           );
         })}
       </ScrollView>
@@ -67,7 +68,7 @@ export default function AideScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F6F7' },
   content: { flex: 1, padding: 16 },
-  infoCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 24 },
+  infoCard: { padding: 16, marginBottom: 24 },
   infoTitre: { fontSize: 14, fontWeight: '800', color: '#1A1A2E', marginBottom: 6 },
   infoDesc: { fontSize: 12, color: '#666666', lineHeight: 17, marginBottom: 14 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 8 },
@@ -75,7 +76,7 @@ const styles = StyleSheet.create({
   btnContact: { marginTop: 8, backgroundColor: '#E0F5EE', borderRadius: 10, paddingVertical: 10, alignItems: 'center' },
   btnContactTxt: { fontSize: 12, fontWeight: '700', color: '#0D9E75' },
   secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12 },
-  faqCard: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 8, borderWidth: 1, borderColor: '#E2E8F0' },
+  faqCard: { padding: 14, marginBottom: 8 },
   faqQRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10 },
   faqQ: { flex: 1, fontSize: 12, fontWeight: '700', color: '#1A1A2E' },
   faqR: { fontSize: 12, color: '#666666', lineHeight: 17, marginTop: 10 },

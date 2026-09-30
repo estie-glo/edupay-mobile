@@ -1,6 +1,7 @@
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Award, Heart, MapPin, Shield, Target, Users } from 'lucide-react-native';
 import PageHeader from '../../../components/PageHeader';
+import Card from '../../../components/ui/Card';
 
 const VALEURS = [
   { titre: 'Accessibilité', desc: 'EduPay est conçu pour être accessible à tous, quelle que soit la région ou le niveau de connectivité.', Icone: Users, couleur: '#0D9E75' },
@@ -47,29 +48,29 @@ export default function AProposScreen() {
         <Text style={styles.secLabel}>NOS VALEURS</Text>
         <View style={styles.grid}>
           {VALEURS.map(({ titre, desc, Icone, couleur }) => (
-            <View key={titre} style={styles.card}>
+            <Card key={titre} style={styles.card} accent={couleur}>
               <View style={[styles.cardIco, { backgroundColor: `${couleur}1A` }]}>
                 <Icone size={18} color={couleur} />
               </View>
               <Text style={styles.cardTitre}>{titre}</Text>
               <Text style={styles.cardDesc}>{desc}</Text>
-            </View>
+            </Card>
           ))}
         </View>
 
         <Text style={styles.secLabel}>CONTEXTE CAMEROUNAIS</Text>
         <View style={styles.statsRow}>
           {CONTEXTE.map(({ val, lbl }) => (
-            <View key={lbl} style={styles.statCard}>
+            <Card key={lbl} style={styles.statCard}>
               <Text style={styles.statVal}>{val}</Text>
               <Text style={styles.statLbl}>{lbl}</Text>
-            </View>
+            </Card>
           ))}
         </View>
 
         <Text style={styles.secLabel}>ÉQUIPE PROJET</Text>
         {EQUIPE.map((m) => (
-          <View key={m.nom} style={styles.membreCard}>
+          <Card key={m.nom} style={styles.membreCard}>
             <View style={styles.membreAvatar}>
               <Text style={styles.membreAvatarTxt}>{m.nom.charAt(0)}</Text>
             </View>
@@ -78,7 +79,7 @@ export default function AProposScreen() {
               <Text style={styles.membreRole}>{m.role}</Text>
               <Text style={styles.membreBio}>{m.bio}</Text>
             </View>
-          </View>
+          </Card>
         ))}
 
         <View style={styles.footerNote}>
@@ -98,15 +99,15 @@ const styles = StyleSheet.create({
   missionTxt: { flex: 1, fontSize: 12, color: '#085041', lineHeight: 17 },
   secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 12, marginTop: 4 },
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  card: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { width: '47%', padding: 14 },
   cardIco: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center', marginBottom: 10 },
   cardTitre: { fontSize: 12, fontWeight: '700', color: '#1A1A2E', marginBottom: 4 },
   cardDesc: { fontSize: 10, color: '#888888', lineHeight: 14 },
   statsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginBottom: 24 },
-  statCard: { width: '47%', backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, alignItems: 'center', borderWidth: 1, borderColor: '#E2E8F0' },
+  statCard: { width: '47%', padding: 14, alignItems: 'center' },
   statVal: { fontSize: 16, fontWeight: '800', color: '#0D9E75', marginBottom: 2 },
   statLbl: { fontSize: 10, color: '#888888', textAlign: 'center' },
-  membreCard: { flexDirection: 'row', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  membreCard: { flexDirection: 'row', gap: 12, padding: 14, marginBottom: 10 },
   membreAvatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#0B2545', alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   membreAvatarTxt: { color: '#FFFFFF', fontSize: 15, fontWeight: '800' },
   membreNom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E' },

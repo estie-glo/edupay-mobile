@@ -2,6 +2,8 @@ import { useRouter } from 'expo-router';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Check } from 'lucide-react-native';
 import PageHeader from '../../../components/PageHeader';
+import Card from '../../../components/ui/Card';
+import PrimaryButton from '../../../components/ui/PrimaryButton';
 
 const PLANS = [
   {
@@ -30,7 +32,7 @@ export default function TarifsScreen() {
       />
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {PLANS.map((plan) => (
-          <View key={plan.nom} style={[styles.card, { borderTopColor: plan.couleur }]}>
+          <Card key={plan.nom} style={styles.card} accent={plan.couleur}>
             <Text style={styles.planNom}>{plan.nom}</Text>
             <View style={styles.prixRow}>
               <Text style={[styles.prix, { color: plan.couleur }]}>{plan.prix}</Text>
@@ -48,15 +50,13 @@ export default function TarifsScreen() {
             >
               <Text style={styles.btnChoisirTxt}>Choisir ce plan {plan.nom}</Text>
             </TouchableOpacity>
-          </View>
+          </Card>
         ))}
 
         <View style={styles.ctaBox}>
           <Text style={styles.ctaTitre}>Une question sur les formules ?</Text>
           <Text style={styles.ctaDesc}>Des offres adaptées à chaque taille d'établissement</Text>
-          <TouchableOpacity style={styles.ctaBtn} onPress={() => router.push('/screens/commun/ContactScreen')}>
-            <Text style={styles.ctaBtnTxt}>Contacter l'équipe</Text>
-          </TouchableOpacity>
+          <PrimaryButton title="Contacter l'équipe" onPress={() => router.push('/screens/commun/ContactScreen')} style={{ paddingHorizontal: 20 }} />
         </View>
       </ScrollView>
     </View>
@@ -66,7 +66,7 @@ export default function TarifsScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F5F6F7' },
   content: { flex: 1, padding: 16 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 18, marginBottom: 14, borderWidth: 1, borderColor: '#E2E8F0', borderTopWidth: 4 },
+  card: { padding: 18, marginBottom: 14 },
   planNom: { fontSize: 15, fontWeight: '800', color: '#1A1A2E', marginBottom: 6 },
   prixRow: { flexDirection: 'row', alignItems: 'baseline', gap: 6, marginBottom: 14 },
   prix: { fontSize: 26, fontWeight: '800' },
@@ -78,6 +78,4 @@ const styles = StyleSheet.create({
   ctaBox: { backgroundColor: '#0B2545', borderRadius: 16, padding: 20, alignItems: 'center', marginTop: 8 },
   ctaTitre: { fontSize: 14, fontWeight: '800', color: '#FFFFFF', marginBottom: 4, textAlign: 'center' },
   ctaDesc: { fontSize: 11, color: 'rgba(255,255,255,0.6)', textAlign: 'center', marginBottom: 14 },
-  ctaBtn: { backgroundColor: '#0D9E75', paddingVertical: 10, paddingHorizontal: 20, borderRadius: 10 },
-  ctaBtnTxt: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
 });

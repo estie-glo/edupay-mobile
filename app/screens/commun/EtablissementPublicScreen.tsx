@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { ArrowLeft, Building2, Globe, Layers3, Mail, MapPin, Phone, Users } from 'lucide-react-native';
 import { getEtablissementPublic } from '../../../services/api';
+import Card from '../../../components/ui/Card';
 
 // Forme exacte de EtablissementPublicController::show (vérifiée le 26/09/2026).
 type CategorieFrais = { id: number; nom: string; montant: number; annee_scolaire?: string };
@@ -72,13 +73,13 @@ export default function EtablissementPublicScreen() {
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 32 }}>
         {!!etablissement.description && (
-          <View style={styles.card}>
+          <Card style={styles.card}>
             <Text style={styles.descTxt}>{etablissement.description}</Text>
-          </View>
+          </Card>
         )}
 
         <Text style={styles.secLabel}>INFORMATIONS</Text>
-        <View style={styles.card}>
+        <Card style={styles.card}>
           {!!(etablissement.ville || etablissement.quartier || etablissement.region) && (
             <View style={styles.infoRow}>
               <MapPin size={14} color="#0D9E75" />
@@ -107,12 +108,12 @@ export default function EtablissementPublicScreen() {
             <Users size={14} color="#0D9E75" />
             <Text style={styles.infoTxt}>{etablissement.nb_apprenants ?? 0} apprenant(s) inscrit(s)</Text>
           </View>
-        </View>
+        </Card>
 
         {!!etablissement.categories_frais?.length && (
           <>
             <Text style={[styles.secLabel, { marginTop: 20 }]}>CATÉGORIES DE FRAIS</Text>
-            <View style={styles.card}>
+            <Card style={styles.card}>
               {etablissement.categories_frais.map((c) => (
                 <View key={c.id} style={styles.fraisRow}>
                   <Layers3 size={13} color="#888888" />
@@ -120,7 +121,7 @@ export default function EtablissementPublicScreen() {
                   <Text style={styles.fraisMontant}>{c.montant.toLocaleString('fr-FR')} FCFA</Text>
                 </View>
               ))}
-            </View>
+            </Card>
           </>
         )}
       </ScrollView>
@@ -138,7 +139,7 @@ const styles = StyleSheet.create({
   nom: { fontSize: 17, fontWeight: '800', color: '#FFFFFF' },
   sousTitre: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 2 },
   content: { flex: 1, padding: 16 },
-  card: { backgroundColor: '#FFFFFF', borderRadius: 12, padding: 16, borderWidth: 1, borderColor: '#E2E8F0', marginBottom: 10, gap: 10 },
+  card: { padding: 16, marginBottom: 10, gap: 10 },
   descTxt: { fontSize: 13, color: '#555555', lineHeight: 19 },
   secLabel: { fontSize: 10, fontWeight: '800', color: '#888888', textTransform: 'uppercase', letterSpacing: 1, marginBottom: 8 },
   infoRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },

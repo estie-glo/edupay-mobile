@@ -3,6 +3,7 @@ import { ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 
 import { MapPin, Search } from 'lucide-react-native';
 import PageHeader from '../../../components/PageHeader';
 import { ETABLISSEMENTS, TYPES_ETABLISSEMENT } from '../../../data/etablissements';
+import Card from '../../../components/ui/Card';
 
 const COULEURS_AVATAR = ['#0B2545', '#0D9E75', '#1a472a', '#E8A020'];
 
@@ -54,7 +55,7 @@ export default function EcolesScreen() {
           <Text style={styles.vide}>Aucun établissement trouvé.</Text>
         ) : (
           ecoles.map((ecole, i) => (
-            <View key={ecole.nom} style={styles.card}>
+            <Card key={ecole.nom} style={styles.card}>
               <View style={[styles.avatar, { backgroundColor: COULEURS_AVATAR[i % COULEURS_AVATAR.length] }]}>
                 <Text style={styles.avatarTxt}>{ecole.nom.charAt(0)}</Text>
               </View>
@@ -68,7 +69,7 @@ export default function EcolesScreen() {
               <View style={styles.pill}>
                 <Text style={styles.pillTxt}>{ecole.type}</Text>
               </View>
-            </View>
+            </Card>
           ))
         )}
       </ScrollView>
@@ -88,7 +89,7 @@ const styles = StyleSheet.create({
   chipTxtActive: { color: '#FFFFFF' },
   content: { flex: 1, padding: 16 },
   vide: { fontSize: 13, color: '#888888', textAlign: 'center', marginTop: 40 },
-  card: { flexDirection: 'row', alignItems: 'center', gap: 12, backgroundColor: '#FFFFFF', borderRadius: 12, padding: 14, marginBottom: 10, borderWidth: 1, borderColor: '#E2E8F0' },
+  card: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, marginBottom: 10 },
   avatar: { width: 42, height: 42, borderRadius: 10, alignItems: 'center', justifyContent: 'center', flexShrink: 0 },
   avatarTxt: { color: '#FFFFFF', fontSize: 17, fontWeight: '800' },
   nom: { fontSize: 13, fontWeight: '700', color: '#1A1A2E', marginBottom: 3 },
