@@ -21,6 +21,7 @@ import { ETABLISSEMENTS, TYPES_ETABLISSEMENT } from '../../../data/etablissement
 import { getStatsPubliques } from '../../../services/api';
 import Card from '../../../components/ui/Card';
 import PrimaryButton from '../../../components/ui/PrimaryButton';
+import FloatingBlob from '../../../components/ui/FloatingBlob';
 
 const COULEURS_AVATAR = ['#0B2545', '#0D9E75', '#1a472a', '#E8A020'];
 
@@ -121,6 +122,11 @@ export default function AccueilInviteScreen() {
           end={{ x: 1, y: 1 }}
           style={styles.hero}
         >
+          {/* Formes flottantes décoratives — fond "vivant" plutôt que plat */}
+          <FloatingBlob size={220} color="#0D9E75" top={-60} right={-70} duration={5000} driftY={20} />
+          <FloatingBlob size={160} color="#E8A020" top={260} left={-60} duration={7000} driftY={14} />
+          <FloatingBlob size={130} color="#5DCAA5" top={40} left={220} duration={6500} driftY={18} />
+
           {/* Navbar */}
           <View style={styles.navbar}>
             <View style={styles.logoRow}>
@@ -294,7 +300,10 @@ export default function AccueilInviteScreen() {
 
         {/* FOOTER */}
         <View style={styles.footer}>
-          <Text style={styles.footerLogo}>Edu<Text style={{ color: '#5DCAA5' }}>Pay</Text> Cameroun</Text>
+          <View style={styles.footerBrandRow}>
+            <Image source={require('../../../assets/images/logo-white.png')} style={styles.footerLogoImg} resizeMode="contain" />
+            <Text style={styles.footerLogo}>Edu<Text style={{ color: '#5DCAA5' }}>Pay</Text> Cameroun</Text>
+          </View>
           <Text style={styles.footerDesc}>
             La première plateforme de paiement électronique des frais de scolarité pensée pour les réalités camerounaises.
           </Text>
@@ -305,6 +314,8 @@ export default function AccueilInviteScreen() {
               </View>
             ))}
           </View>
+
+          <View style={styles.footerDivider} />
 
           <View style={styles.footerColonnes}>
             {FOOTER_COLONNES.map(({ titre, liens }) => (
@@ -321,23 +332,24 @@ export default function AccueilInviteScreen() {
 
           <View style={styles.footerDivider} />
 
-          <TouchableOpacity onPress={() => router.push('/screens/commun/MentionsLegalesScreen')}>
-            <Text style={styles.footerMentions}>Mentions légales</Text>
-          </TouchableOpacity>
+          <View style={styles.footerBottomRow}>
+            <View style={styles.footerReseaux}>
+              {FOOTER_RESEAUX.map(({ nom, sigle }) => (
+                <TouchableOpacity key={nom} style={styles.footerReseauBtn} onPress={() => Alert.alert(nom, 'Bientôt disponible.')}>
+                  <Text style={styles.footerReseauTxt}>{sigle}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <TouchableOpacity onPress={() => router.push('/screens/commun/MentionsLegalesScreen')}>
+              <Text style={styles.footerMentions}>Mentions légales</Text>
+            </TouchableOpacity>
+          </View>
 
           <View style={styles.footerBadges2}>
             {FOOTER_BADGES_2.map((badge) => (
               <View key={badge} style={styles.footerBadge2}>
                 <Text style={styles.footerBadge2Txt}>{badge}</Text>
               </View>
-            ))}
-          </View>
-
-          <View style={styles.footerReseaux}>
-            {FOOTER_RESEAUX.map(({ nom, sigle }) => (
-              <TouchableOpacity key={nom} style={styles.footerReseauBtn} onPress={() => Alert.alert(nom, 'Bientôt disponible.')}>
-                <Text style={styles.footerReseauTxt}>{sigle}</Text>
-              </TouchableOpacity>
             ))}
           </View>
 
@@ -353,7 +365,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#F8FAFC' },
 
   // HERO
-  hero: { backgroundColor: '#0B2545', paddingBottom: 0 },
+  hero: { backgroundColor: '#0B2545', paddingBottom: 0, overflow: 'hidden' },
   navbar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 20, paddingTop: 52, paddingBottom: 16 },
   logoRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   logoImg: { width: 30, height: 35 },
@@ -372,7 +384,7 @@ const styles = StyleSheet.create({
   heroAccent: { color: '#0D9E75' },
   heroDesc: { fontSize: 12, color: 'rgba(255,255,255,0.6)', lineHeight: 18, marginBottom: 24 },
   heroBtns: { gap: 10 },
-  heroBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 14, borderRadius: 10, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
+  heroBtnSecondary: { backgroundColor: 'rgba(255,255,255,0.1)', paddingVertical: 14, borderRadius: 999, alignItems: 'center', borderWidth: 1, borderColor: 'rgba(255,255,255,0.3)' },
   heroBtnSecondaryTxt: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
 
   statsRow: { flexDirection: 'row', borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.1)', paddingVertical: 16, paddingHorizontal: 20 },
@@ -428,22 +440,25 @@ const styles = StyleSheet.create({
 
   // FOOTER
   footer: { backgroundColor: '#0B2545', padding: 24, alignItems: 'center' },
-  footerLogo: { fontSize: 16, fontWeight: '800', color: '#FFFFFF', marginBottom: 10 },
-  footerDesc: { fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 16, marginBottom: 16 },
-  footerBadges: { flexDirection: 'row', gap: 8, marginBottom: 24 },
-  footerBadge: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.2)', borderRadius: 8, paddingHorizontal: 10, paddingVertical: 5 },
-  footerBadgeTxt: { fontSize: 9, color: 'rgba(255,255,255,0.6)', fontWeight: '600' },
-  footerColonnes: { width: '100%', gap: 16, marginBottom: 8 },
-  footerColonne: { alignItems: 'center' },
-  footerColonneTitre: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.9)', letterSpacing: 0.8, marginBottom: 10 },
-  footerLien: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 10, textAlign: 'center' },
-  footerDivider: { width: '100%', height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 16 },
-  footerMentions: { fontSize: 11, color: 'rgba(255,255,255,0.5)', marginBottom: 16 },
+  footerBrandRow: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+  footerLogoImg: { width: 22, height: 26 },
+  footerLogo: { fontSize: 16, fontWeight: '800', color: '#FFFFFF' },
+  footerDesc: { fontSize: 11, color: 'rgba(255,255,255,0.5)', textAlign: 'center', lineHeight: 16, marginBottom: 16, maxWidth: 280 },
+  footerBadges: { flexDirection: 'row', gap: 8 },
+  footerBadge: { backgroundColor: 'rgba(13,158,117,0.12)', borderWidth: 1, borderColor: 'rgba(13,158,117,0.35)', borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 },
+  footerBadgeTxt: { fontSize: 9, color: '#5DCAA5', fontWeight: '700' },
+  footerColonnes: { width: '100%', flexDirection: 'row', flexWrap: 'wrap', gap: 20 },
+  footerColonne: { width: '42%' },
+  footerColonneTitre: { fontSize: 10, fontWeight: '800', color: 'rgba(255,255,255,0.9)', letterSpacing: 0.8, marginBottom: 12 },
+  footerLien: { fontSize: 12, color: 'rgba(255,255,255,0.6)', marginBottom: 12, lineHeight: 16 },
+  footerDivider: { width: '100%', height: 1, backgroundColor: 'rgba(255,255,255,0.1)', marginVertical: 20 },
+  footerMentions: { fontSize: 11, color: 'rgba(255,255,255,0.5)' },
   footerBadges2: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 16 },
-  footerBadge2: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 8, paddingHorizontal: 8, paddingVertical: 5 },
+  footerBadge2: { borderWidth: 1, borderColor: 'rgba(255,255,255,0.15)', borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 },
   footerBadge2Txt: { fontSize: 8, color: 'rgba(255,255,255,0.5)', fontWeight: '600' },
-  footerReseaux: { flexDirection: 'row', gap: 10, marginBottom: 16 },
+  footerBottomRow: { width: '100%', flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  footerReseaux: { flexDirection: 'row', gap: 8 },
   footerReseauBtn: { width: 30, height: 30, borderRadius: 15, backgroundColor: 'rgba(255,255,255,0.1)', alignItems: 'center', justifyContent: 'center' },
   footerReseauTxt: { fontSize: 11, fontWeight: '800', color: '#FFFFFF' },
-  footerCopyright: { fontSize: 9, color: 'rgba(255,255,255,0.35)', textAlign: 'center' },
+  footerCopyright: { fontSize: 9, color: 'rgba(255,255,255,0.35)', textAlign: 'center', marginTop: 16 },
 });
