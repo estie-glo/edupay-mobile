@@ -2,7 +2,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { ArrowLeft, KeyRound, School } from 'lucide-react-native';
+import { ArrowLeft, Eye, EyeOff, KeyRound, School } from 'lucide-react-native';
 import { useAuth } from '../../../context/AuthContext';
 import { envoyerOtp, login, verifierOtp } from '../../../services/api';
 import PrimaryButton from '../../../components/ui/PrimaryButton';
@@ -12,6 +12,7 @@ export default function LoginParentScreen() {
   const { signIn } = useAuth();
   const [identifiant, setIdentifiant] = useState('');
   const [password, setPassword] = useState('');
+  const [motDePasseVisible, setMotDePasseVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const [modeOtp, setModeOtp] = useState(false);
@@ -98,14 +99,19 @@ export default function LoginParentScreen() {
               autoCapitalize="none"
             />
             <Text style={styles.lbl}>Mot de passe</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Votre mot de passe"
-              placeholderTextColor="#AAAAAA"
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry={true}
-            />
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={[styles.input, styles.passwordInput]}
+                placeholder="Votre mot de passe"
+                placeholderTextColor="#AAAAAA"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry={!motDePasseVisible}
+              />
+              <TouchableOpacity style={styles.eyeBtn} onPress={() => setMotDePasseVisible((v) => !v)}>
+                {motDePasseVisible ? <EyeOff size={18} color="#888888" /> : <Eye size={18} color="#888888" />}
+              </TouchableOpacity>
+            </View>
             <TouchableOpacity style={styles.oublie} onPress={() => router.push('/screens/commun/MotDePasseOublieScreen')}>
               <Text style={styles.oublieTxt}>Mot de passe oublié ?</Text>
             </TouchableOpacity>
@@ -183,6 +189,9 @@ const styles = StyleSheet.create({
     shadowColor: '#0B2545', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.04, shadowRadius: 6, elevation: 1,
   },
   inputDisabled: { backgroundColor: '#F0F2F5', color: '#888888' },
+  passwordRow: { position: 'relative', justifyContent: 'center' },
+  passwordInput: { paddingRight: 44 },
+  eyeBtn: { position: 'absolute', right: 14, padding: 4 },
   otpToggle: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6, marginTop: 16 },
   otpToggleTxt: { color: '#0D9E75', fontSize: 12, fontWeight: '700' },
   oublie: { alignSelf: 'flex-end', marginTop: 8, marginBottom: 4 },
